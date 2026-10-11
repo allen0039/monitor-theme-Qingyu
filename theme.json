@@ -363,9 +363,9 @@
     {
       "key": "show_total_traffic",
       "type": "boolean",
-      "label": "卡片显示累计流量",
+      "label": "卡片显示本月与累计流量",
       "default": true,
-      "help": "在卡片「在线」下方的「累计」行显示上传与下载总量；总览流量单独配置。"
+      "help": "卡片中间显示该节点本月上传与下载流量，「在线」下方的「累计」行显示历史上传与下载总量；总览流量单独配置。"
     },
     {
       "key": "show_node_metadata",

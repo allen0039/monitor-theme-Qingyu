@@ -4,7 +4,7 @@ import { CalendarDays, ChevronDown, ChevronUp, Coins, Ellipsis } from '@lucide/v
 import type { MonitorNode, ThemeConfig } from '../types'
 import { flagUrl } from '../lib/assets'
 import { nodeState, regionName } from '../lib/data'
-import { cardBytes, cardPrice, duration, expiryLabel, formatBytes, percentage, priceLabel, remarkParts } from '../lib/format'
+import { bytes, cardBytes, cardPrice, duration, expiryLabel, formatBytes, percentage, priceLabel, remarkParts } from '../lib/format'
 import OsIcon from './OsIcon.vue'
 import ResourceMeter from './ResourceMeter.vue'
 import PingPanel from './PingPanel.vue'
@@ -21,9 +21,24 @@ const longCost = computed(() => costParts.value[0].length >= 8 || costParts.valu
 const costTitle = computed(() => `${priceLabel(props.node.price, props.node.currency, props.node.billing_cycle)} (${props.node.currency})`)
 const hasExpiry = computed(() => props.config.show_expiry && props.node.expires_in !== null)
 const hasBilling = computed(() => props.showPrice || hasExpiry.value)
-const highlightCount = computed(() => Number(props.config.show_speed) + Number(hasBilling.value))
+const highlightCount = computed(() => Number(props.config.show_speed) + Number(props.config.show_total_traffic) + Number(hasBilling.value))
 const expiryText = computed(() => props.node.expires_in === null ? '' : props.node.expires_in < 0
   ? `已过期 ${Math.abs(props.node.expires_in)} 天` : props.node.expires_in === 0 ? '今天到期' : `剩余 ${props.node.expires_in} 天`)
+const expiryTileText = computed(() => {
+  const days = props.node.expires_in
+  const compactAt = props.config.card_size === 'mini' ? 100 : 1000
+  if (highlightCount.value === 3 && days !== null && Math.abs(days) >= compactAt) {
+    return days < 0 ? `过期${Math.abs(days)}天` : `剩${days}天`
+  }
+  return expiryText.value
+})
+function tileRate(value: number | null | undefined): string {
+  if (highlightCount.value === 3 && props.config.card_size === 'mini') {
+    const part = bytes(value, true)
+    if (part.unit === 'KB/s') return `${Math.round(Number(part.value))} KB/s`
+  }
+  return cardBytes(value, true)
+}
 const remark = computed(() => remarkParts(props.node.public_remark))
 const hasExtra = computed(() => props.config.show_node_metadata && !!(props.node.cpu_cores || props.node.arch))
 const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null && props.node.expires_in <= props.config.expiry_warning_days, expired: props.node.expires_in !== null && props.node.expires_in < 0 }))
@@ -43,13 +58,17 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
         <ResourceMeter v-if="config.show_disk" icon="disk" label="硬盘" :value="disk" :detail="`${cardBytes(node.metrics?.disk_used)} / ${cardBytes(node.disk_total)}`" :detail-title="`${formatBytes(node.metrics?.disk_used)} / ${formatBytes(node.disk_total)}`" :warning-at="60" :danger-at="80" />
         <ResourceMeter v-if="config.show_traffic" icon="traffic" label="流量" :value="traffic" :detail="`${cardBytes(node.month_used)} / ${node.traffic_limit ? cardBytes(node.traffic_limit) : '∞'}`" :detail-title="`${formatBytes(node.month_used)} / ${node.traffic_limit ? formatBytes(node.traffic_limit) : '∞'}`" :warning-at="80" :danger-at="100" />
       </div>
-      <div v-if="highlightCount" class="node-highlights" :style="{ '--highlight-count': highlightCount }">
+      <div v-if="highlightCount" class="node-highlights" :class="{ 'node-highlights-three': highlightCount === 3 }" :style="{ '--highlight-count': highlightCount }">
         <div v-if="config.show_speed" class="highlight-tile" role="group" aria-label="实时速率">
-          <span class="highlight-value up" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_tx, true)"><ChevronUp />{{ cardBytes(node.metrics?.net_tx, true) }}</span>
-          <span class="highlight-value down" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_rx, true)"><ChevronDown />{{ cardBytes(node.metrics?.net_rx, true) }}</span>
+          <span class="highlight-value up" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_tx, true)"><ChevronUp />{{ tileRate(node.metrics?.net_tx) }}</span>
+          <span class="highlight-value down" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_rx, true)"><ChevronDown />{{ tileRate(node.metrics?.net_rx) }}</span>
+        </div>
+        <div v-if="config.show_total_traffic" class="highlight-tile" role="group" aria-label="本月流量">
+          <span class="highlight-value" :title="`本月上传 ${formatBytes(node.month_tx)}`"><ChevronUp />{{ cardBytes(node.month_tx) }}</span>
+          <span class="highlight-value" :title="`本月下载 ${formatBytes(node.month_rx)}`"><ChevronDown />{{ cardBytes(node.month_rx) }}</span>
         </div>
         <div v-if="hasBilling" class="highlight-tile" role="group" :aria-label="showPrice && hasExpiry ? '费用与到期' : showPrice ? '费用' : '到期'">
-          <span v-if="hasExpiry" class="highlight-value highlight-expiry" :class="expiryClass" :title="`${node.expires_at || ''} ${expiryLabel(node.expires_in)}`"><CalendarDays />{{ expiryText }}</span>
+          <span v-if="hasExpiry" class="highlight-value highlight-expiry" :class="expiryClass" :title="`${node.expires_at || ''} ${expiryLabel(node.expires_in)}`"><CalendarDays />{{ expiryTileText }}</span>
           <span v-if="showPrice" class="highlight-value highlight-cost" :title="costTitle"><Coins /><span class="highlight-cost-text">{{ costParts[0] }}<span v-if="costParts[1]" class="highlight-cycle" :class="{ 'highlight-cycle-break': longCost }">/{{ costParts[1] }}</span></span></span>
         </div>
       </div>
