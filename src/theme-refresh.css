@@ -33,7 +33,7 @@ body { min-width: 0; }
 .card-size-mini .node-highlights-three .highlight-value { font-size: 10.5px; gap: 3px; }
 .node-ping-section { margin-top: 17px; padding-top: 14px; border-top: 1px solid var(--line); }
 .node-offline .node-resources, .node-offline .node-ping-section { opacity: .48; }
-.node-extra-traffic { display: grid; gap: 4px; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.node-card .node-facts { margin-top: 14px; }
 .node-extra-issue { margin-top: 8px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .node-extra-content { max-width: min(270px, calc(100vw - 28px)); overflow-wrap: anywhere; }
 .node-status-badges { position: relative; display: inline-flex; }

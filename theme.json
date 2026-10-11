@@ -2,7 +2,7 @@
   "name": "Emerald Globe Pro · Monitor",
   "short": "boxpro",
   "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
   "config": [
@@ -372,7 +372,7 @@
       "type": "boolean",
       "label": "卡片显示本月与累计流量",
       "default": true,
-      "help": "卡片中格显示该节点当月上传与下载；自定义重置日时标为当期流量。历史累计上下行位于卡片右下角附加信息；总览流量单独配置。"
+      "help": "卡片中格显示该节点当月上传与下载；自定义重置日时标为当期流量。信息带下方的「累计」行直接显示历史累计上下行；总览流量单独配置。"
     },
     {
       "key": "show_node_metadata",

@@ -32,11 +32,15 @@ describe('节点信息带与费用隐私', () => {
     expect(html).toContain('缺少到期信息')
     expect(html).not.toContain('¥0.00')
   })
-  it('累计流量在折叠信息内，关闭硬件信息不影响累计数据，流量开关仍生效', async () => {
-    const html = await render({}, { show_node_metadata: false })
-    const details = html.slice(html.indexOf('<details'))
-    expect(details).toContain('累计上传 1.85 TB')
-    expect(details).toContain('累计下载 3.70 TB')
+  it('完整在线时长与累计上下行直接展示，关闭硬件信息不影响数据，显隐开关仍生效', async () => {
+    const changes = { metrics: { cpu: 1, load: [0, 0, 0], mem_total: GB, mem_used: 0, disk_total: GB, disk_used: 0, net_tx: 0, net_rx: 0, uptime: 14 * 86400 + 5 * 3600 } }
+    const html = await render(changes, { show_node_metadata: false })
+    expect(html).toContain('14 天 5 小时')
+    expect(html).toContain('<span>累计</span>')
+    expect(html).toContain('累计上传 1.85 TB')
+    expect(html).toContain('累计下载 3.70 TB')
+    expect(html).not.toContain('<details')
+    expect(await render(changes, { show_uptime: false })).not.toContain('14 天 5 小时')
     expect(await render({}, { show_node_metadata: false, show_total_traffic: false })).not.toContain('累计上传')
   })
   it('自定义重置日使用当期文案，非法重置日按旧协议回退', async () => {
