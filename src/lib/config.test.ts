@@ -10,6 +10,8 @@ describe('详细主题设置', () => {
     const old = { notice: '维护公告', earth_mode: 'map', layout: 'list', offline_last: true, show_ping: false, show_price: false, hide_admin: true, reduce_motion: true, background_light: 'https://example.com/bg.jpg', background_dark: '', background_blur: 4, footer_text: '备案号', footer_url: 'https://example.com' }
     expect(parseConfig(old)).toEqual({ ...defaultConfig(), ...old })
     expect(parseConfig({ show_summary: false, background_opacity: 0, theme_mode: 'dark' })).toMatchObject({ show_summary: false, background_opacity: 0, theme_mode: 'dark' })
+    expect(parseConfig(old).visitor_info_enabled).toBe(true)
+    expect(parseConfig({ visitor_info_enabled: false }).visitor_info_enabled).toBe(false)
   })
 
   it('错误类型、越界数值和不支持的选项不会破坏页面', () => {

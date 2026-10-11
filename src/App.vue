@@ -14,11 +14,14 @@ import NodeGlobe from './components/NodeGlobe.vue'
 import NodeCard from './components/NodeCard.vue'
 import NodeList from './components/NodeList.vue'
 import SummaryCards from './components/SummaryCards.vue'
+import VisitorInfoCard from './components/VisitorInfoCard.vue'
 
 const nodes = ref<MonitorNode[] | null>(null)
 const site = ref<SiteInfo>({ site_name: 'Monitor', authed: false, public_page: true })
 const config = ref<ThemeConfig>(defaultConfig())
 const configLoaded = ref(false)
+const visitorHeight = ref(36)
+const showVisitor = computed(() => configLoaded.value && config.value.visitor_info_enabled)
 const connection = ref<ConnectionState>('connecting'), error = ref<string | null>(null), closed = ref(false)
 const infoError = ref<string | null>(null), search = ref(''), iconFailed = ref(false)
 const settingsMenu = ref<HTMLDetailsElement | null>(null)
@@ -98,7 +101,7 @@ onMounted(() => {
 onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListener('pointerdown', closeSettings) })
 </script>
 <template>
-  <div class="app-shell" :class="{ 'reduced-motion': reduceMotion }">
+  <div class="app-shell" :class="{ 'reduced-motion': reduceMotion, 'visitor-safe-area': showVisitor }" :style="{ '--visitor-height': `${visitorHeight}px` }">
     <div class="page-background" aria-hidden="true"><div class="emerald-wash" /><div v-if="config.background_show_grid" class="perspective-grid" /></div>
     <div v-if="backgroundUrl" class="custom-background" aria-hidden="true" :style="{ backgroundImage: `url(${JSON.stringify(backgroundUrl)})`, filter: `blur(${config.background_blur}px)`, opacity: config.background_opacity / 100 }" />
     <header class="masthead">
@@ -155,6 +158,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
       <div v-else-if="error || closed" class="empty-state load-error" role="alert"><CircleAlert /><h2>{{ closed ? '需要登录后查看' : '暂时无法获取节点' }}</h2><p>{{ error }}</p><a v-if="closed" href="/admin" class="primary-button">前往登录<ExternalLink /></a><button v-else class="primary-button" type="button" @click="retry"><RotateCcw />重新连接</button></div>
       <div v-else class="loading-state" aria-busy="true" aria-label="正在读取节点"><div class="loading-label"><LoaderCircle />正在连接 Monitor…</div><div class="skeleton-overview" /><div class="nodes-grid"><div v-for="n in 8" :key="n" class="skeleton-card" /></div></div>
     </main>
+    <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" />
     <footer class="site-footer"><div><span>Powered by <a href="https://github.com/monitor-probe/monitor" target="_blank" rel="noopener noreferrer">Monitor</a></span><span>Theme by <a :href="manifest.url" target="_blank" rel="noopener noreferrer" :title="`Monitor 移植版 v${manifest.version}`">Emerald Globe Pro</a></span></div><p v-if="config.footer_text"><a v-if="footerUrl" :href="footerUrl" target="_blank" rel="noopener noreferrer">{{ config.footer_text }}</a><span v-else>{{ config.footer_text }}</span></p></footer>
   </div>
 </template>

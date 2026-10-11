@@ -105,6 +105,7 @@ export interface ThemeConfig {
   background_show_grid: boolean
   footer_text: string
   footer_url: string
+  visitor_info_enabled: boolean
 }
 
 export interface PingRow {

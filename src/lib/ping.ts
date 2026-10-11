@@ -5,19 +5,20 @@ import { finite, record } from './data'
 
 export function parsePing(value: unknown): PingNetwork[] {
   const data = record(value), probes = record(data.probes)
+  const hasLoss = data.loss !== undefined && typeof data.loss === 'object' && data.loss !== null && !Array.isArray(data.loss)
   const rows: PingRow[] = Array.isArray(data.ping) ? data.ping.flatMap((entry) => {
     const r = record(entry)
     if (!finite(r.ts) || !Number.isSafeInteger(r.task_id) || !finite(r.task_id) || (r.latency !== null && !finite(r.latency))) return []
-    return [{ ts: r.ts, task_id: r.task_id, latency: r.latency, ...(finite(r.loss) ? { loss: Math.min(100, r.loss) } : {}) }]
+    return [{ ts: r.ts, task_id: r.task_id, latency: r.latency,
+      ...(finite(r.loss) ? { loss: Math.min(100, r.loss) } : hasLoss && r.loss === undefined ? { loss: r.latency === null ? 100 : 0 } : {}) }]
   }) : []
   const ids = [...new Set([...rows.map((r) => r.task_id), ...Object.keys(probes).map(Number).filter(finite)])]
-  const hasLoss = data.loss !== undefined && typeof data.loss === 'object' && data.loss !== null
   const loss = record(data.loss)
   return ids.map((id) => {
     const samples = rows.filter((r) => r.task_id === id).sort((a, b) => a.ts - b.ts)
     const windowLoss = loss[String(id)]
     return { id, name: typeof probes[String(id)] === 'string' ? probes[String(id)] as string : `监控 ${id}`, rows: samples, latest: samples.at(-1) ?? null,
-      loss: finite(windowLoss) ? Math.min(100, windowLoss) : hasLoss && samples.length ? 0 : null }
+      loss: finite(windowLoss) ? Math.min(100, windowLoss) : hasLoss && windowLoss === undefined && samples.length ? 0 : null }
   })
 }
 

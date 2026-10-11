@@ -11,6 +11,36 @@ export function formatBytes(value: number | null | undefined, rate = false): str
   return `${part.value}${part.unit ? ` ${part.unit}` : ''}`
 }
 
+// Compact card labels; the shared formatter retains full precision for details.
+export function cardBytes(value: number | null | undefined, rate = false): string {
+  const part = bytes(value, rate)
+  if (!part.unit) return part.value
+  const number = Number(part.value)
+  const display = rate ? String(Number(number.toFixed(1))) : number.toFixed(part.unit.startsWith('B') ? 0 : 1)
+  return `${display} ${part.unit}`
+}
+
+export function cardPrice(price: number | null, currency: string, cycle: string): string {
+  if (price === null || price === 0) return priceLabel(price, currency, cycle)
+  let money: string
+  try {
+    money = new Intl.NumberFormat('en-US', { style: 'currency', currency, currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(price)
+  } catch { money = `${currency} ${price}` }
+  const months = /^(\d+)m$/.exec(cycle)?.[1]
+  return `${money}${cycle === 'once' ? ' · 一次性' : CYCLES[cycle] ? `/${CYCLES[cycle]}` : months ? `/${months}个月` : ''}`
+}
+
+export function cardExpiry(days: number | null): string {
+  return days === null ? '' : days === 0 ? '今天到期' : `${days > 0 ? '+' : ''}${days}天`
+}
+
+export function remarkParts(remark: string): { tags: string[]; text: string } {
+  const parts = remark.split(/[;；]/).map(part => part.trim()).filter(Boolean)
+  return parts.length > 0 && parts.every(part => part.length <= 24 && !part.includes('\n'))
+    ? { tags: [...new Set(parts)], text: '' }
+    : { tags: [], text: remark.trim() }
+}
+
 export function percentage(used: number | null | undefined, total: number | null | undefined): number | null {
   return typeof used === 'number' && typeof total === 'number' && Number.isFinite(used) && Number.isFinite(total) && used >= 0 && total > 0
     ? used / total * 100 : null

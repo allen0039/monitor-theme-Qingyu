@@ -2,7 +2,7 @@
   "name": "Emerald Globe Pro · Monitor",
   "short": "boxpro",
   "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
   "config": [
@@ -365,21 +365,21 @@
       "type": "boolean",
       "label": "卡片显示累计流量",
       "default": true,
-      "help": "控制节点卡片中的累计上传与下载总量；总览流量单独配置。"
+      "help": "在卡片右下角「附加信息」中显示累计上传与下载总量，默认收起；总览流量单独配置。"
     },
     {
       "key": "show_node_metadata",
       "type": "boolean",
       "label": "显示节点信息",
       "default": true,
-      "help": "卡片显示操作系统、国旗、CPU 核心数和架构；列表显示系统、国旗和分组。关闭后仍可按这些信息搜索。"
+      "help": "卡片标题显示系统与国旗，核心数和架构位于右下角「附加信息」；列表显示系统、国旗和分组。关闭后仍可搜索这些字段。"
     },
     {
       "key": "show_expiry",
       "type": "boolean",
       "label": "显示到期时间",
       "default": true,
-      "help": "控制卡片到期标签和列表到期列；天数使用主控返回值，未设置到期时间时不显示标签。"
+      "help": "卡片在费用行显示剩余天数，费用隐藏时单独显示到期行；列表显示到期列。天数使用主控返回值。"
     },
     {
       "key": "expiry_warning_days",
@@ -395,7 +395,7 @@
       "type": "boolean",
       "label": "卡片显示公开备注",
       "default": true,
-      "help": "显示节点的公开备注；过长内容省略，鼠标悬停可查看全文。"
+      "help": "简短公开备注按分号拆成标签；说明性长备注保留文本，悬停可查看全文。"
     },
     {
       "type": "title",
@@ -423,7 +423,7 @@
           "label": "明细 · 含历史色条"
         }
       ],
-      "help": "明细色条显示最近 24 个采样；访客可用首页「摘要 / 明细」按钮切换，并保存在当前浏览器。"
+      "help": "摘要展示线路延迟、窗口丢包率与两组最多 10 格历史色条；明细分别展示各线路。首页可切换并保存到当前浏览器。"
     },
     {
       "key": "ping_max_lines",
@@ -524,6 +524,13 @@
       "label": "显示背景网格",
       "default": true,
       "help": "控制内置背景的透视网格；关闭后仍保留翡翠渐变，可与自定义图片搭配使用。"
+    },
+    {
+      "key": "visitor_info_enabled",
+      "type": "boolean",
+      "label": "显示底部访客气泡",
+      "default": true,
+      "help": "显示访客网络出口地区与浏览器，点击可展开设备、IP、运营商和访问时间。开启后会向 ip.sb 请求定位，失败时回退 ipwho.is；关闭后不请求定位。不受登录状态影响。"
     },
     {
       "key": "footer_text",
