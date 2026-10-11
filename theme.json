@@ -1,0 +1,33 @@
+{
+  "name": "Emerald Globe Pro · Monitor",
+  "short": "boxpro",
+  "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
+  "version": "0.1.0",
+  "author": "Davies_Allen",
+  "url": "https://github.com/allen0039/monitor-theme-boxpro",
+  "config": [
+    { "type": "title", "label": "首页" },
+    { "key": "notice", "type": "text", "label": "首页公告", "default": "", "help": "纯文本，留空不显示，支持换行。" },
+    { "key": "earth_mode", "type": "select", "label": "头部展示", "default": "earth", "options": [
+      { "value": "earth", "label": "自转地球" },
+      { "value": "earth-stop", "label": "静止地球" },
+      { "value": "map", "label": "点状世界地图" },
+      { "value": "summary", "label": "仅汇总卡片" },
+      { "value": "hide", "label": "隐藏头部" }
+    ] },
+    { "key": "layout", "type": "select", "label": "默认节点视图", "default": "card", "options": [
+      { "value": "card", "label": "卡片" }, { "value": "list", "label": "列表" }
+    ] },
+    { "key": "offline_last", "type": "boolean", "label": "离线节点排到末尾", "default": false },
+    { "key": "show_ping", "type": "boolean", "label": "显示网络延迟", "default": true, "help": "仅为可见节点读取近一小时延迟，最多同时三个请求，每分钟刷新。" },
+    { "key": "show_price", "type": "boolean", "label": "显示节点费用", "default": true, "help": "显示各节点原币种金额，不合并不同币种。此设置只控制展示，不改变 Monitor 接口权限。" },
+    { "key": "hide_admin", "type": "boolean", "label": "对未登录访客隐藏后台入口", "default": false },
+    { "key": "reduce_motion", "type": "boolean", "label": "减弱动画", "default": false },
+    { "type": "title", "label": "背景与页脚" },
+    { "key": "background_light", "type": "string", "label": "浅色背景图片", "default": "", "help": "http/https 图片地址；留空使用原主题的翡翠渐变网格。" },
+    { "key": "background_dark", "type": "string", "label": "深色背景图片", "default": "" },
+    { "key": "background_blur", "type": "number", "label": "背景模糊（像素）", "default": 0, "min": 0, "max": 24 },
+    { "key": "footer_text", "type": "string", "label": "页脚文字 / 备案号", "default": "" },
+    { "key": "footer_url", "type": "string", "label": "页脚链接", "default": "", "help": "http/https 地址；留空仅显示文字。" }
+  ]
+}

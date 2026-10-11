@@ -1,0 +1,18 @@
+node_modules/
+dist/
+theme.tar.gz
+theme.tar.gz.sha256
+output/
+.playwright-cli/
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.log
+.DS_Store
+*.tsbuildinfo
