@@ -267,6 +267,25 @@ export interface RegionCluster {
   tx: number
   rx: number
 }
+
+export interface GlobeArc {
+  fromLat: number
+  fromLng: number
+  toLat: number
+  toLng: number
+}
+
+// Like Komari, arcs connect country centroids to the visitor's country.
+// An unavailable location has no destination; never invent a fallback route.
+export function arcsToCountry(clusters: RegionCluster[], country: string): GlobeArc[] {
+  const destination = COORD_MAP[country]
+  if (!destination) return []
+  return clusters.filter(cluster => cluster.code !== country).map(cluster => ({
+    fromLat: cluster.lat, fromLng: cluster.lng,
+    toLat: destination[0], toLng: destination[1],
+  }))
+}
+
 export function clustersOf(nodes: MonitorNode[]): RegionCluster[] {
   const clusters = new Map<string, RegionCluster>()
   for (const node of nodes) {

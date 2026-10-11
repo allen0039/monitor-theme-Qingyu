@@ -4,7 +4,7 @@ import { Building2, Clock3, Globe2, Monitor, Network, PanelsTopLeft, RotateCcw }
 import { flagUrl } from '../lib/assets'
 import { detectClient, fetchVisitorGeo, type VisitorGeo } from '../lib/visitor'
 
-const emit = defineEmits<{ height: [value: number] }>()
+const emit = defineEmits<{ height: [value: number]; country: [value: string] }>()
 const client = detectClient(navigator.userAgent)
 const expanded = ref(false), loading = ref(true), flagFailed = ref(false)
 const geo = ref<VisitorGeo | null>(null)
@@ -24,6 +24,7 @@ async function locate(force = false) {
   const result = await fetchVisitorGeo({ force, signal: current.signal })
   if (!alive || current.signal.aborted) return
   geo.value = result
+  emit('country', result?.countryCode ?? '')
   flagFailed.value = false
   loading.value = false
 }
@@ -34,7 +35,7 @@ onMounted(() => {
     observer.observe(shell.value)
   }
 })
-onBeforeUnmount(() => { alive = false; request?.abort(); observer?.disconnect(); emit('height', 0) })
+onBeforeUnmount(() => { alive = false; request?.abort(); observer?.disconnect(); emit('height', 0); emit('country', '') })
 </script>
 <template>
   <aside ref="shell" class="visitor-shell" aria-label="访客信息">

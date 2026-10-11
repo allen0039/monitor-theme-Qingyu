@@ -3,14 +3,15 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { GlobeInstance } from 'globe.gl'
 import type { MeshPhongMaterial, Texture } from 'three'
 import type { MonitorNode } from '../types'
-import { clustersOf, type RegionCluster } from '../lib/geo'
+import { arcsToCountry, clustersOf, COORD_MAP, type RegionCluster } from '../lib/geo'
 import { flagUrl } from '../lib/assets'
 import { formatBytes } from '../lib/format'
 import GeoMap from './GeoMap.vue'
 
-const props = defineProps<{ nodes: MonitorNode[]; rotate: boolean; dark: boolean; reduceMotion: boolean; rotationSpeed: number; showLabels: boolean; showRates: boolean }>()
+const props = defineProps<{ nodes: MonitorNode[]; rotate: boolean; dark: boolean; reduceMotion: boolean; rotationSpeed: number; showLabels: boolean; showRates: boolean; visitorCountry: string }>()
 const host = ref<HTMLElement | null>(null), failed = ref(false), ready = ref(false)
 const clusters = computed(() => clustersOf(props.nodes))
+const arcs = computed(() => arcsToCountry(clusters.value, props.visitorCountry))
 let globe: GlobeInstance | null = null, observer: ResizeObserver | null = null, visibilityObserver: IntersectionObserver | null = null
 let material: MeshPhongMaterial | null = null, water: Texture | null = null
 let destroyed = false, inViewport = true
@@ -31,7 +32,7 @@ function createLabel(value: object): HTMLElement {
     row.className = `earth-rate-row ${direction}`
     const arrow = document.createElement('span')
     arrow.textContent = direction === 'up' ? '↑' : '↓'
-    const text = document.createTextNode(formatBytes(rate, true))
+    const text = document.createTextNode(formatBytes(rate, true, 'overview'))
     row.append(arrow, text)
     panel.append(row)
     textNodes.push(text)
@@ -48,15 +49,24 @@ function syncData() {
   if (!globe) return
   labelElements.clear()
   globe.htmlElementsData(props.showLabels ? clusters.value : [])
-  globe.pointsData(clusters.value)
 }
 function syncRates() {
   for (const c of clusters.value) {
     const element = labelElements.get(c.code)
     if (!element) continue
-    element.tx.textContent = formatBytes(c.tx, true)
-    element.rx.textContent = formatBytes(c.rx, true)
+    element.tx.textContent = formatBytes(c.tx, true, 'overview')
+    element.rx.textContent = formatBytes(c.rx, true, 'overview')
   }
+}
+function syncArcs() {
+  globe?.arcsData(arcs.value)
+}
+function arcColor() {
+  return props.dark ? 'rgba(96,165,250,0.96)' : 'rgba(37,99,235,0.94)'
+}
+function resetPointOfView(duration = 0) {
+  const [lat, lng] = COORD_MAP.CN
+  globe?.pointOfView({ lat, lng, altitude: 1.95 }, duration)
 }
 function resize() {
   // Globe.gl inserts a canvas with the window height during construction. Reading
@@ -81,12 +91,15 @@ onMounted(async () => {
       .width(size).height(size)
       .backgroundColor('rgba(0,0,0,0)').globeImageUrl('/images/earth/earth-blue-marble.jpg')
       .bumpImageUrl('/images/earth/earth-topology.png').showAtmosphere(true).atmosphereColor('#60a5fa').atmosphereAltitude(.1)
-      .htmlLat('lat').htmlLng('lng').htmlAltitude(.025).htmlElement(createLabel)
-      .htmlElementVisibilityModifier((element, visible) => { element.style.opacity = visible ? '1' : '0' })
+      .arcStartLat('fromLat').arcStartLng('fromLng').arcEndLat('toLat').arcEndLng('toLng')
+      .arcColor(arcColor).arcAltitude(.28).arcStroke(.55).arcCurveResolution(64)
+      .arcsTransitionDuration(props.reduceMotion ? 0 : 700)
+      .htmlLat('lat').htmlLng('lng').htmlAltitude(.018).htmlElement(createLabel)
+      .htmlElementVisibilityModifier((element, visible) => {
+        element.style.opacity = visible ? '1' : '0'
+        element.style.filter = visible ? 'blur(0)' : 'blur(16px)'
+      })
       .htmlTransitionDuration(props.reduceMotion ? 0 : 400)
-      .pointLat('lat').pointLng('lng').pointAltitude(.015).pointRadius(.35)
-      .pointColor((value) => (value as RegionCluster).online ? '#34d399' : '#fbbf24')
-      .pointsTransitionDuration(0)
     const renderer = globe.renderer()
     renderer.setClearColor(0, 0)
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2))
@@ -106,14 +119,17 @@ onMounted(async () => {
     keyLight.position.set(1.2, 1.1, 1.6)
     const fill = new THREE.DirectionalLight(0xdbeafe, .46)
     fill.position.set(-1.2, .2, 1.2)
-    globe.lights([new THREE.AmbientLight(0xffffff, 1.35), keyLight, fill])
+    const rearFill = new THREE.DirectionalLight(0xe0f2fe, .34)
+    rearFill.position.set(-1, -.8, -1.2)
+    globe.lights([new THREE.AmbientLight(0xffffff, 1.35), keyLight, fill, rearFill])
     const controls = globe.controls()
     controls.autoRotateSpeed = props.rotationSpeed
     controls.enableDamping = true
     controls.enableZoom = controls.enablePan = false
     controls.rotateSpeed = .55
-    globe.pointOfView({ lat: 35.86, lng: 104.2, altitude: 3 }, 0)
+    resetPointOfView()
     syncData()
+    syncArcs()
     observer = new ResizeObserver(resize)
     observer.observe(host.value)
     visibilityObserver = new IntersectionObserver(([entry]) => { inViewport = entry.isIntersecting; syncVisibility() })
@@ -133,7 +149,13 @@ onMounted(async () => {
 })
 watch(signature, syncData)
 watch(clusters, syncRates)
+watch([signature, () => props.visitorCountry], syncArcs)
+watch(() => props.dark, () => globe?.arcColor(arcColor))
 watch(() => [props.rotate, props.reduceMotion, props.rotationSpeed], syncVisibility)
+watch(() => props.reduceMotion, value => {
+  globe?.htmlTransitionDuration(value ? 0 : 400).arcsTransitionDuration(value ? 0 : 700)
+})
+watch(() => props.rotate, value => { if (!value) resetPointOfView(props.reduceMotion ? 0 : 300) })
 watch(() => [props.showLabels, props.showRates], syncData)
 onBeforeUnmount(() => {
   destroyed = true
@@ -154,7 +176,6 @@ onBeforeUnmount(() => {
     <template v-else>
       <div v-if="!ready" class="earth-placeholder" aria-label="地球加载中" />
       <div ref="host" class="globe-host" role="img" aria-label="交互地球，可拖动查看节点地区" />
-      <span v-if="ready" class="visual-caption">{{ clusters.length }} 个国家和地区 · 拖动查看</span>
     </template>
   </div>
 </template>

@@ -25,6 +25,8 @@ const site = ref<SiteInfo>({ site_name: 'Monitor', authed: false, public_page: t
 const config = ref<ThemeConfig>(defaultConfig())
 const configLoaded = ref(false)
 const visitorHeight = ref(36)
+const visitorCountry = ref('')
+const scrolled = ref(false)
 const showVisitor = computed(() => configLoaded.value && config.value.visitor_info_enabled)
 const connection = ref<ConnectionState>('connecting'), error = ref<string | null>(null), closed = ref(false)
 const infoError = ref<string | null>(null), search = ref(''), iconFailed = ref(false)
@@ -87,6 +89,7 @@ function resetFilters() { search.value = ''; group.value = null }
 function closeSettings(event: Event) {
   if (settingsMenu.value && !settingsMenu.value.contains(event.target as Node)) settingsMenu.value.open = false
 }
+function syncScroll() { scrolled.value = window.scrollY > 8 }
 watch([nodes, group], ([list, selected]) => {
   if (list && selected !== null && !list.some((node) => node.group === selected)) group.value = null
 })
@@ -105,15 +108,25 @@ onMounted(() => {
   void loadSite()
   void loadConfig().then((value) => { if (alive) { config.value = value; configLoaded.value = true } })
   connect()
+  syncScroll()
+  window.addEventListener('scroll', syncScroll, { passive: true })
   document.addEventListener('pointerdown', closeSettings)
 })
-onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListener('pointerdown', closeSettings) })
+onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener('scroll', syncScroll); document.removeEventListener('pointerdown', closeSettings) })
 </script>
 <template>
   <div class="app-shell" :class="{ 'reduced-motion': reduceMotion, 'visitor-safe-area': showVisitor }" :style="{ '--visitor-height': `${visitorHeight}px` }">
-    <div class="page-background" aria-hidden="true"><div class="emerald-wash" /><div v-if="config.background_show_grid" class="perspective-grid" /></div>
+    <div class="page-background" aria-hidden="true">
+      <div class="emerald-wash">
+        <svg v-if="config.background_show_grid" class="perspective-grid" aria-hidden="true">
+          <defs><pattern id="monitor-emerald-grid" width="72" height="56" patternUnits="userSpaceOnUse" x="-12" y="4"><path d="M.5 56V.5H72" fill="none" /></pattern></defs>
+          <rect width="100%" height="100%" stroke-width="0" fill="url(#monitor-emerald-grid)" />
+          <svg x="-12" y="4" class="grid-tiles"><rect stroke-width="0" width="73" height="57" x="288" y="168" /><rect stroke-width="0" width="73" height="57" x="144" y="56" /><rect stroke-width="0" width="73" height="57" x="504" y="168" /><rect stroke-width="0" width="73" height="57" x="720" y="336" /></svg>
+        </svg>
+      </div>
+    </div>
     <div v-if="backgroundUrl" class="custom-background" aria-hidden="true" :style="{ backgroundImage: `url(${JSON.stringify(backgroundUrl)})`, filter: `blur(${config.background_blur}px)`, opacity: config.background_opacity / 100 }" />
-    <header class="masthead">
+    <header class="masthead" :class="{ 'masthead-scrolled': scrolled }">
       <div class="masthead-inner">
         <a class="brand" href="/" :aria-label="`${site.site_name} 首页`"><img v-if="!iconFailed" :src="iconUrl" :alt="site.site_name" @error="iconFailed = true" /><span v-else class="brand-fallback"><Globe2 /></span><h1>{{ site.site_name }}</h1></a>
         <div class="header-actions">
@@ -143,7 +156,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
           <div v-if="hasVisual" class="overview-visual">
             <NodeStatusBadges v-if="config.show_node_status" class="visual-node-status" :nodes="grouped" :group="effectiveGroup" />
             <GeoMap v-if="earth === 'map'" :nodes="grouped" :show-labels="config.earth_show_labels" />
-            <NodeGlobe v-else :nodes="grouped" :rotate="earth === 'earth'" :dark="dark" :reduce-motion="reduceMotion" :rotation-speed="config.earth_rotation_speed" :show-labels="config.earth_show_labels" :show-rates="config.earth_show_rates" />
+            <NodeGlobe v-else :nodes="grouped" :rotate="earth === 'earth'" :dark="dark" :reduce-motion="reduceMotion" :rotation-speed="config.earth_rotation_speed" :show-labels="config.earth_show_labels" :show-rates="config.earth_show_rates" :visitor-country="showVisitor ? visitorCountry : ''" />
           </div>
         </section>
         <div class="node-toolbar" :class="{ 'toolbar-without-overview': !showOverview }">
@@ -171,7 +184,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
       <div v-else class="loading-state" aria-busy="true" aria-label="正在读取节点"><div class="loading-label"><LoaderCircle />正在连接 Monitor…</div><div class="skeleton-overview" /><div class="nodes-grid"><div v-for="n in 8" :key="n" class="skeleton-card" /></div></div>
     </main>
     <PersonalFinanceDialog v-if="financeOpen && canCalculate && nodes !== null" :nodes="nodes" :exchange="exchange" :rates-loading="ratesLoading" @close="financeOpen = false" />
-    <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" />
+    <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" @country="visitorCountry = $event" />
     <footer class="site-footer"><div><span>Powered by <a href="https://github.com/monitor-probe/monitor" target="_blank" rel="noopener noreferrer">Monitor</a></span><span>Theme by <a :href="manifest.url" target="_blank" rel="noopener noreferrer" :title="`Monitor 移植版 v${manifest.version}`">Emerald Globe Pro</a></span></div><p v-if="config.footer_text"><a v-if="footerUrl" :href="footerUrl" target="_blank" rel="noopener noreferrer">{{ config.footer_text }}</a><span v-else>{{ config.footer_text }}</span></p></footer>
   </div>
 </template>

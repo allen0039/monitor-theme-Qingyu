@@ -1,13 +1,15 @@
-export function bytes(value: number | null | undefined, rate = false): { value: string; unit: string } {
+export function bytes(value: number | null | undefined, rate = false, precision: 'full' | 'overview' = 'full'): { value: string; unit: string } {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return { value: '—', unit: '' }
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
   const power = value ? Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1) : 0
   const scaled = value / 1024 ** power
-  return { value: scaled.toFixed(power === 0 ? 0 : 2), unit: units[power] + (rate ? '/s' : '') }
+  // Komari's overview uses whole KB, one decimal for MB/GB, two for TB/PB.
+  const decimals = precision === 'overview' ? power >= 4 ? 2 : power >= 2 ? 1 : 0 : power === 0 ? 0 : 2
+  return { value: scaled.toFixed(decimals), unit: units[power] + (rate ? '/s' : '') }
 }
 
-export function formatBytes(value: number | null | undefined, rate = false): string {
-  const part = bytes(value, rate)
+export function formatBytes(value: number | null | undefined, rate = false, precision: 'full' | 'overview' = 'full'): string {
+  const part = bytes(value, rate, precision)
   return `${part.value}${part.unit ? ` ${part.unit}` : ''}`
 }
 

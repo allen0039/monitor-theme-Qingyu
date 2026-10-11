@@ -41,7 +41,7 @@ export function usePreferences(config: { value: ThemeConfig }) {
   const reduceMotion = computed(() => config.value.reduce_motion || systemReduce.value)
   watch(dark, (value) => {
     document.documentElement.classList.toggle('dark', value)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', value ? '#101a24' : '#f8faf9')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', value ? '#101a24' : '#f8fafc')
   }, { immediate: true })
   watch([themeOverride, layoutOverride, earthOverride, offlineOverride, sortOverride, pingOverride, group], () => {
     try {
