@@ -52,6 +52,63 @@ export function normalizeNodes(value: unknown): MonitorNode[] {
   })
 }
 
+/**
+ * 将新的节点快照合并到现有列表中，并尽量保持节点及指标对象的引用。
+ *
+ * WebSocket/轮询快照会为每个节点创建普通的新对象。如果直接替换整个列表，
+ * 会让所有 NodeCard 都进入一次完整的更新路径，即使只有一个指标发生变化，也
+ * 可能让所有卡片同时重绘。就地更新可以让 Vue 只处理真正变化的字段。
+ */
+export function mergeNodes(current: MonitorNode[] | null, incoming: MonitorNode[]): MonitorNode[] {
+  if (!current) return incoming
+
+  const byId = new Map(current.map((node) => [node.id, node]))
+  const merged: MonitorNode[] = []
+  for (const next of incoming) {
+    const existing = byId.get(next.id)
+    if (existing) {
+      mergeNode(existing, next)
+      merged.push(existing)
+    } else {
+      merged.push(next)
+    }
+  }
+
+  // 保留当前数组引用；仅在节点增删或顺序变化时改动数组，避免每个快照都触发列表更新。
+  if (current.length !== merged.length || current.some((node, index) => node !== merged[index])) {
+    current.splice(0, current.length, ...merged)
+  }
+  return current
+}
+
+function mergeNode(target: MonitorNode, source: MonitorNode): void {
+  for (const key of Object.keys(source) as Array<keyof MonitorNode>) {
+    if (key === 'metrics') continue
+    const previous = target[key]
+    const next = source[key]
+    if (!Object.is(previous, next)) Reflect.set(target, key, next)
+  }
+
+  const currentMetrics = target.metrics
+  const nextMetrics = source.metrics
+  if (!currentMetrics || !nextMetrics) {
+    if (currentMetrics !== nextMetrics) target.metrics = nextMetrics
+    return
+  }
+
+  if (currentMetrics.cpu !== nextMetrics.cpu) currentMetrics.cpu = nextMetrics.cpu
+  if (currentMetrics.mem_total !== nextMetrics.mem_total) currentMetrics.mem_total = nextMetrics.mem_total
+  if (currentMetrics.mem_used !== nextMetrics.mem_used) currentMetrics.mem_used = nextMetrics.mem_used
+  if (currentMetrics.disk_total !== nextMetrics.disk_total) currentMetrics.disk_total = nextMetrics.disk_total
+  if (currentMetrics.disk_used !== nextMetrics.disk_used) currentMetrics.disk_used = nextMetrics.disk_used
+  if (currentMetrics.net_rx !== nextMetrics.net_rx) currentMetrics.net_rx = nextMetrics.net_rx
+  if (currentMetrics.net_tx !== nextMetrics.net_tx) currentMetrics.net_tx = nextMetrics.net_tx
+  if (currentMetrics.uptime !== nextMetrics.uptime) currentMetrics.uptime = nextMetrics.uptime
+  if (currentMetrics.load.some((value, index) => value !== nextMetrics.load[index])) {
+    currentMetrics.load = [...nextMetrics.load] as [number, number, number]
+  }
+}
+
 export function groupsOf(nodes: MonitorNode[]): string[] {
   return [...new Set(nodes.map((node) => node.group).filter(Boolean))]
 }

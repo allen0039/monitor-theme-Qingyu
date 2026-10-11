@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterNodes, groupsOf, inGroup, monthlyUsed, nodeState, normalizeNodes, summarize } from './data'
+import { filterNodes, groupsOf, inGroup, mergeNodes, monthlyUsed, nodeState, normalizeNodes, summarize } from './data'
 import { expiryLabel, percentage, priceLabel, safeUrl } from './format'
 import { defaultConfig, parseConfig } from './config'
 import { parsePing } from './ping'
@@ -49,6 +49,29 @@ describe('Monitor 节点数据', () => {
     expect(filterNodes(nodes, '日本', 'default', false)).toHaveLength(3)
     expect(filterNodes(nodes, '晚高峰', 'default', false).map((n) => n.id)).toEqual([2])
     expect(filterNodes(nodes, '', 'cpu', true).map((n) => n.id)).toEqual([3, 2, 1])
+  })
+  it('就地合并实时快照，保持节点和指标对象引用', () => {
+    const initial = normalizeNodes([
+      sample(1),
+      sample(2, { online: false, metrics: null }),
+    ])
+    const first = initial[0]!
+    const firstMetrics = first.metrics
+    const updated = normalizeNodes([
+      sample(2, { online: true, metrics: { ...metrics, cpu: 24 } }),
+      sample(1, { metrics: { ...metrics, cpu: 32 }, public_remark: '已更新' }),
+      sample(3),
+    ])
+
+    const merged = mergeNodes(initial, updated)
+
+    expect(merged).toBe(initial)
+    expect(merged.map((node) => node.id)).toEqual([2, 1, 3])
+    expect(merged.find((node) => node.id === 1)).toBe(first)
+    expect(first.metrics).toBe(firstMetrics)
+    expect(first.metrics?.cpu).toBe(32)
+    expect(first.public_remark).toBe('已更新')
+    expect(merged.find((node) => node.id === 2)?.metrics?.cpu).toBe(24)
   })
 })
 describe('设置与展示', () => {

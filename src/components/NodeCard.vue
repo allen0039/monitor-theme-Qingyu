@@ -76,11 +76,13 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
           <span v-if="showPrice" class="highlight-value highlight-cost" :title="remainingTitle"><Coins /><span class="highlight-cost-text">{{ remaining }}</span></span>
         </div>
       </div>
-      <div v-if="config.show_uptime || config.show_total_traffic" class="node-facts">
-        <div v-if="config.show_uptime" class="fact-row"><span>在线</span><i /><span :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ node.metrics ? duration(node.metrics.uptime) : nodeState(node) }}</span></div>
-        <div v-if="config.show_total_traffic" class="fact-row"><span>累计</span><i /><div class="rates cumulative-rates"><span :title="`累计上传 ${formatBytes(node.total_tx)}`"><ChevronUp />{{ cardBytes(node.total_tx) }}</span><span :title="`累计下载 ${formatBytes(node.total_rx)}`"><ChevronDown />{{ cardBytes(node.total_rx) }}</span></div></div>
+      <div v-if="config.show_uptime || config.show_total_traffic || showPing" class="node-detail-section">
+        <div v-if="config.show_uptime || config.show_total_traffic" class="node-facts">
+          <div v-if="config.show_uptime" class="fact-row"><span>在线</span><i /><span :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ node.metrics ? duration(node.metrics.uptime) : nodeState(node) }}</span></div>
+          <div v-if="config.show_total_traffic" class="fact-row"><span>累计</span><i /><div class="rates cumulative-rates"><span :title="`累计上传 ${formatBytes(node.total_tx)}`"><ChevronUp />{{ cardBytes(node.total_tx) }}</span><span :title="`累计下载 ${formatBytes(node.total_rx)}`"><ChevronDown />{{ cardBytes(node.total_rx) }}</span></div></div>
+        </div>
+        <div v-if="showPing" class="node-ping-section"><PingPanel :node="node" :details="pingDetails" :config="config" /></div>
       </div>
-      <div v-if="showPing" class="node-ping-section"><PingPanel :node="node" :details="pingDetails" :config="config" /></div>
       <div v-if="(config.show_remark && node.public_remark) || hasExtra" class="node-card-footer">
         <div v-if="config.show_remark && remark.tags.length" class="remark-tags"><span v-for="tag in remark.tags" :key="tag" :title="tag">{{ tag }}</span></div>
         <p v-if="config.show_remark && remark.text" class="node-remark" :title="remark.text">{{ remark.text }}</p>

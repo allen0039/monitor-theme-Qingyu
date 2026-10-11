@@ -5,7 +5,7 @@ import type { ConnectionState, MonitorNode, SiteInfo, ThemeConfig } from './type
 import manifest from '../theme.json'
 import { api } from './lib/api'
 import { defaultConfig, loadConfig, summaryKeys } from './lib/config'
-import { filterNodes, groupsOf, inGroup, record } from './lib/data'
+import { filterNodes, groupsOf, inGroup, mergeNodes, record } from './lib/data'
 import { safeImageUrl, safeUrl } from './lib/format'
 import { usePreferences } from './lib/preferences'
 import { startStream } from './lib/stream'
@@ -62,7 +62,7 @@ function connect() {
   streamStarted = true
   stopStream()
   stopStream = startStream({
-    nodes: (value) => { nodes.value = value; lastUpdated.value = new Date() },
+    nodes: (value) => { nodes.value = mergeNodes(nodes.value, value); lastUpdated.value = new Date() },
     state: (value) => { connection.value = value },
     error: (message, privatePage) => {
       error.value = message
