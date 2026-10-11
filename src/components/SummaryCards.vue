@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
-import { ArrowDown, ArrowUp, Cpu, Globe2, HardDrive, MemoryStick, Network, Server, ServerOff } from '@lucide/vue'
+import { ArrowDown, ArrowUp, Cpu, Globe2, HardDrive, MemoryStick, Network, Server, ServerOff, Wallet } from '@lucide/vue'
 import type { MonitorNode, SummaryKey } from '../types'
 import { summarize } from '../lib/data'
 import { bytes, formatBytes } from '../lib/format'
-const props = defineProps<{ nodes: MonitorNode[]; cards: SummaryKey[]; scope: 'group' | 'all' }>()
+import { financeAmount, financeCoverage, resolveFinanceCurrency, summarizeFinance, type ExchangeRates } from '../lib/finance'
+const props = defineProps<{ nodes: MonitorNode[]; cards: SummaryKey[]; scope: 'group' | 'all'; showPrice: boolean; currency: string; rates: ExchangeRates; rateLabel: string; ratesLoading: boolean; canCalculate: boolean }>()
+const emit = defineEmits<{ openFinance: [] }>()
+const remaining = computed(() => props.showPrice ? summarizeFinance(props.nodes, props.currency, props.rates).remaining : null)
+const converts = computed(() => props.nodes.some(node => node.price && resolveFinanceCurrency(node.currency) !== resolveFinanceCurrency(props.currency)))
 const totals = computed(() => summarize(props.nodes))
 const memory = computed(() => bytes(totals.value.reporting ? totals.value.memUsed : null))
 const disk = computed(() => bytes(totals.value.reporting ? totals.value.diskUsed : null))
@@ -16,6 +20,11 @@ const values = computed<Record<SummaryKey, CardValue>>(() => {
   const reporting = props.nodes.filter((node) => node.metrics !== null)
   const avgCpu = reporting.length ? reporting.reduce((sum, node) => sum + node.metrics!.cpu, 0) / reporting.length : null
   return {
+    remaining_value: {
+      label: '剩余价值', icon: Wallet, value: props.showPrice ? financeAmount(remaining.value!.value, props.currency, true) : '—', unit: props.showPrice ? props.currency : '',
+      title: props.showPrice ? `${props.scope === 'all' ? '全部节点' : '当前分组'} · 按剩余天数折算\n${financeAmount(remaining.value!.value, props.currency)} ${props.currency}\n已计入 ${remaining.value!.included}/${props.nodes.length} 台${remaining.value!.missing ? `\n${financeCoverage(remaining.value!)}` : ''}${converts.value ? `\n${props.rateLabel}` : ''}` : '费用已隐藏',
+      note: !props.showPrice ? '费用已隐藏' : remaining.value!.missing ? `${remaining.value!.value === null ? '暂不可计算' : '部分计入'} · ${remaining.value!.missing} 台未计入` : converts.value ? props.ratesLoading ? '正在更新汇率…' : props.rateLabel : '按剩余天数折算',
+    },
     memory: { label: '内存用量', icon: MemoryStick, ...memory.value, unit: `${memory.value.unit} / ${formatBytes(totals.value.memTotal)}`, title: '已上报的在线节点用量 / 统计范围内全部节点容量' },
     disk: { label: '硬盘用量', icon: HardDrive, ...disk.value, unit: `${disk.value.unit} / ${formatBytes(totals.value.diskTotal)}`, title: '已上报的在线节点用量 / 统计范围内全部节点容量' },
     online: { label: '节点在线', icon: Server, value: totals.value.online, unit: `/ ${totals.value.total} 台`, tone: 'up', note: totals.value.total - totals.value.online ? `${totals.value.total - totals.value.online} 台离线` : '全部在线' },
@@ -30,10 +39,10 @@ const values = computed<Record<SummaryKey, CardValue>>(() => {
 </script>
 <template>
   <div class="summary-grid" :style="{ '--summary-columns': Math.min(3, cards.length), '--summary-wide-columns': Math.min(6, cards.length) }" :aria-label="scope === 'all' ? '全部节点汇总' : '当前分组汇总'">
-    <div v-for="key in cards" :key="key" class="summary-card" :title="values[key].title">
+    <component :is="key === 'remaining_value' && canCalculate ? 'button' : 'div'" v-for="key in cards" :key="key" class="summary-card" :class="{ 'summary-finance': key === 'remaining_value', 'summary-clickable': key === 'remaining_value' && canCalculate }" :type="key === 'remaining_value' && canCalculate ? 'button' : undefined" :title="values[key].title" :aria-label="key === 'remaining_value' && canCalculate ? '剩余价值，打开个人价值计算' : undefined" @click="key === 'remaining_value' && canCalculate && emit('openFinance')">
       <div class="summary-label">{{ values[key].label }}<component :is="values[key].icon" /></div>
       <div class="summary-value"><strong :class="values[key].tone">{{ values[key].value }}</strong><span>{{ values[key].unit }}</span></div>
-      <div v-if="values[key].note" class="summary-note"><span class="status-dot" />{{ values[key].note }}</div>
-    </div>
+      <div v-if="values[key].note" class="summary-note"><span v-if="key === 'online'" class="status-dot" />{{ values[key].note }}</div>
+    </component>
   </div>
 </template>

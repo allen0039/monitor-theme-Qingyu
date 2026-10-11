@@ -51,7 +51,7 @@ export interface SiteInfo {
 export type EarthMode = 'earth' | 'earth-stop' | 'map' | 'summary' | 'hide'
 export type Layout = 'card' | 'list'
 export type ThemeMode = 'auto' | 'beijing' | 'light' | 'dark'
-export type SummaryKey = 'memory' | 'disk' | 'online' | 'offline' | 'traffic' | 'upload' | 'download' | 'cpu' | 'regions'
+export type SummaryKey = 'memory' | 'disk' | 'online' | 'offline' | 'traffic' | 'upload' | 'download' | 'cpu' | 'regions' | 'remaining_value'
 export type SortKey = 'default' | 'name' | 'cpu' | 'memory' | 'disk' | 'traffic' | 'upload' | 'download'
 export type ConnectionState = 'connecting' | 'live' | 'polling' | 'reconnecting' | 'paused' | 'closed'
 
@@ -67,6 +67,7 @@ export interface ThemeConfig {
   earth_rotation_speed: number
   earth_show_labels: boolean
   earth_show_rates: boolean
+  show_node_status: boolean
   show_group_tabs: boolean
   show_search: boolean
   show_sort: boolean
@@ -94,6 +95,8 @@ export interface ThemeConfig {
   ping_tasks: string
   ping_refresh_interval: number
   show_price: boolean
+  finance_currency: string
+  show_personal_finance: boolean
   hide_price_logged_out: boolean
   hide_admin: boolean
   reduce_motion: boolean

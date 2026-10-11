@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Activity, CircleAlert, Clock3, ExternalLink, Globe2, LayoutGrid, LoaderCircle, Megaphone, Monitor, Moon, RotateCcw, Search, Server, Settings, SlidersHorizontal, Sun, Table2, X } from '@lucide/vue'
+import { Activity, CircleAlert, Clock3, ExternalLink, Globe2, LayoutGrid, LoaderCircle, Megaphone, Monitor, Moon, RotateCcw, Search, Server, Settings, SlidersHorizontal, Sun, Table2, Wallet, X } from '@lucide/vue'
 import type { ConnectionState, MonitorNode, SiteInfo, ThemeConfig } from './types'
 import manifest from '../theme.json'
 import { api } from './lib/api'
@@ -15,6 +15,10 @@ import NodeCard from './components/NodeCard.vue'
 import NodeList from './components/NodeList.vue'
 import SummaryCards from './components/SummaryCards.vue'
 import VisitorInfoCard from './components/VisitorInfoCard.vue'
+import NodeStatusBadges from './components/NodeStatusBadges.vue'
+import PersonalFinanceDialog from './components/PersonalFinanceDialog.vue'
+import { exchangeRateLabel, useExchangeRates } from './lib/exchange-rates'
+import { resolveFinanceCurrency } from './lib/finance'
 
 const nodes = ref<MonitorNode[] | null>(null)
 const site = ref<SiteInfo>({ site_name: 'Monitor', authed: false, public_page: true })
@@ -25,6 +29,7 @@ const showVisitor = computed(() => configLoaded.value && config.value.visitor_in
 const connection = ref<ConnectionState>('connecting'), error = ref<string | null>(null), closed = ref(false)
 const infoError = ref<string | null>(null), search = ref(''), iconFailed = ref(false)
 const settingsMenu = ref<HTMLDetailsElement | null>(null)
+const financeOpen = ref(false)
 const lastUpdated = ref<Date | null>(null)
 const { theme, layout, earth, sort, group, offlineLast, pingDetails, dark, reduceMotion, cycleTheme, resetPreferences } = usePreferences(config)
 const groups = computed(() => groupsOf(nodes.value ?? []))
@@ -37,7 +42,11 @@ const cards = computed(() => summaryKeys(config.value))
 const showSummary = computed(() => config.value.show_summary && cards.value.length > 0)
 const showOverview = computed(() => earth.value !== 'hide' && (hasVisual.value || showSummary.value))
 const summaryNodes = computed(() => config.value.summary_scope === 'all' ? nodes.value ?? [] : grouped.value)
-const showPrice = computed(() => configLoaded.value && config.value.show_price && (site.value.authed || !config.value.hide_price_logged_out))
+const showPrice = computed(() => configLoaded.value && !closed.value && config.value.show_price && (!config.value.hide_price_logged_out || (site.value.authed && !infoError.value)))
+const canCalculate = computed(() => showPrice.value && config.value.show_personal_finance && nodes.value !== null)
+const needsExchangeRates = computed(() => showPrice.value && nodes.value !== null && ((financeOpen.value && canCalculate.value) || (showOverview.value && showSummary.value && cards.value.includes('remaining_value') && summaryNodes.value.some(node => node.price && resolveFinanceCurrency(node.currency) && resolveFinanceCurrency(node.currency) !== config.value.finance_currency))))
+const { snapshot: exchange, loading: ratesLoading } = useExchangeRates(needsExchangeRates)
+watch(canCalculate, allowed => { if (!allowed) financeOpen.value = false })
 const connectionLabel = computed(() => error.value ? '更新中断' : {
   connecting: '连接中', live: '实时更新', polling: '轮询更新', reconnecting: '重新连接', paused: '已暂停', closed: '需要登录',
 }[connection.value])
@@ -109,6 +118,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
         <a class="brand" href="/" :aria-label="`${site.site_name} 首页`"><img v-if="!iconFailed" :src="iconUrl" :alt="site.site_name" @error="iconFailed = true" /><span v-else class="brand-fallback"><Globe2 /></span><h1>{{ site.site_name }}</h1></a>
         <div class="header-actions">
           <span class="connection" :class="{ 'connection-warning': error || connection === 'reconnecting' }" :title="lastUpdated ? `最后更新 ${lastUpdated.toLocaleTimeString()}` : '正在获取状态'"><span class="status-dot" />{{ connectionLabel }}</span>
+          <button v-if="canCalculate" class="icon-button" type="button" aria-label="个人价值计算" title="个人价值计算" @click="financeOpen = true"><Wallet /></button>
           <button class="icon-button theme-toggle" type="button" :aria-label="`切换配色，当前${themeLabel}`" :title="themeLabel" @click="cycleTheme"><component :is="themeIcon" /></button>
           <details ref="settingsMenu" class="display-menu" @keydown.esc="settingsMenu && (settingsMenu.open = false)">
             <summary class="icon-button" aria-label="显示设置" title="显示设置"><SlidersHorizontal /></summary>
@@ -129,8 +139,9 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
       <div v-if="(error || infoError) && nodes !== null" class="error-banner" role="status"><CircleAlert /><span>{{ error || infoError }}；页面保留最近一次数据。</span><button type="button" @click="retry"><RotateCcw />重试</button></div>
       <template v-if="nodes !== null">
         <section v-if="showOverview" class="overview" :class="{ 'overview-compact': !hasVisual, 'overview-visual-only': !showSummary }" aria-label="节点概况">
-          <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" />
+          <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :show-price="showPrice" :currency="config.finance_currency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" :can-calculate="canCalculate" @open-finance="financeOpen = true" />
           <div v-if="hasVisual" class="overview-visual">
+            <NodeStatusBadges v-if="config.show_node_status" class="visual-node-status" :nodes="grouped" :group="effectiveGroup" />
             <GeoMap v-if="earth === 'map'" :nodes="grouped" :show-labels="config.earth_show_labels" />
             <NodeGlobe v-else :nodes="grouped" :rotate="earth === 'earth'" :dark="dark" :reduce-motion="reduceMotion" :rotation-speed="config.earth_rotation_speed" :show-labels="config.earth_show_labels" :show-rates="config.earth_show_rates" />
           </div>
@@ -142,6 +153,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
             <button v-if="groups.length && nodes.some(n => n.group === '')" type="button" :aria-pressed="group === ''" :class="{ active: group === '' }" @click="group = ''">未分组<span>{{ inGroup(nodes, '').length }}</span></button>
           </div>
           <div class="toolbar-actions">
+            <NodeStatusBadges v-if="config.show_node_status && (!hasVisual || !showOverview)" class="toolbar-node-status" :nodes="grouped" :group="effectiveGroup" />
             <button v-if="config.show_ping && layout === 'card'" class="ping-toggle" type="button" :aria-pressed="pingDetails" :title="pingDetails ? '切换为网络摘要' : '展开网络明细'" @click="pingDetails = !pingDetails"><Activity />{{ pingDetails ? '明细' : '摘要' }}</button>
             <div class="view-switch" role="group" aria-label="节点视图"><button type="button" class="icon-button" :class="{ active: layout === 'card' }" :aria-pressed="layout === 'card'" aria-label="卡片视图" title="卡片视图" @click="layout = 'card'"><LayoutGrid /></button><button type="button" class="icon-button" :class="{ active: layout === 'list' }" :aria-pressed="layout === 'list'" aria-label="列表视图" title="列表视图" @click="layout = 'list'"><Table2 /></button></div>
             <select v-if="config.show_sort" v-model="sort" class="sort-select" aria-label="节点排序"><option value="default">默认排序</option><option value="name">名称 A → Z</option><option value="cpu">CPU ↓</option><option value="memory">内存用量 ↓</option><option value="disk">硬盘用量 ↓</option><option value="traffic">本期流量 ↓</option><option value="upload">上传速率 ↓</option><option value="download">下载速率 ↓</option></select>
@@ -158,6 +170,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
       <div v-else-if="error || closed" class="empty-state load-error" role="alert"><CircleAlert /><h2>{{ closed ? '需要登录后查看' : '暂时无法获取节点' }}</h2><p>{{ error }}</p><a v-if="closed" href="/admin" class="primary-button">前往登录<ExternalLink /></a><button v-else class="primary-button" type="button" @click="retry"><RotateCcw />重新连接</button></div>
       <div v-else class="loading-state" aria-busy="true" aria-label="正在读取节点"><div class="loading-label"><LoaderCircle />正在连接 Monitor…</div><div class="skeleton-overview" /><div class="nodes-grid"><div v-for="n in 8" :key="n" class="skeleton-card" /></div></div>
     </main>
+    <PersonalFinanceDialog v-if="financeOpen && canCalculate && nodes !== null" :nodes="nodes" :exchange="exchange" :rates-loading="ratesLoading" @close="financeOpen = false" />
     <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" />
     <footer class="site-footer"><div><span>Powered by <a href="https://github.com/monitor-probe/monitor" target="_blank" rel="noopener noreferrer">Monitor</a></span><span>Theme by <a :href="manifest.url" target="_blank" rel="noopener noreferrer" :title="`Monitor 移植版 v${manifest.version}`">Emerald Globe Pro</a></span></div><p v-if="config.footer_text"><a v-if="footerUrl" :href="footerUrl" target="_blank" rel="noopener noreferrer">{{ config.footer_text }}</a><span v-else>{{ config.footer_text }}</span></p></footer>
   </div>

@@ -6,6 +6,11 @@ import { parsePing, selectPingNetworks } from './ping'
 afterEach(() => vi.unstubAllGlobals())
 
 describe('详细主题设置', () => {
+  it('默认显示剩余价值，兼容自定义在线卡片，新增费用设置可独立关闭', () => {
+    expect(summaryKeys(defaultConfig())).toEqual(['memory', 'remaining_value', 'upload', 'disk', 'traffic', 'download'])
+    expect(summaryKeys(parseConfig({ summary_preset: 'custom', summary_cards: 'online remaining_value offline' }))).toEqual(['online', 'remaining_value', 'offline'])
+    expect(parseConfig({ show_node_status: false, show_personal_finance: false, finance_currency: 'USD' })).toMatchObject({ show_node_status: false, show_personal_finance: false, finance_currency: 'USD' })
+  })
   it('兼容旧站点保存的配置，新增项补默认值且保留关闭状态', () => {
     const old = { notice: '维护公告', earth_mode: 'map', layout: 'list', offline_last: true, show_ping: false, show_price: false, hide_admin: true, reduce_motion: true, background_light: 'https://example.com/bg.jpg', background_dark: '', background_blur: 4, footer_text: '备案号', footer_url: 'https://example.com' }
     expect(parseConfig(old)).toEqual({ ...defaultConfig(), ...old })

@@ -2,7 +2,7 @@
   "name": "Emerald Globe Pro · Monitor",
   "short": "boxpro",
   "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
   "config": [
@@ -178,6 +178,13 @@
       "help": "在地球国旗旁显示当前地区合计速率；需要同时开启国旗，手机窄屏自动隐藏速率面板。"
     },
     {
+      "key": "show_node_status",
+      "type": "boolean",
+      "label": "显示在线状态数量",
+      "default": true,
+      "help": "在地球或地图旁显示当前分组在线数量，只有离线数大于 0 时显示离线徽章；隐藏地球时移至节点工具栏。"
+    },
+    {
       "key": "show_group_tabs",
       "type": "boolean",
       "label": "显示节点分组",
@@ -233,21 +240,21 @@
         },
         {
           "value": "all",
-          "label": "完整 · 九张卡片"
+          "label": "完整 · 十张卡片"
         },
         {
           "value": "custom",
           "label": "自定义 · 按下方顺序"
         }
       ],
-      "help": "默认方案保留原来的六张卡片；选择自定义后读取下方的卡片名称与显示顺序。"
+      "help": "默认六张：内存、剩余价值、上传、硬盘、累计流量、下载；选择自定义后读取下方的卡片名称与显示顺序。"
     },
     {
       "key": "summary_cards",
       "type": "text",
       "label": "自定义总览卡片与顺序",
-      "default": "memory\nonline\nupload\ndisk\ntraffic\ndownload",
-      "help": "仅自定义方案生效，用逗号、空格或换行分隔：memory=内存；disk=硬盘；online=在线节点；offline=离线节点；traffic=累计流量；upload=上传速率；download=下载速率；cpu=平均 CPU；regions=国家和地区。重复和不支持的名称会忽略，留空不显示总览。"
+      "default": "memory\nremaining_value\nupload\ndisk\ntraffic\ndownload",
+      "help": "仅自定义方案生效，用逗号、空格或换行分隔：remaining_value=剩余价值；memory=内存；disk=硬盘；online=在线节点；offline=离线节点；traffic=累计流量；upload=上传速率；download=下载速率；cpu=平均 CPU；regions=国家和地区。重复和不支持的名称会忽略，留空不显示总览。"
     },
     {
       "key": "summary_scope",
@@ -457,16 +464,168 @@
     {
       "key": "show_price",
       "type": "boolean",
-      "label": "显示节点费用",
+      "label": "显示费用",
       "default": true,
-      "help": "在卡片和列表中显示各节点原币种金额，支持一次性与自定义付款周期，不合并不同币种。"
+      "help": "在节点卡片和列表中显示原币种价格，并允许首页剩余价值与个人价值计算。关闭时隐藏全部费用和计算器，也不请求汇率。"
+    },
+    {
+      "key": "finance_currency",
+      "type": "select",
+      "label": "首页金额汇总币种",
+      "default": "CNY",
+      "options": [
+        {
+          "value": "CNY",
+          "label": "CNY"
+        },
+        {
+          "value": "USD",
+          "label": "USD"
+        },
+        {
+          "value": "EUR",
+          "label": "EUR"
+        },
+        {
+          "value": "GBP",
+          "label": "GBP"
+        },
+        {
+          "value": "JPY",
+          "label": "JPY"
+        },
+        {
+          "value": "HKD",
+          "label": "HKD"
+        },
+        {
+          "value": "KRW",
+          "label": "KRW"
+        },
+        {
+          "value": "AUD",
+          "label": "AUD"
+        },
+        {
+          "value": "CAD",
+          "label": "CAD"
+        },
+        {
+          "value": "SGD",
+          "label": "SGD"
+        },
+        {
+          "value": "CHF",
+          "label": "CHF"
+        },
+        {
+          "value": "NZD",
+          "label": "NZD"
+        },
+        {
+          "value": "BRL",
+          "label": "BRL"
+        },
+        {
+          "value": "CZK",
+          "label": "CZK"
+        },
+        {
+          "value": "DKK",
+          "label": "DKK"
+        },
+        {
+          "value": "HUF",
+          "label": "HUF"
+        },
+        {
+          "value": "IDR",
+          "label": "IDR"
+        },
+        {
+          "value": "ILS",
+          "label": "ILS"
+        },
+        {
+          "value": "INR",
+          "label": "INR"
+        },
+        {
+          "value": "ISK",
+          "label": "ISK"
+        },
+        {
+          "value": "KZT",
+          "label": "KZT"
+        },
+        {
+          "value": "MXN",
+          "label": "MXN"
+        },
+        {
+          "value": "MYR",
+          "label": "MYR"
+        },
+        {
+          "value": "NOK",
+          "label": "NOK"
+        },
+        {
+          "value": "PHP",
+          "label": "PHP"
+        },
+        {
+          "value": "PLN",
+          "label": "PLN"
+        },
+        {
+          "value": "RON",
+          "label": "RON"
+        },
+        {
+          "value": "RUB",
+          "label": "RUB"
+        },
+        {
+          "value": "SEK",
+          "label": "SEK"
+        },
+        {
+          "value": "THB",
+          "label": "THB"
+        },
+        {
+          "value": "TRY",
+          "label": "TRY"
+        },
+        {
+          "value": "UAH",
+          "label": "UAH"
+        },
+        {
+          "value": "VND",
+          "label": "VND"
+        },
+        {
+          "value": "ZAR",
+          "label": "ZAR"
+        }
+      ],
+      "help": "剩余价值卡片的目标币种；跨币种使用每日汇率估算。个人计算器的币种独立保存在浏览器。"
+    },
+    {
+      "key": "show_personal_finance",
+      "type": "boolean",
+      "label": "启用个人价值计算器",
+      "default": true,
+      "help": "显示右上角钱袋入口，并允许点击剩余价值卡片打开。支持搜索、分组筛选、勾选机器和月均费用计算；个人选择不改变公开汇总，遵守费用显隐设置。"
     },
     {
       "key": "hide_price_logged_out",
       "type": "boolean",
       "label": "对未登录访客隐藏费用",
       "default": false,
-      "help": "开启后只向已登录用户展示费用；同时需要开启「显示节点费用」。此设置只控制页面展示，不改变 Monitor 接口权限。"
+      "help": "开启后仅向已登录用户展示节点费用、剩余价值和个人计算器，且需要开启「显示费用」。只控制主题展示，不改变 Monitor 接口权限。"
     },
     {
       "key": "hide_admin",
