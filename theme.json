@@ -1,7 +1,7 @@
 {
   "name": "Emerald Globe Pro · 卡片测试版",
   "short": "boxpro_cardtest",
-  "description": "独立安装的卡片布局测试版：双列资源、并排摘要与三网质量。",
+  "description": "独立安装的紧凑卡片测试版：优化资源信息，并排显示速率、累计流量和费用到期。",
   "version": "0.2.1",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
@@ -75,7 +75,7 @@
           "label": "宽松 · 更大字号"
         }
       ],
-      "help": "调整卡片字号和间距；桌面默认并排显示两张卡片，迷你模式可显示更多，手机自动改为单列。列表视图不受影响。"
+      "help": "调整卡片宽度、字号和间距；手机自动适应屏幕宽度，列表视图不受影响。"
     },
     {
       "key": "site_icon",
@@ -358,21 +358,21 @@
       "type": "boolean",
       "label": "显示在线时长",
       "default": true,
-      "help": "卡片标题下方显示在线时长或离线状态，列表显示在线时长；关闭后仍保留节点状态指示。"
+      "help": "卡片显示在线时长或离线状态，列表显示在线时长；关闭后仍保留节点状态指示。"
     },
     {
       "key": "show_total_traffic",
       "type": "boolean",
       "label": "卡片显示累计流量",
       "default": true,
-      "help": "在卡片摘要区并排显示累计上传与下载流量；总览流量单独配置。"
+      "help": "在卡片中间显示累计上传与下载流量，右下角附加信息保留累计总量；总览流量单独配置。"
     },
     {
       "key": "show_node_metadata",
       "type": "boolean",
       "label": "显示节点信息",
       "default": true,
-      "help": "卡片标题显示系统与国旗，标题下方显示核心数和架构，右下角可查看 CPU 名称与虚拟化信息；列表显示系统、国旗和分组。"
+      "help": "卡片标题显示系统与国旗，核心数和架构位于右下角「附加信息」；列表显示系统、国旗和分组。关闭后仍可搜索这些字段。"
     },
     {
       "key": "show_expiry",

@@ -22,11 +22,10 @@ const costTitle = computed(() => `${priceLabel(props.node.price, props.node.curr
 const hasExpiry = computed(() => props.config.show_expiry && props.node.expires_in !== null)
 const hasBilling = computed(() => props.showPrice || hasExpiry.value)
 const highlightCount = computed(() => Number(props.config.show_speed) + Number(props.config.show_total_traffic) + Number(hasBilling.value))
-const uptimeText = computed(() => props.node.metrics ? `在线 ${duration(props.node.metrics.uptime)}` : nodeState(props.node))
 const expiryText = computed(() => props.node.expires_in === null ? '' : props.node.expires_in < 0
   ? `已过期 ${Math.abs(props.node.expires_in)} 天` : props.node.expires_in === 0 ? '今天到期' : `剩余 ${props.node.expires_in} 天`)
 const remark = computed(() => remarkParts(props.node.public_remark))
-const hasExtra = computed(() => props.config.show_node_metadata && !!(props.node.cpu_name || props.node.virt))
+const hasExtra = computed(() => props.config.show_total_traffic || (props.config.show_node_metadata && !!(props.node.cpu_cores || props.node.arch)))
 const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null && props.node.expires_in <= props.config.expiry_warning_days, expired: props.node.expires_in !== null && props.node.expires_in < 0 }))
 </script>
 <template>
@@ -36,10 +35,6 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
       <h2 :title="node.name">{{ node.name }}</h2>
       <OsIcon v-if="config.show_node_metadata" :os="node.os" />
       <img v-if="config.show_node_metadata && flagUrl(node.country)" :src="flagUrl(node.country)" :alt="regionName(node.country)" :title="regionName(node.country)" class="country-flag" />
-    </div>
-    <div v-if="config.show_uptime || (config.show_node_metadata && (node.cpu_cores || node.arch))" class="node-card-meta">
-      <span v-if="config.show_uptime" class="node-meta-pill" :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ uptimeText }}</span>
-      <span v-if="config.show_node_metadata && (node.cpu_cores || node.arch)" class="node-meta-pill" :title="node.cpu_name || node.arch">{{ node.cpu_cores ? `${node.cpu_cores} 核` : '' }}{{ node.cpu_cores && node.arch ? ' · ' : '' }}{{ node.arch }}</span>
     </div>
     <div class="node-card-body">
       <div v-if="config.show_cpu || config.show_memory || config.show_disk || config.show_traffic" class="node-resources">
@@ -65,15 +60,16 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
           <span v-if="hasExpiry" class="highlight-value highlight-expiry" :class="expiryClass" :title="`${node.expires_at || ''} ${expiryLabel(node.expires_in)}`">{{ expiryText }}</span>
         </div>
       </div>
+      <div v-if="config.show_uptime" class="node-facts"><div class="fact-row"><span>在线</span><i /><span :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ node.metrics ? duration(node.metrics.uptime) : nodeState(node) }}</span></div></div>
       <PingPanel v-if="showPing" :node="node" :details="pingDetails" :config="config" />
       <div v-if="(config.show_remark && node.public_remark) || hasExtra" class="node-card-footer">
         <div v-if="config.show_remark && remark.tags.length" class="remark-tags"><span v-for="tag in remark.tags" :key="tag" :title="tag">{{ tag }}</span></div>
         <p v-if="config.show_remark && remark.text" class="node-remark" :title="remark.text">{{ remark.text }}</p>
         <details v-if="hasExtra" class="node-extra">
-          <summary :aria-label="`${node.name} 硬件信息`" title="硬件信息"><Ellipsis /></summary>
+          <summary :aria-label="`${node.name} 附加信息`" title="累计流量与硬件信息"><Ellipsis /></summary>
           <div class="node-extra-content">
-            <p v-if="node.cpu_name" class="node-hardware-name">{{ node.cpu_name }}</p>
-            <div v-if="node.virt" class="node-tags"><span>{{ node.virt }}</span></div>
+            <div v-if="config.show_total_traffic" class="fact-row" :title="`上传 ${formatBytes(node.total_tx)} / 下载 ${formatBytes(node.total_rx)}`"><span>累计</span><i /><span>{{ formatBytes(node.total_rx + node.total_tx) }}</span></div>
+            <div v-if="config.show_node_metadata" class="node-tags"><span v-if="node.cpu_cores" :title="node.cpu_name">{{ node.cpu_cores }} 核</span><span v-if="node.arch">{{ node.arch }}</span></div>
           </div>
         </details>
       </div>
