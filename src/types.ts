@@ -32,6 +32,7 @@ export interface MonitorNode {
   month_used: number
   traffic_limit: number
   traffic_mode: string
+  traffic_reset_day?: number | null
   price: number | null
   currency: string
   billing_cycle: string

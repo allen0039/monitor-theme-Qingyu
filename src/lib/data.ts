@@ -43,6 +43,7 @@ export function normalizeNodes(value: unknown): MonitorNode[] {
       mem_total: m?.mem_total ?? number(n.mem_total), disk_total: m?.disk_total ?? number(n.disk_total),
       total_rx: number(n.total_rx), total_tx: number(n.total_tx), month_rx: number(n.month_rx), month_tx: number(n.month_tx),
       month_used: monthlyUsed(n), traffic_limit: number(n.traffic_limit), traffic_mode: text(n.traffic_mode),
+      traffic_reset_day: Number.isInteger(n.traffic_reset_day) && finite(n.traffic_reset_day) && n.traffic_reset_day >= 1 && n.traffic_reset_day <= 31 ? n.traffic_reset_day : null,
       price: finite(n.price) ? n.price : null, currency: text(n.currency) || 'CNY', billing_cycle: text(n.billing_cycle),
       expires_at: typeof n.expires_at === 'string' ? n.expires_at : null,
       expires_in: typeof expires === 'number' && Number.isFinite(expires) ? expires : null,

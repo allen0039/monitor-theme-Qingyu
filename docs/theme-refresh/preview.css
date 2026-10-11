@@ -1,0 +1,115 @@
+/* Proposal styles are isolated from the shipped theme. */
+body:has(.design-preview) { min-width: 0; }
+.design-preview { --design-radius: 14px; --design-offline: #a36a07; }
+.dark .design-preview { --design-offline: #efb747; }
+.design-preview .masthead-inner { height: 68px; }
+.design-preview-label { color: var(--muted); font-size: 11px; }
+.design-preview .overview { min-height: 292px; padding-top: 22px; padding-bottom: 32px; gap: 28px; }
+.design-preview .summary-grid { gap: 10px; }
+.design-preview .summary-card { height: 112px; border-radius: var(--design-radius); padding: 15px; border: 1px solid color-mix(in srgb, var(--line) 40%, transparent); backdrop-filter: blur(10px); }
+.design-preview .summary-label { font-size: 12px; letter-spacing: .02em; }
+.design-preview .summary-value strong { font-size: 28px; }
+.design-preview .summary-finance .summary-value strong { color: var(--emerald); font-size: 27px; }
+.design-preview .summary-note { font-size: 10px; }
+.design-preview .overview-visual { height: 246px; }
+.design-preview .globe-host { width: min(480px, 100%); }
+.design-preview .earth-flag { width: 22px; height: 16px; }
+.design-status-anchor { position: absolute; z-index: 3; left: 14px; top: 5px; }
+.design-status { display: inline-flex; align-items: center; gap: 13px; padding: 8px 12px; border-radius: 9px; background: var(--surface-solid); border: 1px solid var(--line); box-shadow: 0 3px 12px rgb(20 44 35 / 7%); font-size: 14px; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
+.design-status > span { display: flex; align-items: center; gap: 6px; }
+.design-status i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.design-status-online { color: var(--emerald); }
+.design-status-offline { color: var(--design-offline); }
+.design-status-detail { position: absolute; top: 40px; left: 0; width: max-content; max-width: 300px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-solid); color: var(--foreground); font-size: 11px; line-height: 1.5; }
+.design-preview .node-toolbar { margin-bottom: 18px; }
+.design-preview .group-tabs { border-radius: 10px; padding: 4px; }
+.design-preview .group-tabs button { min-height: 32px; font-size: 12px; border-radius: 7px; padding: 5px 12px; }
+.design-view-label { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--emerald); padding: 8px 10px; background: var(--surface); border-radius: 8px; }
+.design-view-label svg { width: 14px; height: 14px; }
+.design-preview .search-field input { border-radius: 8px; }
+.design-status-toolbar-detail { color: var(--muted); font-size: 11px; }
+.design-node-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.design-node-card { border-radius: 16px; border-color: color-mix(in srgb, var(--line) 48%, transparent); background: color-mix(in srgb, var(--surface-solid) 82%, transparent); backdrop-filter: blur(12px); }
+.design-node-card .node-card-header { padding: 18px 16px 8px; gap: 7px; }
+.design-node-card .node-card-header h2 { font-size: 14px; }
+.design-node-chips { display: flex; gap: 6px; padding: 0 16px 17px; font-size: 10px; color: var(--muted); }
+.design-node-chips > span { border-radius: 99px; padding: 3px 7px; background: var(--subtle); line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.design-node-chips > span.danger { color: var(--danger); }
+.design-node-card .node-resources { gap: 14px 12px; margin-bottom: 18px; }
+.design-node-card .meter-label { font-size: 12px; }
+.design-node-card .meter-detail { font-size: 10px; }
+.design-node-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.design-node-tile { min-width: 0; border-radius: 10px; padding: 8px 6px; background: color-mix(in srgb, var(--muted) 7%, transparent); display: flex; flex-direction: column; gap: 3px; justify-content: center; }
+.design-tile-label { color: var(--muted); font-size: 9px; white-space: nowrap; margin-bottom: 2px; }
+.design-tile-value { display: flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; font-size: 11px; font-weight: 550; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.design-tile-value svg { width: 11px; height: 11px; flex: none; color: var(--muted); }
+.design-tile-value.up svg, .design-tile-value.down svg, .design-tile-value.expired svg, .design-tile-value.expiring svg { color: inherit; }
+.design-ping-section { margin-top: 17px; padding-top: 14px; border-top: 1px solid var(--line); }
+.design-node-card .ping-detail-network + .ping-detail-network { margin-top: 12px; }
+.design-node-card .ping-detail-heading { font-size: 11px; }
+.design-node-card .ping-history { height: 8px; gap: 2px; }
+.design-node-card .ping-history > span { border-radius: 2px; }
+.design-node-card .ping-heading { font-size: 10px; }
+.design-node-card.node-offline .node-resources, .design-node-card.node-offline .design-ping-section { opacity: .48; }
+.design-node-remark { margin-top: 12px; }
+.design-extra { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 10px; color: var(--muted); line-height: 1.8; }
+.design-extra summary { width: fit-content; font-size: 10px; }
+.design-extra[open] summary { margin-bottom: 5px; }
+.design-extra > div { overflow-wrap: anywhere; }
+.design-preview-footnote { margin: 22px 0 0; font-size: 10px; color: var(--muted); text-align: center; }
+.design-error { color: var(--danger); margin: 30px 0; }
+@media (max-width: 1100px) {
+  .design-node-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .design-preview .summary-value strong { font-size: 23px; }
+  .design-preview .summary-finance .summary-value strong { font-size: clamp(18px, 2.2vw, 22px); }
+  .design-preview .summary-card { padding: 12px; }
+}
+@media (max-width: 850px) {
+  .design-node-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .design-preview-label { display: none; }
+  .design-preview .overview { gap: 14px; }
+}
+@media (max-width: 767px) {
+  .design-preview .masthead-inner { height: 60px; }
+  .design-preview .overview { flex-direction: column; padding-top: 12px; padding-bottom: 22px; }
+  .design-preview .summary-card { height: 100px; padding: 11px; }
+  .design-preview .summary-value strong { font-size: 24px; }
+  .design-preview .summary-finance .summary-value strong { font-size: 24px; }
+  .design-preview .summary-label { font-size: 11px; }
+  .design-preview .summary-note { font-size: 9px; }
+  .design-preview .summary-value > span { font-size: 9px; }
+  .design-preview .overview-visual { height: 230px; margin-top: 16px; }
+  .design-preview .globe-host { width: min(440px, 100%); }
+  .design-status-anchor { top: 0; left: 0; }
+  .design-status { min-height: 40px; }
+  .design-preview .node-toolbar { gap: 10px; }
+  .design-view-label { min-height: 44px; }
+  .design-preview .icon-button { height: 44px; width: 40px; }
+  .design-preview .search-field input { font-size: 16px; }
+  .design-preview .brand h1 { font-size: 16px; }
+  .design-preview .brand { gap: 8px; }
+  .design-preview .header-actions { gap: 0; }
+}
+@media (max-width: 600px) {
+  .design-node-grid { grid-template-columns: 1fr; }
+  .design-preview .main-content { padding: 0 14px; }
+  .design-preview .summary-grid, .design-preview .overview-compact .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .design-node-card .node-card-header { padding: 18px 18px 8px; }
+  .design-node-card .node-card-body { padding: 0 18px 16px; }
+  .design-node-chips { padding: 0 18px 17px; font-size: 11px; }
+  .design-node-card .node-card-header h2 { font-size: 16px; }
+  .design-node-card .meter-label { font-size: 13px; }
+  .design-node-card .meter-detail { font-size: 11px; }
+  .design-node-tile { padding: 10px 8px; }
+  .design-tile-label { font-size: 10px; }
+  .design-tile-value { font-size: 12px; }
+  .design-node-card .ping-detail-heading { font-size: 12px; }
+  .design-status-toolbar { margin-right: auto; }
+}
+@media (max-width: 359px) {
+  .design-preview .brand h1 { font-size: 13px; }
+  .design-preview .brand img { width: 26px; height: 26px; }
+  .design-preview .icon-button { width: 36px; }
+  .design-node-tile { padding: 9px 6px; }
+  .design-tile-value { font-size: 11px; gap: 3px; }
+}

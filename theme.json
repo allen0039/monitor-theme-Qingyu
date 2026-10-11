@@ -2,7 +2,7 @@
   "name": "Emerald Globe Pro · Monitor",
   "short": "boxpro",
   "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
   "config": [
@@ -182,7 +182,7 @@
       "type": "boolean",
       "label": "显示在线状态数量",
       "default": true,
-      "help": "在地球或地图旁显示当前分组在线数量，只有离线数大于 0 时显示离线徽章；隐藏地球时移至节点工具栏。"
+      "help": "在地球或地图左上角以绿色在线数与琥珀色离线数显示当前分组状态，只有离线数大于 0 时显示离线项；点击可查看说明，隐藏地球时移至节点工具栏。"
     },
     {
       "key": "show_group_tabs",
@@ -372,7 +372,7 @@
       "type": "boolean",
       "label": "卡片显示本月与累计流量",
       "default": true,
-      "help": "卡片中间显示该节点本月上传与下载流量，「在线」下方的「累计」行显示历史上传与下载总量；总览流量单独配置。"
+      "help": "卡片中格显示该节点当月上传与下载；自定义重置日时标为当期流量。历史累计上下行位于卡片右下角附加信息；总览流量单独配置。"
     },
     {
       "key": "show_node_metadata",
@@ -386,7 +386,7 @@
       "type": "boolean",
       "label": "显示到期时间",
       "default": true,
-      "help": "卡片在费用摘要格显示剩余天数，费用隐藏时仍可单独显示到期；列表显示到期列。天数使用主控返回值。"
+      "help": "卡片信息带右格显示剩余天数与剩余价值；费用隐藏时仍可单独显示到期。列表显示到期列，天数使用主控返回值。"
     },
     {
       "key": "expiry_warning_days",
