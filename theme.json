@@ -2,32 +2,542 @@
   "name": "Emerald Globe Pro · Monitor",
   "short": "boxpro",
   "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
   "config": [
-    { "type": "title", "label": "首页" },
-    { "key": "notice", "type": "text", "label": "首页公告", "default": "", "help": "纯文本，留空不显示，支持换行。" },
-    { "key": "earth_mode", "type": "select", "label": "头部展示", "default": "earth", "options": [
-      { "value": "earth", "label": "自转地球" },
-      { "value": "earth-stop", "label": "静止地球" },
-      { "value": "map", "label": "点状世界地图" },
-      { "value": "summary", "label": "仅汇总卡片" },
-      { "value": "hide", "label": "隐藏头部" }
-    ] },
-    { "key": "layout", "type": "select", "label": "默认节点视图", "default": "card", "options": [
-      { "value": "card", "label": "卡片" }, { "value": "list", "label": "列表" }
-    ] },
-    { "key": "offline_last", "type": "boolean", "label": "离线节点排到末尾", "default": false },
-    { "key": "show_ping", "type": "boolean", "label": "显示网络延迟", "default": true, "help": "仅为可见节点读取近一小时延迟，最多同时三个请求，每分钟刷新。" },
-    { "key": "show_price", "type": "boolean", "label": "显示节点费用", "default": true, "help": "显示各节点原币种金额，不合并不同币种。此设置只控制展示，不改变 Monitor 接口权限。" },
-    { "key": "hide_admin", "type": "boolean", "label": "对未登录访客隐藏后台入口", "default": false },
-    { "key": "reduce_motion", "type": "boolean", "label": "减弱动画", "default": false },
-    { "type": "title", "label": "背景与页脚" },
-    { "key": "background_light", "type": "string", "label": "浅色背景图片", "default": "", "help": "http/https 图片地址；留空使用原主题的翡翠渐变网格。" },
-    { "key": "background_dark", "type": "string", "label": "深色背景图片", "default": "" },
-    { "key": "background_blur", "type": "number", "label": "背景模糊（像素）", "default": 0, "min": 0, "max": 24 },
-    { "key": "footer_text", "type": "string", "label": "页脚文字 / 备案号", "default": "" },
-    { "key": "footer_url", "type": "string", "label": "页脚链接", "default": "", "help": "http/https 地址；留空仅显示文字。" }
+    {
+      "type": "title",
+      "label": "01 · 基础与外观"
+    },
+    {
+      "key": "theme_mode",
+      "type": "select",
+      "label": "默认主题模式",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "跟随系统"
+        },
+        {
+          "value": "beijing",
+          "label": "北京时间自动"
+        },
+        {
+          "value": "light",
+          "label": "浅色"
+        },
+        {
+          "value": "dark",
+          "label": "深色"
+        }
+      ],
+      "help": "北京时间自动：06:00–18:00 为浅色，其余时间为深色。访客已保存的页面配色优先；在首页「显示设置」中可恢复站点默认。"
+    },
+    {
+      "key": "layout",
+      "type": "select",
+      "label": "默认节点视图",
+      "default": "card",
+      "options": [
+        {
+          "value": "card",
+          "label": "卡片"
+        },
+        {
+          "value": "list",
+          "label": "列表"
+        }
+      ],
+      "help": "首次访问使用的节点视图；访客在首页切换后，优先使用当前浏览器的选择。"
+    },
+    {
+      "key": "card_size",
+      "type": "select",
+      "label": "节点卡片尺寸",
+      "default": "compact",
+      "options": [
+        {
+          "value": "mini",
+          "label": "迷你 · 更高密度"
+        },
+        {
+          "value": "compact",
+          "label": "紧凑 · 默认"
+        },
+        {
+          "value": "comfortable",
+          "label": "舒适 · 更大间距"
+        },
+        {
+          "value": "large",
+          "label": "宽松 · 更大字号"
+        }
+      ],
+      "help": "调整卡片宽度、字号和间距；手机自动适应屏幕宽度，列表视图不受影响。"
+    },
+    {
+      "key": "site_icon",
+      "type": "string",
+      "label": "站点图标",
+      "default": "",
+      "help": "用于左上角、浏览器标签页和 iOS 主屏幕；支持 http(s) 图片地址或以 / 开头的站内路径，建议使用正方形 PNG。留空使用内置图标。"
+    },
+    {
+      "key": "poll_interval",
+      "type": "number",
+      "label": "断线时数据刷新间隔（秒）",
+      "default": 5,
+      "min": 1,
+      "max": 60,
+      "help": "WebSocket 不可用时的 HTTP 轮询间隔，范围 1–60 秒；正常连接时仍实时接收主控推送。"
+    },
+    {
+      "key": "reduce_motion",
+      "type": "boolean",
+      "label": "减弱动画",
+      "default": false,
+      "help": "停止地球自转并关闭页面过渡；浏览器或系统启用「减少动态效果」时也会自动生效。"
+    },
+    {
+      "type": "title",
+      "label": "02 · 首页布局与地球"
+    },
+    {
+      "key": "notice_enabled",
+      "type": "boolean",
+      "label": "显示首页公告",
+      "default": true,
+      "help": "可暂时隐藏公告并保留内容；标题和内容都为空时不显示公告。"
+    },
+    {
+      "key": "notice_title",
+      "type": "string",
+      "label": "公告标题",
+      "default": "",
+      "help": "可选，显示在公告内容上方；留空只显示内容。"
+    },
+    {
+      "key": "notice",
+      "type": "text",
+      "label": "公告内容",
+      "default": "",
+      "help": "纯文本，支持换行；HTML 和 Markdown 按原文显示。"
+    },
+    {
+      "key": "earth_mode",
+      "type": "select",
+      "label": "默认头部展示",
+      "default": "earth",
+      "options": [
+        {
+          "value": "earth",
+          "label": "自转地球"
+        },
+        {
+          "value": "earth-stop",
+          "label": "静止地球"
+        },
+        {
+          "value": "map",
+          "label": "点状世界地图"
+        },
+        {
+          "value": "summary",
+          "label": "仅总览卡片"
+        },
+        {
+          "value": "hide",
+          "label": "隐藏整个头部"
+        }
+      ],
+      "help": "静止地球仍可拖动；无法使用 WebGL 时自动显示本地点状地图。访客已保存的头部选择优先。"
+    },
+    {
+      "key": "earth_rotation_speed",
+      "type": "number",
+      "label": "地球自转速度",
+      "default": 1.6,
+      "min": 0.1,
+      "max": 5,
+      "help": "范围 0.1–5，数值越大转得越快；仅在自转地球模式下生效，减弱动画时停止。"
+    },
+    {
+      "key": "earth_show_labels",
+      "type": "boolean",
+      "label": "显示地球与地图国旗",
+      "default": true,
+      "help": "显示节点所在国家和地区的国旗；关闭后保留位置标记。位置使用国家中心点。"
+    },
+    {
+      "key": "earth_show_rates",
+      "type": "boolean",
+      "label": "显示地球实时上下行",
+      "default": true,
+      "help": "在地球国旗旁显示当前地区合计速率；需要同时开启国旗，手机窄屏自动隐藏速率面板。"
+    },
+    {
+      "key": "show_group_tabs",
+      "type": "boolean",
+      "label": "显示节点分组",
+      "default": true,
+      "help": "在节点上方显示分组切换；关闭后显示全部节点，不沿用浏览器之前选中的分组。"
+    },
+    {
+      "key": "show_search",
+      "type": "boolean",
+      "label": "显示节点搜索",
+      "default": true,
+      "help": "允许按名称、地区、系统和公开备注搜索；关闭后不使用搜索筛选。"
+    },
+    {
+      "key": "show_sort",
+      "type": "boolean",
+      "label": "显示排序选择",
+      "default": true,
+      "help": "允许访客切换排序；关闭后使用「节点卡片与列表」中设置的默认排序。"
+    },
+    {
+      "type": "title",
+      "label": "03 · 首页总览卡片"
+    },
+    {
+      "key": "show_summary",
+      "type": "boolean",
+      "label": "显示总览卡片",
+      "default": true,
+      "help": "控制头部的资源和节点汇总卡片；关闭后仍可单独显示地球或地图。隐藏整个头部时此项不生效。"
+    },
+    {
+      "key": "summary_preset",
+      "type": "select",
+      "label": "总览卡片方案",
+      "default": "default",
+      "options": [
+        {
+          "value": "default",
+          "label": "默认 · 六张卡片"
+        },
+        {
+          "value": "resources",
+          "label": "资源 · CPU / 内存 / 硬盘"
+        },
+        {
+          "value": "network",
+          "label": "网络 · 流量 / 上传 / 下载"
+        },
+        {
+          "value": "status",
+          "label": "状态 · 在线 / 离线 / 地区"
+        },
+        {
+          "value": "all",
+          "label": "完整 · 九张卡片"
+        },
+        {
+          "value": "custom",
+          "label": "自定义 · 按下方顺序"
+        }
+      ],
+      "help": "默认方案保留原来的六张卡片；选择自定义后读取下方的卡片名称与显示顺序。"
+    },
+    {
+      "key": "summary_cards",
+      "type": "text",
+      "label": "自定义总览卡片与顺序",
+      "default": "memory\nonline\nupload\ndisk\ntraffic\ndownload",
+      "help": "仅自定义方案生效，用逗号、空格或换行分隔：memory=内存；disk=硬盘；online=在线节点；offline=离线节点；traffic=累计流量；upload=上传速率；download=下载速率；cpu=平均 CPU；regions=国家和地区。重复和不支持的名称会忽略，留空不显示总览。"
+    },
+    {
+      "key": "summary_scope",
+      "type": "select",
+      "label": "总览统计范围",
+      "default": "group",
+      "options": [
+        {
+          "value": "group",
+          "label": "当前节点分组"
+        },
+        {
+          "value": "all",
+          "label": "全部节点"
+        }
+      ],
+      "help": "只控制总览卡片；地球和地图始终展示当前分组，搜索和排序不改变汇总。离线节点计入总容量，实时用量只计算已有上报的在线节点。"
+    },
+    {
+      "type": "title",
+      "label": "04 · 节点卡片与列表"
+    },
+    {
+      "key": "default_sort",
+      "type": "select",
+      "label": "默认节点排序",
+      "default": "default",
+      "options": [
+        {
+          "value": "default",
+          "label": "主控默认顺序"
+        },
+        {
+          "value": "name",
+          "label": "名称 A → Z"
+        },
+        {
+          "value": "cpu",
+          "label": "CPU 使用率从高到低"
+        },
+        {
+          "value": "memory",
+          "label": "内存用量从高到低"
+        },
+        {
+          "value": "disk",
+          "label": "硬盘用量从高到低"
+        },
+        {
+          "value": "traffic",
+          "label": "本期流量从高到低"
+        },
+        {
+          "value": "upload",
+          "label": "上传速率从高到低"
+        },
+        {
+          "value": "download",
+          "label": "下载速率从高到低"
+        }
+      ],
+      "help": "无指标的节点排在有效指标后；访客已保存的排序优先，关闭排序选择时固定使用此项。"
+    },
+    {
+      "key": "offline_last",
+      "type": "boolean",
+      "label": "离线节点排到末尾",
+      "default": false,
+      "help": "在当前筛选和排序结果中优先显示在线节点；访客在首页显示设置中可保存自己的选择。"
+    },
+    {
+      "key": "show_cpu",
+      "type": "boolean",
+      "label": "显示 CPU 使用率",
+      "default": true,
+      "help": "控制卡片中的 CPU 指标与负载、列表中的 CPU 列。"
+    },
+    {
+      "key": "show_memory",
+      "type": "boolean",
+      "label": "显示内存用量",
+      "default": true,
+      "help": "控制卡片和列表中的内存指标；不影响总览统计。"
+    },
+    {
+      "key": "show_disk",
+      "type": "boolean",
+      "label": "显示硬盘用量",
+      "default": true,
+      "help": "控制卡片和列表中的硬盘指标；不影响总览统计。"
+    },
+    {
+      "key": "show_traffic",
+      "type": "boolean",
+      "label": "显示本期流量",
+      "default": true,
+      "help": "显示按 Monitor 计费方向计算的本期用量与配额；未设置配额时显示 ∞。"
+    },
+    {
+      "key": "show_speed",
+      "type": "boolean",
+      "label": "显示实时上下行",
+      "default": true,
+      "help": "控制卡片和列表中的上传、下载速率；地球速率和总览卡片单独配置。"
+    },
+    {
+      "key": "show_uptime",
+      "type": "boolean",
+      "label": "显示在线时长",
+      "default": true,
+      "help": "卡片显示在线时长或离线状态，列表显示在线时长；关闭后仍保留节点状态指示。"
+    },
+    {
+      "key": "show_total_traffic",
+      "type": "boolean",
+      "label": "卡片显示累计流量",
+      "default": true,
+      "help": "控制节点卡片中的累计上传与下载总量；总览流量单独配置。"
+    },
+    {
+      "key": "show_node_metadata",
+      "type": "boolean",
+      "label": "显示节点信息",
+      "default": true,
+      "help": "卡片显示操作系统、国旗、CPU 核心数和架构；列表显示系统、国旗和分组。关闭后仍可按这些信息搜索。"
+    },
+    {
+      "key": "show_expiry",
+      "type": "boolean",
+      "label": "显示到期时间",
+      "default": true,
+      "help": "控制卡片到期标签和列表到期列；天数使用主控返回值，未设置到期时间时不显示标签。"
+    },
+    {
+      "key": "expiry_warning_days",
+      "type": "number",
+      "label": "到期提醒天数",
+      "default": 7,
+      "min": 1,
+      "max": 365,
+      "help": "剩余天数小于等于此值时显示提醒色，范围 1–365 天；过期节点显示红色，需要开启到期时间。"
+    },
+    {
+      "key": "show_remark",
+      "type": "boolean",
+      "label": "卡片显示公开备注",
+      "default": true,
+      "help": "显示节点的公开备注；过长内容省略，鼠标悬停可查看全文。"
+    },
+    {
+      "type": "title",
+      "label": "05 · 首页网络延迟"
+    },
+    {
+      "key": "show_ping",
+      "type": "boolean",
+      "label": "卡片显示网络延迟",
+      "default": true,
+      "help": "仅为屏幕附近且已有指标的在线节点读取近一小时延迟，最多同时三个请求；关闭后不请求延迟接口，列表视图不显示延迟。"
+    },
+    {
+      "key": "ping_mode",
+      "type": "select",
+      "label": "默认延迟展示",
+      "default": "summary",
+      "options": [
+        {
+          "value": "summary",
+          "label": "摘要 · 延迟与丢包"
+        },
+        {
+          "value": "details",
+          "label": "明细 · 含历史色条"
+        }
+      ],
+      "help": "明细色条显示最近 24 个采样；访客可用首页「摘要 / 明细」按钮切换，并保存在当前浏览器。"
+    },
+    {
+      "key": "ping_max_lines",
+      "type": "number",
+      "label": "每张卡片最多显示线路数",
+      "default": 3,
+      "min": 1,
+      "max": 8,
+      "help": "范围 1–8，非整数向下取整；摘要和明细都生效，不足时只显示已匹配的线路。"
+    },
+    {
+      "key": "ping_tasks",
+      "type": "string",
+      "label": "探测线路名称或 ID",
+      "default": "",
+      "help": "按显示顺序填写完整名称或任务 ID，例如：电信,联通,移动。用逗号或换行分隔，名称须完全一致；留空自动显示全部可用线路，同名线路均会匹配。"
+    },
+    {
+      "key": "ping_refresh_interval",
+      "type": "number",
+      "label": "延迟刷新间隔（秒）",
+      "default": 60,
+      "min": 30,
+      "max": 600,
+      "help": "范围 30–600 秒，缓存使用同样的时长；节点滚出屏幕或页面切到后台时停止刷新。延迟显示最新采样，丢包率使用主控的整段窗口汇总。"
+    },
+    {
+      "type": "title",
+      "label": "06 · 费用展示与隐私"
+    },
+    {
+      "key": "show_price",
+      "type": "boolean",
+      "label": "显示节点费用",
+      "default": true,
+      "help": "在卡片和列表中显示各节点原币种金额，支持一次性与自定义付款周期，不合并不同币种。"
+    },
+    {
+      "key": "hide_price_logged_out",
+      "type": "boolean",
+      "label": "对未登录访客隐藏费用",
+      "default": false,
+      "help": "开启后只向已登录用户展示费用；同时需要开启「显示节点费用」。此设置只控制页面展示，不改变 Monitor 接口权限。"
+    },
+    {
+      "key": "hide_admin",
+      "type": "boolean",
+      "label": "对未登录访客隐藏后台入口",
+      "default": false,
+      "help": "隐藏首页右上角的后台管理入口，已登录用户仍可见；不改变 /admin 的登录要求或主控权限。"
+    },
+    {
+      "type": "title",
+      "label": "07 · 自定义背景与页脚"
+    },
+    {
+      "key": "background_enabled",
+      "type": "boolean",
+      "label": "启用自定义背景",
+      "default": true,
+      "help": "可暂时停用图片并保留地址；没有有效图片地址时使用内置翡翠渐变。"
+    },
+    {
+      "key": "background_light",
+      "type": "string",
+      "label": "浅色背景图片",
+      "default": "",
+      "help": "支持 http(s) 图片地址或以 / 开头的站内路径；留空使用内置背景。"
+    },
+    {
+      "key": "background_dark",
+      "type": "string",
+      "label": "深色背景图片",
+      "default": "",
+      "help": "支持 http(s) 图片地址或以 / 开头的站内路径；独立于浅色图片，留空使用内置深色背景。"
+    },
+    {
+      "key": "background_blur",
+      "type": "number",
+      "label": "背景模糊（像素）",
+      "default": 0,
+      "min": 0,
+      "max": 24,
+      "help": "范围 0–24 px，0 表示不模糊；仅对自定义背景图片生效。"
+    },
+    {
+      "key": "background_opacity",
+      "type": "number",
+      "label": "背景图片不透明度（%）",
+      "default": 25,
+      "min": 0,
+      "max": 100,
+      "help": "范围 0–100%，数值越大图片越清晰；默认 25% 保持文字易读，0 完全隐藏图片。"
+    },
+    {
+      "key": "background_show_grid",
+      "type": "boolean",
+      "label": "显示背景网格",
+      "default": true,
+      "help": "控制内置背景的透视网格；关闭后仍保留翡翠渐变，可与自定义图片搭配使用。"
+    },
+    {
+      "key": "footer_text",
+      "type": "string",
+      "label": "页脚文字 / 备案号",
+      "default": "",
+      "help": "显示在主题署名下方；留空不显示额外文字。"
+    },
+    {
+      "key": "footer_url",
+      "type": "string",
+      "label": "页脚链接",
+      "default": "",
+      "help": "仅接受 http/https 地址，需要同时填写页脚文字；留空或地址无效时只显示文字。"
+    }
   ]
 }

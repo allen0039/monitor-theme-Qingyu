@@ -21,6 +21,17 @@ export function parsePing(value: unknown): PingNetwork[] {
   })
 }
 
+export function selectPingNetworks(networks: PingNetwork[], tasks: string, maxLines: number): PingNetwork[] {
+  const selected = tasks.split(/[,，\n]+/).map((task) => task.trim()).filter(Boolean)
+  const ordered = selected.length ? selected.flatMap((task) => networks.filter((network) => network.name === task || String(network.id) === task)) : networks
+  const ids = new Set<number>()
+  return ordered.filter((network) => {
+    if (ids.has(network.id)) return false
+    ids.add(network.id)
+    return true
+  }).slice(0, Math.floor(maxLines))
+}
+
 interface Snapshot { networks: PingNetwork[]; at: number; state: 'loading' | 'ready' | 'error'; error: string }
 const cache = reactive(new Map<number, Snapshot>())
 const pending = new Map<number, Promise<void>>()
@@ -35,9 +46,9 @@ function drain() {
   }
 }
 
-function fetchPing(id: number, valid: () => boolean): Promise<void> {
+function fetchPing(id: number, valid: () => boolean, interval: number): Promise<void> {
   const existing = cache.get(id)
-  if (existing && Date.now() - existing.at < 60000) return Promise.resolve()
+  if (existing && Date.now() - existing.at < interval) return Promise.resolve()
   if (pending.has(id)) return pending.get(id)!
   const job = new Promise<void>((resolve) => {
     queue.push({ valid, resolve, run: async () => {
@@ -57,7 +68,7 @@ function fetchPing(id: number, valid: () => boolean): Promise<void> {
   return job
 }
 
-export function useNodePing(element: Ref<HTMLElement | null>, id: () => number, enabled: () => boolean) {
+export function useNodePing(element: Ref<HTMLElement | null>, id: () => number, enabled: () => boolean, refreshInterval: () => number = () => 60) {
   const visible = ref(false)
   const foreground = ref(!document.hidden)
   let observer: IntersectionObserver | null = null
@@ -70,8 +81,12 @@ export function useNodePing(element: Ref<HTMLElement | null>, id: () => number, 
     if (timer) clearTimeout(timer)
     if (!canRead()) return
     const nodeId = id()
-    void fetchPing(nodeId, () => canRead() && nodeId === id()).finally(() => {
-      if (current === generation && canRead()) timer = setTimeout(refresh, 60000)
+    const interval = refreshInterval() * 1000
+    void fetchPing(nodeId, () => canRead() && nodeId === id(), interval).finally(() => {
+      if (current === generation && canRead()) {
+        const at = cache.get(nodeId)?.at ?? Date.now()
+        timer = setTimeout(refresh, Math.max(1000, interval - (Date.now() - at)))
+      }
     })
   }
   const onVisibility = () => { foreground.value = !document.hidden }
@@ -82,7 +97,7 @@ export function useNodePing(element: Ref<HTMLElement | null>, id: () => number, 
     } else visible.value = true
     document.addEventListener('visibilitychange', onVisibility)
   })
-  watch([visible, foreground, enabled, id], refresh, { immediate: true })
+  watch([visible, foreground, enabled, id, refreshInterval], refresh, { immediate: true })
   onBeforeUnmount(() => {
     generation++
     observer?.disconnect()

@@ -5,7 +5,7 @@ import worldPaths from '../assets/world-map.json'
 import { clustersOf } from '../lib/geo'
 import { flagUrl } from '../lib/assets'
 import { formatBytes } from '../lib/format'
-const props = defineProps<{ nodes: MonitorNode[] }>()
+const props = withDefaults(defineProps<{ nodes: MonitorNode[]; showLabels?: boolean }>(), { showLabels: true })
 const clusters = computed(() => clustersOf(props.nodes))
 const uid = useId().replaceAll(':', '')
 const position = (lat: number, lng: number) => [400 + lng * 800 / 360, 200 - lat * 800 / 360]
@@ -22,7 +22,7 @@ const position = (lat: number, lng: number) => [400 + lng * 800 / 360, 200 - lat
         <title>{{ cluster.name }} · {{ cluster.online }}/{{ cluster.total }} 在线 · ↑ {{ formatBytes(cluster.tx, true) }} ↓ {{ formatBytes(cluster.rx, true) }}</title>
         <circle r="9" :fill="cluster.online ? 'var(--emerald)' : 'var(--warning)'" opacity=".15" />
         <circle r="3" :fill="cluster.online ? 'var(--emerald)' : 'var(--warning)'" />
-        <image v-if="flagUrl(cluster.code)" :href="flagUrl(cluster.code)" x="5" y="-18" width="20" height="14" />
+        <image v-if="showLabels && flagUrl(cluster.code)" :href="flagUrl(cluster.code)" x="5" y="-18" width="20" height="14" />
       </g>
     </svg>
     <span class="visual-caption">{{ clusters.length }} 个国家和地区</span>

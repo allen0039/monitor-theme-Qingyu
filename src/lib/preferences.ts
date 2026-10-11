@@ -5,19 +5,29 @@ import { record } from './data'
 const KEY = 'boxpro.preferences'
 const MODES: EarthMode[] = ['earth', 'earth-stop', 'map', 'summary', 'hide']
 const SORTS: SortKey[] = ['default', 'name', 'cpu', 'memory', 'disk', 'traffic', 'upload', 'download']
+const THEMES: ThemeMode[] = ['auto', 'beijing', 'light', 'dark']
+
+export function isDarkTheme(theme: ThemeMode, systemDark: boolean, now = new Date()): boolean {
+  const beijingHour = (now.getUTCHours() + 8) % 24
+  return theme === 'dark' || (theme === 'auto' && systemDark) || (theme === 'beijing' && (beijingHour < 6 || beijingHour >= 18))
+}
+
 export function usePreferences(config: { value: ThemeConfig }) {
   let saved: Record<string, unknown> = {}
   try { saved = record(JSON.parse(localStorage.getItem(KEY) || '{}')) } catch {}
-  const theme = ref<ThemeMode>(['auto', 'light', 'dark'].includes(String(saved.theme)) ? saved.theme as ThemeMode : 'auto')
+  const themeOverride = ref<ThemeMode | null>(THEMES.includes(saved.theme as ThemeMode) ? saved.theme as ThemeMode : null)
   const layoutOverride = ref<Layout | null>(['card', 'list'].includes(String(saved.layout)) ? saved.layout as Layout : null)
   const earthOverride = ref<EarthMode | null>(MODES.includes(saved.earth as EarthMode) ? saved.earth as EarthMode : null)
   const offlineOverride = ref<boolean | null>(typeof saved.offlineLast === 'boolean' ? saved.offlineLast : null)
-  const sort = ref<SortKey>(SORTS.includes(saved.sort as SortKey) ? saved.sort as SortKey : 'default')
-  const pingDetails = ref(saved.pingDetails === true)
+  const sortOverride = ref<SortKey | null>(SORTS.includes(saved.sort as SortKey) ? saved.sort as SortKey : null)
+  const pingOverride = ref<boolean | null>(typeof saved.pingDetails === 'boolean' ? saved.pingDetails : null)
   const group = ref<string | null>(typeof saved.group === 'string' ? saved.group : null)
+  const theme = computed({ get: () => themeOverride.value ?? config.value.theme_mode, set: (v: ThemeMode) => { themeOverride.value = v } })
   const layout = computed({ get: () => layoutOverride.value ?? config.value.layout, set: (v: Layout) => { layoutOverride.value = v } })
   const earth = computed({ get: () => earthOverride.value ?? config.value.earth_mode, set: (v: EarthMode) => { earthOverride.value = v } })
   const offlineLast = computed({ get: () => offlineOverride.value ?? config.value.offline_last, set: (v: boolean) => { offlineOverride.value = v } })
+  const sort = computed({ get: () => sortOverride.value ?? config.value.default_sort, set: (v: SortKey) => { sortOverride.value = v } })
+  const pingDetails = computed({ get: () => pingOverride.value ?? config.value.ping_mode === 'details', set: (v: boolean) => { pingOverride.value = v } })
   const scheme = matchMedia('(prefers-color-scheme: dark)')
   const motion = matchMedia('(prefers-reduced-motion: reduce)')
   const systemDark = ref(scheme.matches), systemReduce = ref(motion.matches)
@@ -25,18 +35,25 @@ export function usePreferences(config: { value: ThemeConfig }) {
   const onMotion = (event: MediaQueryListEvent) => { systemReduce.value = event.matches }
   scheme.addEventListener('change', onScheme)
   motion.addEventListener('change', onMotion)
-  const dark = computed(() => theme.value === 'dark' || (theme.value === 'auto' && systemDark.value))
+  const now = ref(new Date())
+  const clock = setInterval(() => { now.value = new Date() }, 30000)
+  const dark = computed(() => isDarkTheme(theme.value, systemDark.value, now.value))
   const reduceMotion = computed(() => config.value.reduce_motion || systemReduce.value)
   watch(dark, (value) => {
     document.documentElement.classList.toggle('dark', value)
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', value ? '#101a24' : '#f8faf9')
   }, { immediate: true })
-  watch([theme, layoutOverride, earthOverride, offlineOverride, sort, pingDetails, group], () => {
+  watch([themeOverride, layoutOverride, earthOverride, offlineOverride, sortOverride, pingOverride, group], () => {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ theme: theme.value, layout: layoutOverride.value, earth: earthOverride.value, offlineLast: offlineOverride.value, sort: sort.value, pingDetails: pingDetails.value, group: group.value }))
+      localStorage.setItem(KEY, JSON.stringify({ theme: themeOverride.value, layout: layoutOverride.value, earth: earthOverride.value, offlineLast: offlineOverride.value, sort: sortOverride.value, pingDetails: pingOverride.value, group: group.value }))
     } catch { /* Preferences are optional when browser storage is unavailable. */ }
   })
-  onBeforeUnmount(() => { scheme.removeEventListener('change', onScheme); motion.removeEventListener('change', onMotion) })
-  function cycleTheme() { theme.value = theme.value === 'auto' ? 'light' : theme.value === 'light' ? 'dark' : 'auto' }
-  return { theme, layout, earth, offlineLast, sort, pingDetails, group, dark, reduceMotion, cycleTheme }
+  onBeforeUnmount(() => { clearInterval(clock); scheme.removeEventListener('change', onScheme); motion.removeEventListener('change', onMotion) })
+  function cycleTheme() { theme.value = THEMES[(THEMES.indexOf(theme.value) + 1) % THEMES.length] }
+  function resetPreferences() {
+    themeOverride.value = layoutOverride.value = earthOverride.value = sortOverride.value = null
+    offlineOverride.value = pingOverride.value = null
+    group.value = null
+  }
+  return { theme, layout, earth, offlineLast, sort, pingDetails, group, dark, reduceMotion, cycleTheme, resetPreferences }
 }

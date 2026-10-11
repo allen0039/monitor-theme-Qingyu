@@ -1,5 +1,5 @@
 import manifest from '../../theme.json'
-import type { ThemeConfig } from '../types'
+import type { SummaryKey, ThemeConfig } from '../types'
 import { record } from './data'
 
 interface Field { key?: string; type: string; default?: unknown; min?: number; max?: number; options?: { value: string }[] }
@@ -16,6 +16,19 @@ export function parseConfig(value: unknown): ThemeConfig {
   })) as unknown as ThemeConfig
 }
 export const defaultConfig = () => parseConfig({})
+
+const SUMMARY_PRESETS: Record<Exclude<ThemeConfig['summary_preset'], 'custom'>, SummaryKey[]> = {
+  default: ['memory', 'online', 'upload', 'disk', 'traffic', 'download'],
+  resources: ['cpu', 'memory', 'disk'],
+  network: ['traffic', 'upload', 'download'],
+  status: ['online', 'offline', 'regions'],
+  all: ['memory', 'online', 'upload', 'disk', 'traffic', 'download', 'cpu', 'offline', 'regions'],
+}
+export function summaryKeys(config: ThemeConfig): SummaryKey[] {
+  if (config.summary_preset !== 'custom') return SUMMARY_PRESETS[config.summary_preset]
+  const keys = [...new Set(config.summary_cards.split(/[\s,，]+/))]
+  return keys.filter((key): key is SummaryKey => SUMMARY_PRESETS.all.includes(key as SummaryKey))
+}
 export async function loadConfig(): Promise<ThemeConfig> {
   try {
     const response = await fetch(`/api/themes/${manifest.short}/config`, { signal: AbortSignal.timeout(10000) })

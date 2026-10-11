@@ -51,3 +51,9 @@ export function safeUrl(value: string): string {
     return ['http:', 'https:'].includes(url.protocol) ? url.href : ''
   } catch { return '' }
 }
+
+export function safeImageUrl(value: string): string {
+  // A local path stays on the hub; protocol-relative URLs are not local paths.
+  if (/^\/(?!\/)/.test(value) && !/[\\\s]/.test(value)) return value
+  return safeUrl(value)
+}

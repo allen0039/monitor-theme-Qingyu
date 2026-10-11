@@ -50,22 +50,59 @@ export interface SiteInfo {
 
 export type EarthMode = 'earth' | 'earth-stop' | 'map' | 'summary' | 'hide'
 export type Layout = 'card' | 'list'
-export type ThemeMode = 'auto' | 'light' | 'dark'
+export type ThemeMode = 'auto' | 'beijing' | 'light' | 'dark'
+export type SummaryKey = 'memory' | 'disk' | 'online' | 'offline' | 'traffic' | 'upload' | 'download' | 'cpu' | 'regions'
 export type SortKey = 'default' | 'name' | 'cpu' | 'memory' | 'disk' | 'traffic' | 'upload' | 'download'
 export type ConnectionState = 'connecting' | 'live' | 'polling' | 'reconnecting' | 'paused' | 'closed'
 
 export interface ThemeConfig {
+  theme_mode: ThemeMode
+  card_size: 'mini' | 'compact' | 'comfortable' | 'large'
+  site_icon: string
+  poll_interval: number
+  notice_enabled: boolean
+  notice_title: string
   notice: string
   earth_mode: EarthMode
+  earth_rotation_speed: number
+  earth_show_labels: boolean
+  earth_show_rates: boolean
+  show_group_tabs: boolean
+  show_search: boolean
+  show_sort: boolean
+  show_summary: boolean
+  summary_preset: 'default' | 'resources' | 'network' | 'status' | 'all' | 'custom'
+  summary_cards: string
+  summary_scope: 'group' | 'all'
   layout: Layout
+  default_sort: SortKey
   offline_last: boolean
+  show_cpu: boolean
+  show_memory: boolean
+  show_disk: boolean
+  show_traffic: boolean
+  show_speed: boolean
+  show_uptime: boolean
+  show_total_traffic: boolean
+  show_node_metadata: boolean
+  show_expiry: boolean
+  expiry_warning_days: number
+  show_remark: boolean
   show_ping: boolean
+  ping_mode: 'summary' | 'details'
+  ping_max_lines: number
+  ping_tasks: string
+  ping_refresh_interval: number
   show_price: boolean
+  hide_price_logged_out: boolean
   hide_admin: boolean
   reduce_motion: boolean
+  background_enabled: boolean
   background_light: string
   background_dark: string
   background_blur: number
+  background_opacity: number
+  background_show_grid: boolean
   footer_text: string
   footer_url: string
 }

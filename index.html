@@ -11,7 +11,8 @@
     <script>
       try {
         const preference = JSON.parse(localStorage.getItem('boxpro.preferences') || '{}').theme || 'auto'
-        const dark = preference === 'dark' || (preference === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)
+        const hour = (new Date().getUTCHours() + 8) % 24
+        const dark = preference === 'dark' || (preference === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches) || (preference === 'beijing' && (hour < 6 || hour >= 18))
         document.documentElement.classList.toggle('dark', dark)
       } catch {}
     </script>

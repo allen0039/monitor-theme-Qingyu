@@ -8,7 +8,7 @@ interface Callbacks {
   error: (message: string | null, closed?: boolean) => void
 }
 
-export function startStream(callbacks: Callbacks): () => void {
+export function startStream(callbacks: Callbacks, pollInterval = 5000): () => void {
   let socket: WebSocket | null = null
   let poll: ReturnType<typeof setInterval> | null = null
   let retry: ReturnType<typeof setTimeout> | null = null
@@ -42,7 +42,7 @@ export function startStream(callbacks: Callbacks): () => void {
     }
   }
 
-  function ensurePoll() { poll ??= setInterval(() => { void fetchOnce() }, 5000) }
+  function ensurePoll() { poll ??= setInterval(() => { void fetchOnce() }, pollInterval) }
   function connect() {
     if (stopped || document.hidden) return
     const currentEpoch = epoch

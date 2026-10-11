@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { MonitorNode } from '../types'
-import { useNodePing } from '../lib/ping'
-const props = defineProps<{ node: MonitorNode; details: boolean }>()
+import type { MonitorNode, ThemeConfig } from '../types'
+import { selectPingNetworks, useNodePing } from '../lib/ping'
+const props = defineProps<{ node: MonitorNode; details: boolean; config: ThemeConfig }>()
 const element = ref<HTMLElement | null>(null)
-const snapshot = useNodePing(element, () => props.node.id, () => props.node.online && props.node.metrics !== null)
-const networks = computed(() => snapshot.value?.networks.slice(0, props.details ? 3 : 6) ?? [])
+const snapshot = useNodePing(element, () => props.node.id, () => props.node.online && props.node.metrics !== null, () => props.config.ping_refresh_interval)
+const networks = computed(() => selectPingNetworks(snapshot.value?.networks ?? [], props.config.ping_tasks, props.config.ping_max_lines))
 const colors = ['var(--emerald)', 'var(--blue)', '#b48cd2', 'var(--warning)', '#ec8f79', '#6c9b99']
 function latency(value: number | null | undefined): string { return value === null ? '超时' : value === undefined ? '—' : `${value.toFixed(0)} ms` }
 function loss(value: number | null): string { return value === null ? '—' : `${value.toFixed(value > 0 && value < 1 ? 2 : 1)}%` }
@@ -17,7 +17,7 @@ function loss(value: number | null): string { return value === null ? '—' : `$
     <div v-else-if="!snapshot || snapshot.state === 'loading'" class="ping-empty">读取延迟…</div>
     <div v-else-if="snapshot.state === 'error'" class="ping-empty" :title="snapshot.error">延迟暂时不可用</div>
     <div v-else-if="!networks.length" class="ping-empty">暂无延迟监控</div>
-    <div v-else class="ping-networks" :class="{ 'ping-detailed': details }">
+    <div v-else class="ping-networks" :class="{ 'ping-detailed': details }" :style="{ '--ping-columns': Math.min(3, networks.length) }">
       <div v-for="(network, index) in networks" :key="network.id" class="ping-network" :style="{ '--probe-color': colors[index % colors.length] }">
         <div class="ping-network-top"><span class="probe-name" :title="network.name"><i />{{ network.name }}</span><strong>{{ latency(network.latest?.latency) }}</strong></div>
         <div class="ping-loss" :class="{ 'loss-alert': network.loss !== null && network.loss > 0 }">丢包 {{ loss(network.loss) }}</div>

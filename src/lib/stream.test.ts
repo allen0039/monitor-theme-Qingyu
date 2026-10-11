@@ -31,6 +31,17 @@ beforeEach(() => {
 afterEach(() => { dispose?.(); dispose = undefined; vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('Monitor 实时连接', () => {
+  it('断线轮询按主题间隔刷新，收到推送后停止重复轮询', async () => {
+    const cb = callbacks(); dispose = startStream(cb, 3000); await flush()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(2999)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(fetch).toHaveBeenCalledTimes(2)
+    FakeSocket.instances[0].push(payload(2)); await flush()
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
   it('使用压缩同源 WebSocket，并接收旧 hub 的文本帧', async () => {
     const cb = callbacks(); dispose = startStream(cb)
     expect(FakeSocket.instances[0].url).toBe('wss://hub.example.com/api/ws?gzip')

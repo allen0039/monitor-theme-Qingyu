@@ -8,7 +8,7 @@ import { flagUrl } from '../lib/assets'
 import { formatBytes } from '../lib/format'
 import GeoMap from './GeoMap.vue'
 
-const props = defineProps<{ nodes: MonitorNode[]; rotate: boolean; dark: boolean; reduceMotion: boolean }>()
+const props = defineProps<{ nodes: MonitorNode[]; rotate: boolean; dark: boolean; reduceMotion: boolean; rotationSpeed: number; showLabels: boolean; showRates: boolean }>()
 const host = ref<HTMLElement | null>(null), failed = ref(false), ready = ref(false)
 const clusters = computed(() => clustersOf(props.nodes))
 let globe: GlobeInstance | null = null, observer: ResizeObserver | null = null, visibilityObserver: IntersectionObserver | null = null
@@ -24,6 +24,7 @@ function createLabel(value: object): HTMLElement {
   root.title = `${c.name} · ${c.online}/${c.total} 在线`
   const panel = document.createElement('div')
   panel.className = 'earth-rate-panel'
+  panel.hidden = !props.showRates
   const textNodes: Text[] = []
   for (const [direction, rate] of [['up', c.tx], ['down', c.rx]] as const) {
     const row = document.createElement('div')
@@ -46,7 +47,7 @@ function createLabel(value: object): HTMLElement {
 function syncData() {
   if (!globe) return
   labelElements.clear()
-  globe.htmlElementsData(clusters.value)
+  globe.htmlElementsData(props.showLabels ? clusters.value : [])
   globe.pointsData(clusters.value)
 }
 function syncRates() {
@@ -68,6 +69,7 @@ function syncVisibility() {
   if (visible) { globe.resumeAnimation(); resize() }
   else globe.pauseAnimation()
   globe.controls().autoRotate = visible && props.rotate && !props.reduceMotion
+  globe.controls().autoRotateSpeed = props.rotationSpeed
 }
 onMounted(async () => {
   try {
@@ -106,7 +108,7 @@ onMounted(async () => {
     fill.position.set(-1.2, .2, 1.2)
     globe.lights([new THREE.AmbientLight(0xffffff, 1.35), keyLight, fill])
     const controls = globe.controls()
-    controls.autoRotateSpeed = 1.6
+    controls.autoRotateSpeed = props.rotationSpeed
     controls.enableDamping = true
     controls.enableZoom = controls.enablePan = false
     controls.rotateSpeed = .55
@@ -131,7 +133,8 @@ onMounted(async () => {
 })
 watch(signature, syncData)
 watch(clusters, syncRates)
-watch(() => [props.rotate, props.reduceMotion], syncVisibility)
+watch(() => [props.rotate, props.reduceMotion, props.rotationSpeed], syncVisibility)
+watch(() => [props.showLabels, props.showRates], syncData)
 onBeforeUnmount(() => {
   destroyed = true
   observer?.disconnect()
@@ -147,7 +150,7 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div class="globe-panel" :class="{ 'globe-dark': dark }">
-    <GeoMap v-if="failed" :nodes="nodes" />
+    <GeoMap v-if="failed" :nodes="nodes" :show-labels="showLabels" />
     <template v-else>
       <div v-if="!ready" class="earth-placeholder" aria-label="地球加载中" />
       <div ref="host" class="globe-host" role="img" aria-label="交互地球，可拖动查看节点地区" />
