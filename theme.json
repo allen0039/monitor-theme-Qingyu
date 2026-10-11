@@ -1,7 +1,7 @@
 {
   "name": "Emerald Globe Pro · 卡片测试版",
   "short": "boxpro_cardtest",
-  "description": "独立安装的紧凑卡片测试版：优化资源信息，并排显示速率、累计流量和费用到期。",
+  "description": "独立安装的紧凑卡片测试版：中间并排显示速率与费用到期，在线下方显示累计流量。",
   "version": "0.2.1",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
@@ -365,7 +365,7 @@
       "type": "boolean",
       "label": "卡片显示累计流量",
       "default": true,
-      "help": "在卡片中间显示累计上传与下载流量，右下角附加信息保留累计总量；总览流量单独配置。"
+      "help": "在卡片在线时长下方显示累计上传与下载流量；总览流量单独配置。"
     },
     {
       "key": "show_node_metadata",
