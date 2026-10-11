@@ -160,9 +160,9 @@ onBeforeUnmount(() => { alive = false; stopStream(); document.removeEventListene
             <div v-if="config.show_search" class="search-field"><Search /><input v-model="search" type="search" placeholder="搜索名称、地区、系统" aria-label="搜索节点" /><button v-if="search" class="search-clear" aria-label="清空搜索" type="button" @click="search = ''"><X /></button></div>
           </div>
         </div>
-        <TransitionGroup v-if="filtered.length && layout === 'card'" name="nodes" tag="div" class="nodes-grid" :class="`card-size-${config.card_size}`" :css="!reduceMotion" :appear="!reduceMotion">
+        <div v-if="filtered.length && layout === 'card'" class="nodes-grid" :class="`card-size-${config.card_size}`">
           <NodeCard v-for="node in filtered" :key="node.id" :node="node" :config="config" :show-ping="configLoaded && config.show_ping" :ping-details="pingDetails" :show-price="showPrice" />
-        </TransitionGroup>
+        </div>
         <NodeList v-else-if="filtered.length" :nodes="filtered" :config="config" :show-price="showPrice" />
         <div v-else class="empty-state"><Search v-if="effectiveSearch || effectiveGroup !== null" /><Server v-else /><h2>{{ nodes.length ? '没有匹配的节点' : '暂无节点' }}</h2><p>{{ nodes.length ? '试试其它关键词或节点分组。' : '节点接入 Monitor 后会显示在这里。' }}</p><button v-if="nodes.length" type="button" class="text-button" @click="resetFilters">清除筛选</button><a v-else-if="site.authed" href="/admin">前往后台接入节点<ExternalLink /></a></div>
         <p v-if="filtered.length && effectiveSearch.trim()" class="search-count">找到 {{ filtered.length }} 个节点</p>

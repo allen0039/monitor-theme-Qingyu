@@ -15,7 +15,8 @@ body { min-width: 0; }
 .group-tabs button { min-height: 32px; font-size: 12px; border-radius: 7px; padding: 5px 12px; }
 .nodes-grid { gap: 16px; }
 .card-size-mini { gap: 12px; }
-.node-card { --card-section-gap: 16px; --card-row-gap: 8px; border-radius: 16px; border-color: color-mix(in srgb, var(--line) 48%, transparent); background: color-mix(in srgb, var(--surface-solid) 82%, transparent); backdrop-filter: blur(12px); }
+/* Keep live card content on the normal paint path while scrolling. */
+.node-card { --card-section-gap: 16px; --card-row-gap: 8px; border-radius: 16px; border-color: color-mix(in srgb, var(--line) 48%, transparent); background: color-mix(in srgb, var(--surface-solid) 82%, transparent); }
 .card-size-mini .node-card { --card-section-gap: 12px; }
 .node-card-header { padding: var(--card-padding-top, 18px) var(--card-padding, 16px) 8px; }
 .node-card-chips { display: flex; gap: 6px; padding: 0 var(--card-padding, 16px) var(--card-section-gap); font-size: var(--card-detail-size, 10px); color: var(--muted); }

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { createSSRApp } from 'vue'
+import { renderToString } from '@vue/server-renderer'
 import { parsePing } from './ping'
 import { historyBuckets, latencyLabel, networkLatency, windowSummary } from './ping-display'
 import { cardBytes, cardExpiry, cardPrice, remarkParts } from './format'
+import PingHistoryBars from '../components/PingHistoryBars.vue'
 
 describe('原版式网络摘要', () => {
   it('使用线路平均值再取平均，不让高频线路压过其他线路', () => {
@@ -30,6 +33,12 @@ describe('原版式网络摘要', () => {
     expect(latencyLabel(null)).toBe('超时')
     expect(latencyLabel(null, false)).toBe('—')
     expect(windowSummary([...timeout, ...parsePing({ probes: { 2: '未接入' }, ping: [], loss: {} })]).loss).toBeNull()
+  })
+  it('无网络采样时仍保留灰色占位分段条', async () => {
+    const html = await renderToString(createSSRApp(PingHistoryBars, { buckets: [], metric: 'latency', label: '近期延迟分段', emptyTitle: '未配置网络探针' }))
+    expect(html).toContain('ping-history-empty')
+    expect(html.match(/ping-tone-unknown/g)).toHaveLength(10)
+    expect(html).toContain('未配置网络探针')
   })
   it('损坏的丢包字段保持未知，不按省略的零丢包处理', () => {
     const broken = parsePing({ ping: [{ task_id: 1, ts: 60, latency: 20, loss: 'wrong' }], loss: { 1: 'wrong' } })
