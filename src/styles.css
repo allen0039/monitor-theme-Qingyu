@@ -348,6 +348,8 @@ svg { flex-shrink: 0; }
 .card-size-mini { --card-min: 240px; --card-padding: 12px; --card-padding-top: 11px; --card-padding-bottom: 11px; --card-title-size: 13px; --card-metric-size: 11px; --card-detail-size: 9px; --card-fact-size: 10px; --card-resource-gap: 6px; }
 .card-size-comfortable { --card-min: 336px; --card-padding: 20px; --card-padding-top: 18px; --card-padding-bottom: 18px; --card-title-size: 17px; --card-metric-size: 13px; --card-detail-size: 11px; --card-fact-size: 12px; --card-resource-gap: 8px; }
 .card-size-large { --card-min: 380px; --card-padding: 24px; --card-padding-top: 22px; --card-padding-bottom: 22px; --card-title-size: 18px; --card-metric-size: 14px; --card-detail-size: 12px; --card-fact-size: 13px; --card-resource-gap: 10px; }
+.node-card { --meter-warning: #f59e0b; --meter-danger: #dc2626; }
+.dark .node-card { --meter-warning: #fbbf24; --meter-danger: #f87171; }
 .node-card .node-resources { row-gap: max(9px, var(--card-resource-gap, 6px)); }
 .node-card .meter-name { display: inline-flex; align-items: center; min-width: 0; gap: 4px; white-space: nowrap; }
 .node-card .meter-icon { width: 13px; height: 13px; stroke-width: 2; }

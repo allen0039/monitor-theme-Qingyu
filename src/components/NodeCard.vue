@@ -38,9 +38,9 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
     </div>
     <div class="node-card-body">
       <div v-if="config.show_cpu || config.show_memory || config.show_disk || config.show_traffic" class="node-resources">
-        <ResourceMeter v-if="config.show_cpu" icon="cpu" label="CPU" :value="node.metrics?.cpu ?? null" :detail="node.metrics ? node.metrics.load.map(n => n.toFixed(2)).join(', ') : '暂无指标'" />
-        <ResourceMeter v-if="config.show_memory" icon="memory" label="内存" :value="mem" :detail="`${cardBytes(node.metrics?.mem_used)} / ${cardBytes(node.mem_total)}`" :detail-title="`${formatBytes(node.metrics?.mem_used)} / ${formatBytes(node.mem_total)}`" />
-        <ResourceMeter v-if="config.show_disk" icon="disk" label="硬盘" :value="disk" :detail="`${cardBytes(node.metrics?.disk_used)} / ${cardBytes(node.disk_total)}`" :detail-title="`${formatBytes(node.metrics?.disk_used)} / ${formatBytes(node.disk_total)}`" />
+        <ResourceMeter v-if="config.show_cpu" icon="cpu" label="CPU" :value="node.metrics?.cpu ?? null" :detail="node.metrics ? node.metrics.load.map(n => n.toFixed(2)).join(', ') : '暂无指标'" :warning-at="60" :danger-at="80" />
+        <ResourceMeter v-if="config.show_memory" icon="memory" label="内存" :value="mem" :detail="`${cardBytes(node.metrics?.mem_used)} / ${cardBytes(node.mem_total)}`" :detail-title="`${formatBytes(node.metrics?.mem_used)} / ${formatBytes(node.mem_total)}`" :warning-at="60" :danger-at="80" />
+        <ResourceMeter v-if="config.show_disk" icon="disk" label="硬盘" :value="disk" :detail="`${cardBytes(node.metrics?.disk_used)} / ${cardBytes(node.disk_total)}`" :detail-title="`${formatBytes(node.metrics?.disk_used)} / ${formatBytes(node.disk_total)}`" :warning-at="60" :danger-at="80" />
         <ResourceMeter v-if="config.show_traffic" icon="traffic" label="流量" :value="traffic" :detail="`${cardBytes(node.month_used)} / ${node.traffic_limit ? cardBytes(node.traffic_limit) : '∞'}`" :detail-title="`${formatBytes(node.month_used)} / ${node.traffic_limit ? formatBytes(node.traffic_limit) : '∞'}`" :warning-at="80" :danger-at="100" />
       </div>
       <div v-if="highlightCount" class="node-highlights" :style="{ '--highlight-count': highlightCount }">
