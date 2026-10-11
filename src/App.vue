@@ -32,6 +32,9 @@ const connection = ref<ConnectionState>('connecting'), error = ref<string | null
 const infoError = ref<string | null>(null), search = ref(''), iconFailed = ref(false)
 const settingsMenu = ref<HTMLDetailsElement | null>(null)
 const financeOpen = ref(false)
+const publicFinanceOpen = ref(false)
+const summaryCurrency = ref(config.value.finance_currency)
+watch(() => config.value.finance_currency, currency => { summaryCurrency.value = currency })
 const lastUpdated = ref<Date | null>(null)
 const { theme, layout, earth, sort, group, offlineLast, pingDetails, dark, reduceMotion, cycleTheme, resetPreferences } = usePreferences(config)
 const groups = computed(() => groupsOf(nodes.value ?? []))
@@ -46,7 +49,7 @@ const showOverview = computed(() => earth.value !== 'hide' && (hasVisual.value |
 const summaryNodes = computed(() => config.value.summary_scope === 'all' ? nodes.value ?? [] : grouped.value)
 const showPrice = computed(() => configLoaded.value && !closed.value && config.value.show_price && (!config.value.hide_price_logged_out || (site.value.authed && !infoError.value)))
 const canCalculate = computed(() => showPrice.value && config.value.show_personal_finance && nodes.value !== null)
-const needsExchangeRates = computed(() => showPrice.value && nodes.value !== null && ((financeOpen.value && canCalculate.value) || (showOverview.value && showSummary.value && cards.value.includes('remaining_value') && summaryNodes.value.some(node => node.price && resolveFinanceCurrency(node.currency) && resolveFinanceCurrency(node.currency) !== config.value.finance_currency))))
+const needsExchangeRates = computed(() => showPrice.value && nodes.value !== null && ((financeOpen.value && canCalculate.value) || (showOverview.value && showSummary.value && cards.value.includes('remaining_value') && (publicFinanceOpen.value || summaryNodes.value.some(node => node.price && resolveFinanceCurrency(node.currency) && resolveFinanceCurrency(node.currency) !== summaryCurrency.value)))))
 const { snapshot: exchange, loading: ratesLoading } = useExchangeRates(needsExchangeRates)
 watch(canCalculate, allowed => { if (!allowed) financeOpen.value = false })
 const connectionLabel = computed(() => error.value ? '更新中断' : {
@@ -152,7 +155,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
       <div v-if="(error || infoError) && nodes !== null" class="error-banner" role="status"><CircleAlert /><span>{{ error || infoError }}；页面保留最近一次数据。</span><button type="button" @click="retry"><RotateCcw />重试</button></div>
       <template v-if="nodes !== null">
         <section v-if="showOverview" class="overview" :class="{ 'overview-compact': !hasVisual, 'overview-visual-only': !showSummary }" aria-label="节点概况">
-          <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :show-price="showPrice" :currency="config.finance_currency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" :can-calculate="canCalculate" @open-finance="financeOpen = true" />
+          <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :show-price="showPrice" v-model:currency="summaryCurrency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" @public-open-change="publicFinanceOpen = $event" />
           <div v-if="hasVisual" class="overview-visual">
             <NodeStatusBadges v-if="config.show_node_status" class="visual-node-status" :nodes="grouped" :group="effectiveGroup" />
             <GeoMap v-if="earth === 'map'" :nodes="grouped" :show-labels="config.earth_show_labels" />

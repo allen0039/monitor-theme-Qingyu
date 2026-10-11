@@ -2,7 +2,7 @@ import type { MonitorNode } from '../types'
 
 // Reference rates and currency symbols adapted from the original Komari theme.
 // These are only estimates; fetched rates and dated caches take precedence.
-const CURRENCY_CONFIG = {
+export const CURRENCY_CONFIG = {
   CNY: [1, '¥'], USD: [0.14799, '$'], EUR: [0.1275, '€'], GBP: [0.11027, '£'],
   JPY: [23.707, '¥'], HKD: [1.1594, 'HK$'], KRW: [224.11, '₩'], AUD: [0.20941, 'A$'],
   CAD: [0.20691, 'C$'], SGD: [0.18975, 'S$'], CHF: [0.11746, 'CHF'], NZD: [0.2535, 'NZ$'],

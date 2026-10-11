@@ -4,7 +4,7 @@ import { Search, X } from '@lucide/vue'
 import type { MonitorNode } from '../types'
 import type { ExchangeRateSnapshot } from '../lib/exchange-rates'
 import { exchangeRateLabel } from '../lib/exchange-rates'
-import { FINANCE_CURRENCIES, FINANCE_LABELS, calculateNodeFinance, financeAmount, financeCoverage, financeIssueText, summarizeFinance, type FinanceMetricKey } from '../lib/finance'
+import { FINANCE_CURRENCIES, calculateNodeFinance, financeAmount, financeCoverage, financeIssueText, summarizeFinance, type FinanceMetricKey } from '../lib/finance'
 import { useFinancePreferences } from '../lib/finance-preferences'
 import { filterNodes, groupsOf, inGroup, regionName } from '../lib/data'
 import { flagUrl } from '../lib/assets'
@@ -22,8 +22,15 @@ const hasFilter = computed(() => group.value !== null || !!search.value.trim())
 const allFilteredSelected = computed(() => filtered.value.length > 0 && filtered.value.every(node => selectedSet.value.has(node.id)))
 const values = computed(() => new Map(props.nodes.map(node => [node.id, calculateNodeFinance(node, currency.value, props.exchange.rates)])))
 const summary = computed(() => summarizeFinance(selectedNodes.value, currency.value, props.exchange.rates))
-const metricKeys: FinanceMetricKey[] = ['total', 'monthly', 'remaining']
+const metricKeys: FinanceMetricKey[] = ['total', 'remaining', 'monthly']
+const metricLabels: Record<FinanceMetricKey, string> = { total: '购入总价', remaining: '剩余价值', monthly: '月均续费' }
+const metricDescriptions: Record<FinanceMetricKey, string> = { total: '按录入的当前付款周期标价计算', remaining: '按主控剩余天数和付款周期参考天数折算', monthly: '按付款月数折算的月均续费价格，例如年付金额 ÷ 12' }
 const partialKeys = computed(() => metricKeys.filter(key => summary.value[key].missing > 0))
+
+function rowMetricTitle(node: MonitorNode, key: FinanceMetricKey) {
+  const value = values.value.get(node.id)!
+  return financeIssueText(value.issues[key]) || (key === 'monthly' && value.once ? '一次性费用，无持续月均续费' : metricDescriptions[key])
+}
 
 function toggleNode(id: number, checked: boolean) {
   const next = new Set(selectedIds.value)
@@ -70,8 +77,8 @@ onBeforeUnmount(() => {
         <button type="button" class="icon-button finance-close" aria-label="关闭个人价值计算" autofocus @click="emit('close')"><X /></button>
       </header>
       <div class="finance-totals" aria-live="polite" aria-atomic="true">
-        <div v-for="key in metricKeys" :key="key" class="finance-metric" :title="key === 'total' ? '所选机器当前一个付款周期的标价合计' : key === 'monthly' ? '按付款月数折算，例如年付金额 ÷ 12' : '按主控剩余天数和付款周期参考天数折算'">
-          <span>{{ FINANCE_LABELS[key] }}</span><strong :title="`${financeAmount(summary[key].value, currency)} ${currency}`">{{ financeAmount(summary[key].value, currency) }}</strong>
+        <div v-for="key in metricKeys" :key="key" class="finance-metric" :title="metricDescriptions[key]">
+          <span>{{ metricLabels[key] }}</span><strong :title="`${financeAmount(summary[key].value, currency)} ${currency}${key === 'monthly' ? '/月' : ''}`">{{ financeAmount(summary[key].value, currency) }}</strong>
           <small v-if="summary[key].missing">{{ summary[key].included }} 台计入 · {{ summary[key].missing }} 台未计入</small>
         </div>
       </div>
@@ -85,14 +92,20 @@ onBeforeUnmount(() => {
       <div class="finance-node-list">
         <label v-for="node in filtered" :key="node.id" class="finance-node-row" :class="{ 'finance-node-selected': selectedSet.has(node.id) }">
           <input type="checkbox" :checked="selectedSet.has(node.id)" :aria-label="`计入 ${node.name}`" @change="toggleNode(node.id, ($event.target as HTMLInputElement).checked)" />
-          <span class="finance-node-info"><strong :title="node.name">{{ node.name }}</strong><span class="finance-node-meta"><span class="status-dot" :class="{ offline: !node.online }" :title="node.online ? '在线' : '离线'" /><img v-if="flagUrl(node.country)" :src="flagUrl(node.country)" :alt="regionName(node.country)" class="country-flag" /><span>{{ node.group || regionName(node.country) }}</span><span v-if="values.get(node.id)!.issues.remaining" class="finance-row-issue">{{ financeIssueText(values.get(node.id)!.issues.remaining) }}</span></span></span>
-          <span class="finance-node-amounts"><strong :title="values.get(node.id)!.prepaid ? '剩余时间超过一个付款周期，可能包含多周期预付' : financeIssueText(values.get(node.id)!.issues.remaining)">{{ financeAmount(values.get(node.id)!.remaining, currency) }}</strong><span :title="financeIssueText(values.get(node.id)!.issues.monthly)">{{ values.get(node.id)!.once ? '一次性' : `${financeAmount(values.get(node.id)!.monthly, currency)}/月` }}</span></span>
+          <span class="finance-node-info"><strong :title="node.name">{{ node.name }}</strong><span class="finance-node-meta"><span class="status-dot" :class="{ offline: !node.online }" :title="node.online ? '在线' : '离线'" /><img v-if="flagUrl(node.country)" :src="flagUrl(node.country)" :alt="regionName(node.country)" class="country-flag" /><span>{{ node.group || regionName(node.country) }}</span><span v-if="values.get(node.id)!.issues.total || values.get(node.id)!.issues.monthly" class="finance-row-issue">{{ financeIssueText(values.get(node.id)!.issues.total || values.get(node.id)!.issues.monthly) }}</span></span></span>
+          <span class="finance-node-amounts">
+            <span v-for="key in metricKeys" :key="key" class="finance-node-amount" :class="`finance-node-amount-${key}`" :title="rowMetricTitle(node, key)">
+              <span class="finance-node-amount-label">{{ metricLabels[key] }}</span>
+              <strong :title="`${metricLabels[key]} ${financeAmount(values.get(node.id)![key], currency)} ${currency}${key === 'monthly' ? '/月' : ''} · ${rowMetricTitle(node, key)}`">{{ financeAmount(values.get(node.id)![key], currency) }}{{ key === 'monthly' ? '/月' : '' }}</strong>
+            </span>
+          </span>
         </label>
         <div v-if="!filtered.length" class="finance-empty">{{ nodes.length ? '没有匹配的服务器' : '暂无可计算的服务器' }}<button v-if="hasFilter" type="button" class="text-button" @click="search = ''; group = null">清除筛选</button></div>
       </div>
       <footer class="finance-footer">
-        <div class="finance-rate-note"><span>{{ currency }} · {{ ratesLoading ? '正在更新汇率…' : exchangeRateLabel(exchange) }}</span><span>月均按付款月数折算</span></div>
-        <p v-for="key in partialKeys" :key="key" class="finance-coverage">{{ FINANCE_LABELS[key] }}未计入：{{ financeCoverage(summary[key]) }}。</p>
+        <div class="finance-rate-note"><span>{{ currency }} · {{ ratesLoading ? '正在更新汇率…' : exchangeRateLabel(exchange) }}</span></div>
+        <p class="finance-price-note">购入总价按录入标价，续费按付款周期折算为月均价格。</p>
+        <p v-for="key in partialKeys" :key="key" class="finance-coverage">{{ metricLabels[key] }}未计入：{{ financeCoverage(summary[key]) }}。</p>
         <p v-if="!storageAvailable" class="finance-coverage" role="status">浏览器存储不可用，本次选择只在当前页面有效。</p>
       </footer>
     </dialog>

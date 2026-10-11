@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
+import { computed, onBeforeUnmount, ref, useId, watch, type Component } from 'vue'
 import { ArrowDown, ArrowUp, Cpu, Globe2, HardDrive, MemoryStick, Network, Server, ServerOff, Wallet } from '@lucide/vue'
 import type { MonitorNode, SummaryKey } from '../types'
 import { summarize } from '../lib/data'
 import { bytes, formatBytes } from '../lib/format'
 import { financeAmount, financeCoverage, resolveFinanceCurrency, summarizeFinance, type ExchangeRates } from '../lib/finance'
-const props = defineProps<{ nodes: MonitorNode[]; cards: SummaryKey[]; scope: 'group' | 'all'; showPrice: boolean; currency: string; rates: ExchangeRates; rateLabel: string; ratesLoading: boolean; canCalculate: boolean }>()
-const emit = defineEmits<{ openFinance: [] }>()
+import PublicFinancePopover from './PublicFinancePopover.vue'
+const props = defineProps<{ nodes: MonitorNode[]; cards: SummaryKey[]; scope: 'group' | 'all'; showPrice: boolean; currency: string; rates: ExchangeRates; rateLabel: string; ratesLoading: boolean }>()
+const emit = defineEmits<{ 'update:currency': [currency: string]; publicOpenChange: [open: boolean] }>()
+const financePopoverId = `public-finance-${useId()}`
+const financeAnchor = ref<HTMLElement | null>(null)
+const publicOpen = ref(false)
+function setPublicOpen(open: boolean) { publicOpen.value = open; emit('publicOpenChange', open) }
+watch(() => props.showPrice && props.cards.includes('remaining_value'), visible => { if (!visible) setPublicOpen(false) })
+onBeforeUnmount(() => setPublicOpen(false))
 const remaining = computed(() => props.showPrice ? summarizeFinance(props.nodes, props.currency, props.rates).remaining : null)
 const converts = computed(() => props.nodes.some(node => node.price && resolveFinanceCurrency(node.currency) !== resolveFinanceCurrency(props.currency)))
 const totals = computed(() => summarize(props.nodes))
@@ -39,10 +46,11 @@ const values = computed<Record<SummaryKey, CardValue>>(() => {
 </script>
 <template>
   <div class="summary-grid" :style="{ '--summary-columns': Math.min(3, cards.length), '--summary-wide-columns': Math.min(6, cards.length) }" :aria-label="scope === 'all' ? '全部节点汇总' : '当前分组汇总'">
-    <component :is="key === 'remaining_value' && canCalculate ? 'button' : 'div'" v-for="key in cards" :key="key" class="summary-card" :class="{ 'summary-finance': key === 'remaining_value', 'summary-clickable': key === 'remaining_value' && canCalculate }" :type="key === 'remaining_value' && canCalculate ? 'button' : undefined" :title="values[key].title" :aria-label="key === 'remaining_value' && canCalculate ? '剩余价值，打开个人价值计算' : undefined" @click="key === 'remaining_value' && canCalculate && emit('openFinance')">
+    <component :is="key === 'remaining_value' && showPrice ? 'button' : 'div'" v-for="key in cards" :key="key" class="summary-card" :class="{ 'summary-finance': key === 'remaining_value', 'summary-clickable': key === 'remaining_value' && showPrice }" :type="key === 'remaining_value' && showPrice ? 'button' : undefined" :title="values[key].title" :aria-label="key === 'remaining_value' && showPrice ? '剩余价值，查看公开费用汇总' : undefined" :aria-haspopup="key === 'remaining_value' && showPrice ? 'dialog' : undefined" :aria-expanded="key === 'remaining_value' && showPrice ? publicOpen : undefined" :popovertarget="key === 'remaining_value' && showPrice ? financePopoverId : undefined" @click="key === 'remaining_value' && showPrice && (financeAnchor = $event.currentTarget as HTMLElement)">
       <div class="summary-label">{{ values[key].label }}<component :is="values[key].icon" /></div>
       <div class="summary-value"><strong :class="values[key].tone">{{ values[key].value }}</strong><span>{{ values[key].unit }}</span></div>
       <div v-if="values[key].note" class="summary-note"><span v-if="key === 'online'" class="status-dot" />{{ values[key].note }}</div>
     </component>
+    <PublicFinancePopover v-if="showPrice && cards.includes('remaining_value')" :id="financePopoverId" :anchor="financeAnchor" :nodes="nodes" :scope="scope" :currency="currency" :rates="rates" :rate-label="rateLabel" :rates-loading="ratesLoading" @update:currency="emit('update:currency', $event)" @open-change="setPublicOpen" />
   </div>
 </template>

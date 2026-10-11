@@ -2,7 +2,7 @@
   "name": "Emerald Globe Pro · Monitor",
   "short": "boxpro",
   "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
   "config": [
@@ -611,14 +611,14 @@
           "label": "ZAR"
         }
       ],
-      "help": "剩余价值卡片的目标币种；跨币种使用每日汇率估算。个人计算器的币种独立保存在浏览器。"
+      "help": "首页剩余价值与公开费用汇总的默认币种；可在公开汇总浮层切换，跨币种使用每日汇率估算。个人计算器的币种独立保存在浏览器。"
     },
     {
       "key": "show_personal_finance",
       "type": "boolean",
       "label": "启用个人价值计算器",
       "default": true,
-      "help": "显示右上角钱袋入口，并允许点击剩余价值卡片打开。支持搜索、分组筛选、勾选机器和月均费用计算；个人选择不改变公开汇总，遵守费用显隐设置。"
+      "help": "显示右上角钱包入口。支持搜索、分组筛选、勾选机器和月均费用计算；每台显示购入总价、剩余价值与月均续费，总价取录入标价，续费按周期折算。个人选择不改变公开汇总，遵守费用显隐设置；首页剩余价值卡片独立展示公开费用汇总。"
     },
     {
       "key": "hide_price_logged_out",
