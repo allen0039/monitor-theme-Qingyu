@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CalendarDays, ChevronDown, ChevronUp, Coins, Ellipsis } from '@lucide/vue'
+import { CalendarDays, ChevronDown, ChevronUp, Coins, Download, Ellipsis, Upload } from '@lucide/vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { flagUrl } from '../lib/assets'
 import { nodeState, regionName } from '../lib/data'
@@ -59,15 +59,15 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
         <ResourceMeter v-if="config.show_traffic" icon="traffic" label="流量" :value="traffic" :detail="`${cardBytes(node.month_used)} / ${node.traffic_limit ? cardBytes(node.traffic_limit) : '∞'}`" :detail-title="`${formatBytes(node.month_used)} / ${node.traffic_limit ? formatBytes(node.traffic_limit) : '∞'}`" :warning-at="80" :danger-at="100" />
       </div>
       <div v-if="highlightCount" class="node-highlights" :class="{ 'node-highlights-three': highlightCount === 3 }" :style="{ '--highlight-count': highlightCount }">
-        <div v-if="config.show_speed" class="highlight-tile" role="group" aria-label="实时速率">
+        <div v-if="config.show_speed" class="highlight-tile highlight-speed" role="group" aria-label="实时速率">
           <span class="highlight-value up" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_tx, true)"><ChevronUp />{{ tileRate(node.metrics?.net_tx) }}</span>
           <span class="highlight-value down" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_rx, true)"><ChevronDown />{{ tileRate(node.metrics?.net_rx) }}</span>
         </div>
-        <div v-if="config.show_total_traffic" class="highlight-tile" role="group" aria-label="本月流量">
-          <span class="highlight-value" :title="`本月上传 ${formatBytes(node.month_tx)}`"><ChevronUp />{{ cardBytes(node.month_tx) }}</span>
-          <span class="highlight-value" :title="`本月下载 ${formatBytes(node.month_rx)}`"><ChevronDown />{{ cardBytes(node.month_rx) }}</span>
+        <div v-if="config.show_total_traffic" class="highlight-tile highlight-month" role="group" aria-label="本月流量">
+          <span class="highlight-value" :title="`本月上传 ${formatBytes(node.month_tx)}`"><Upload />{{ cardBytes(node.month_tx) }}</span>
+          <span class="highlight-value" :title="`本月下载 ${formatBytes(node.month_rx)}`"><Download />{{ cardBytes(node.month_rx) }}</span>
         </div>
-        <div v-if="hasBilling" class="highlight-tile" role="group" :aria-label="showPrice && hasExpiry ? '费用与到期' : showPrice ? '费用' : '到期'">
+        <div v-if="hasBilling" class="highlight-tile highlight-billing" role="group" :aria-label="showPrice && hasExpiry ? '费用与到期' : showPrice ? '费用' : '到期'">
           <span v-if="hasExpiry" class="highlight-value highlight-expiry" :class="expiryClass" :title="`${node.expires_at || ''} ${expiryLabel(node.expires_in)}`"><CalendarDays />{{ expiryTileText }}</span>
           <span v-if="showPrice" class="highlight-value highlight-cost" :title="costTitle"><Coins /><span class="highlight-cost-text">{{ costParts[0] }}<span v-if="costParts[1]" class="highlight-cycle" :class="{ 'highlight-cycle-break': longCost }">/{{ costParts[1] }}</span></span></span>
         </div>

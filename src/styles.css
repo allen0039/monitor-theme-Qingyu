@@ -360,7 +360,7 @@ svg { flex-shrink: 0; }
 .node-card .meter-label .data-number { font-weight: 650; }
 .node-card .meter-track { height: 5px; }
 .node-highlights { display: grid; grid-template-columns: repeat(var(--highlight-count), minmax(0, min(120px, calc(50% - 4px)))); justify-content: center; gap: 8px; margin-bottom: 11px; }
-.node-highlights-three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.node-highlights-three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .highlight-tile { display: flex; flex-direction: column; justify-content: center; min-width: 0; min-height: 58px; padding: 8px 9px; border-radius: 12px; background: color-mix(in srgb, var(--muted) 6%, var(--surface-solid)); }
 .highlight-value { display: flex; align-items: center; min-width: 0; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--foreground); font-size: 13px; font-weight: 550; line-height: 1.3; font-variant-numeric: tabular-nums; }
 .highlight-value + .highlight-value { margin-top: 2px; }
@@ -375,12 +375,21 @@ svg { flex-shrink: 0; }
 .highlight-cost-text { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.2; }
 .highlight-cycle { color: var(--muted); font-size: .9em; white-space: nowrap; }
 .highlight-cycle-break { display: block; }
-.node-highlights-three .highlight-tile { padding-inline: 5px; border-radius: 9px; }
-.node-highlights-three .highlight-value { font-size: 11px; gap: 3px; }
-.node-highlights-three .highlight-value svg { width: 10px; height: 10px; }
+.node-highlights-three .highlight-tile { min-height: 44px; padding: 6px; border-radius: 8px; background: color-mix(in srgb, #64748b 5%, transparent); overflow: hidden; }
+.node-highlights-three .highlight-value { font-size: 11px; font-weight: 500; gap: 4px; line-height: 1.3; }
+.node-highlights-three .highlight-value + .highlight-value { margin-top: 2px; }
+.node-highlights-three .highlight-value svg { width: 11px; height: 11px; }
+.node-highlights-three .highlight-month .highlight-value,
+.node-highlights-three .highlight-billing .highlight-value { color: var(--muted); }
+.node-highlights-three .highlight-month .highlight-value svg,
+.node-highlights-three .highlight-billing .highlight-value svg { color: inherit; }
+.node-highlights-three .highlight-billing .highlight-value.expiring { color: var(--warning); }
+.node-highlights-three .highlight-billing .highlight-value.expired { color: var(--danger); }
+.node-highlights-three .highlight-cost-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node-highlights-three .highlight-cycle-break { display: inline; }
 .card-size-mini .highlight-tile { padding-inline: 7px; }
 .card-size-mini .highlight-value { font-size: 11.5px; gap: 3px; }
-.card-size-mini .node-highlights-three .highlight-tile { padding-inline: 4px; }
+.card-size-mini .node-highlights-three .highlight-tile { min-height: 38px; padding: 4px; }
 .card-size-mini .node-highlights-three .highlight-value { font-size: 9.5px; gap: 2px; }
 .node-highlights + .node-facts { margin-bottom: 8px; }
 .cumulative-rates { color: var(--foreground); font-variant-numeric: tabular-nums; }
