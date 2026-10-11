@@ -44,18 +44,20 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
         <ResourceMeter v-if="config.show_traffic" icon="traffic" label="流量" :value="traffic" :detail="`${cardBytes(node.month_used)} / ${node.traffic_limit ? cardBytes(node.traffic_limit) : '∞'}`" :detail-title="`${formatBytes(node.month_used)} / ${node.traffic_limit ? formatBytes(node.traffic_limit) : '∞'}`" :warning-at="80" :danger-at="100" />
       </div>
       <div v-if="highlightCount" class="node-highlights" :style="{ '--highlight-count': highlightCount }">
-        <div v-if="config.show_speed" class="highlight-tile" role="group" aria-label="实时速率">
+        <div v-if="config.show_speed" class="highlight-tile highlight-tile-speed" role="group" aria-label="实时速率">
+          <span class="highlight-label">实时速率</span>
           <span class="highlight-value up" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_tx, true)"><ChevronUp />{{ cardBytes(node.metrics?.net_tx, true) }}</span>
           <span class="highlight-value down" :class="{ 'highlight-empty': !node.metrics }" :title="formatBytes(node.metrics?.net_rx, true)"><ChevronDown />{{ cardBytes(node.metrics?.net_rx, true) }}</span>
         </div>
-        <div v-if="hasBilling" class="highlight-tile" role="group" :aria-label="showPrice && hasExpiry ? '费用与到期' : showPrice ? '费用' : '到期'">
+        <div v-if="hasBilling" class="highlight-tile highlight-tile-billing" role="group" :aria-label="showPrice && hasExpiry ? '费用与到期' : showPrice ? '费用' : '到期'">
+          <span class="highlight-label">{{ showPrice && hasExpiry ? '费用与到期' : showPrice ? '费用' : '到期' }}</span>
           <span v-if="hasExpiry" class="highlight-value highlight-expiry" :class="expiryClass" :title="`${node.expires_at || ''} ${expiryLabel(node.expires_in)}`"><CalendarDays />{{ expiryText }}</span>
           <span v-if="showPrice" class="highlight-value highlight-cost" :title="costTitle"><Coins /><span class="highlight-cost-text">{{ costParts[0] }}<span v-if="costParts[1]" class="highlight-cycle" :class="{ 'highlight-cycle-break': longCost }">/{{ costParts[1] }}</span></span></span>
         </div>
       </div>
       <div v-if="config.show_uptime || config.show_total_traffic" class="node-facts">
         <div v-if="config.show_uptime" class="fact-row"><span>在线</span><i /><span :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ node.metrics ? duration(node.metrics.uptime) : nodeState(node) }}</span></div>
-        <div v-if="config.show_total_traffic" class="fact-row"><span>累计流量</span><i /><div class="rates cumulative-rates"><span :title="`累计上传 ${formatBytes(node.total_tx)}`"><ChevronUp />{{ cardBytes(node.total_tx) }}</span><span :title="`累计下载 ${formatBytes(node.total_rx)}`"><ChevronDown />{{ cardBytes(node.total_rx) }}</span></div></div>
+        <div v-if="config.show_total_traffic" class="fact-row"><span>累计</span><i /><div class="rates cumulative-rates"><span :title="`累计上传 ${formatBytes(node.total_tx)}`"><ChevronUp />{{ cardBytes(node.total_tx) }}</span><span :title="`累计下载 ${formatBytes(node.total_rx)}`"><ChevronDown />{{ cardBytes(node.total_rx) }}</span></div></div>
       </div>
       <PingPanel v-if="showPing" :node="node" :details="pingDetails" :config="config" />
       <div v-if="(config.show_remark && node.public_remark) || hasExtra" class="node-card-footer">

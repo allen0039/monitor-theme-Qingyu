@@ -359,11 +359,14 @@ svg { flex-shrink: 0; }
 .node-card .meter-icon-traffic { color: #976cf0; }
 .node-card .meter-label .data-number { font-weight: 650; }
 .node-card .meter-track { height: 5px; }
-.node-highlights { display: grid; grid-template-columns: repeat(var(--highlight-count), minmax(0, 1fr)); gap: 7px; margin-bottom: 10px; }
-.highlight-tile { display: flex; flex-direction: column; justify-content: center; min-width: 0; min-height: 55px; padding: 7px 11px; border-radius: 9px; background: color-mix(in srgb, var(--subtle) 48%, transparent); }
-.highlight-value { display: flex; align-items: center; min-width: 0; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--foreground); font-size: 11px; font-weight: 550; line-height: 1.3; font-variant-numeric: tabular-nums; }
-.highlight-value + .highlight-value { margin-top: 3px; }
-.highlight-value svg { width: 11px; height: 11px; flex: none; color: var(--muted); }
+.node-highlights { display: grid; grid-template-columns: repeat(var(--highlight-count), minmax(0, 1fr)); gap: 8px; margin-bottom: 11px; }
+.highlight-tile { display: flex; flex-direction: column; min-width: 0; min-height: 74px; padding: 9px 10px 8px; border-radius: 9px; }
+.highlight-tile-speed { background: color-mix(in srgb, var(--emerald) 5%, var(--surface-solid)); }
+.highlight-tile-billing { background: color-mix(in srgb, var(--muted) 5%, var(--surface-solid)); }
+.highlight-label { margin-bottom: 5px; color: var(--muted); font-size: 10.5px; font-weight: 550; line-height: 1.2; }
+.highlight-value { display: flex; align-items: center; min-width: 0; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--foreground); font-size: 13px; font-weight: 620; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.highlight-value + .highlight-value { margin-top: 2px; }
+.highlight-value svg { width: 12px; height: 12px; flex: none; color: var(--muted); }
 .highlight-value.up svg { color: var(--emerald); }
 .highlight-value.down svg { color: var(--blue); }
 .highlight-value.up { color: var(--emerald); }
