@@ -35,7 +35,7 @@ jobs:
       - run: npm run package
       - uses: actions/upload-artifact@v4
         with:
-          name: monitor-theme-boxpro
+          name: monitor-theme-Qingyu
           path: |
             theme.tar.gz
             theme.tar.gz.sha256

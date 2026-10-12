@@ -8,7 +8,7 @@
 
 ## 安装
 
-1. 从 [最新 Release](https://github.com/allen0039/monitor-theme-boxpro/releases/latest) 下载 `theme.tar.gz`。
+1. 从 [最新 Release](https://github.com/allen0039/monitor-theme-Qingyu/releases/latest) 下载 `theme.tar.gz`。
 2. 登录 Monitor 后台，在「主题」页上传这个文件。
 3. 选择 **青屿 · Qingyu**，刷新公开首页。
 4. 在主题卡片的设置入口配置外观、公告、地球、总览、节点指标、网络延迟和背景等。
@@ -17,7 +17,7 @@
 
 默认图标采用三层服务器、延迟波动曲线和蓝绿扫描环，首页与浏览器标签页使用 `/favicon.svg`，主屏幕使用 `/apple-touch-icon.png`；另提供 `/favicon.ico`。后台「站点图标」留空时使用这套内置图标，也可填写自己的图片地址。
 
-也可以在 Monitor 的「从 GitHub 安装」中填写 `https://github.com/allen0039/monitor-theme-boxpro`。安装时使用 Release 中的主题包。
+也可以在 Monitor 的「从 GitHub 安装」中填写 `https://github.com/allen0039/monitor-theme-Qingyu`。安装时使用 Release 中的主题包。
 
 下载 `theme.tar.gz.sha256` 后，可在主题包所在目录校验完整性：
 
@@ -138,7 +138,7 @@ theme.tar.gz.sha256
 
 ## 发布到 GitHub
 
-主题仓库为 [allen0039/monitor-theme-boxpro](https://github.com/allen0039/monitor-theme-boxpro)，`theme.json` 已配置该地址，支持 Monitor 的「从 GitHub 安装」和更新功能。首个公开版本为 `0.1.0`。
+主题仓库为 [allen0039/monitor-theme-Qingyu](https://github.com/allen0039/monitor-theme-Qingyu)，`theme.json` 已配置该地址，支持 Monitor 的「从 GitHub 安装」和更新功能。首个公开版本为 `0.1.0`。
 
 发布流程已放在 `.github/workflows/release.yml`。将 `package.json`、`package-lock.json` 和 `theme.json` 版本一起修改后推送同版本 `v*` tag，例如 `v0.1.0`，工作流检查版本、测试、构建，并发布固定名称 `theme.tar.gz` 和校验文件。版本说明保存于 `.github/release-notes/`；手动触发只构建和上传产物。
 
