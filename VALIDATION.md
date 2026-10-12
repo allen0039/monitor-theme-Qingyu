@@ -1,5 +1,11 @@
 # 验证记录
 
+## v0.2.16 发布检查 — 2026-10-12
+
+- README 按当前功能重写，补齐节点详情、资源趋势、多线路延迟历史、安装迁移、外部请求和开发发布说明。
+- `package.json`、锁文件根包及 `theme.json` 版本一致为 `0.2.16`，安装标识为 `qingyu`。
+- 107 项单元测试、Vue / TypeScript 检查、生产构建和安装包校验通过；主题包 278 个条目，约 3.48 MB。README 本地链接与代码块检查通过。
+
 ## Qingyu 统一命名检查
 
 - 包名与锁文件统一为 `monitor-theme-qingyu`，主题安装标识为 `qingyu`，仓库为 `allen0039/monitor-theme-Qingyu`。
