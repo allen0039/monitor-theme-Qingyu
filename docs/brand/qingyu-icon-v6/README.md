@@ -1,4 +1,4 @@
-# BoxPro · 参考图定稿图标 v6
+# Qingyu · 参考图定稿图标 v6
 
 参考图：用户提供的 `/Users/allen/Downloads/2109544157801353216.jpg`。
 

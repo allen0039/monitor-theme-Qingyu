@@ -37,6 +37,7 @@ describe('详细主题设置', () => {
     expect(await loadConfig()).toEqual(defaultConfig())
     expect(await loadConfig()).toEqual(defaultConfig())
     expect(await loadConfig()).toMatchObject({ theme_mode: 'dark', show_ping: false })
+    expect(fetch).toHaveBeenLastCalledWith('/api/themes/qingyu/config', expect.objectContaining({ signal: expect.any(AbortSignal) }))
   })
 
   it('线路按完整名称或 ID 排序，同名全部匹配并去重，不匹配时不偷偷回退', () => {

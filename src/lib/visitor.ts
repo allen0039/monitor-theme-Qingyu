@@ -1,3 +1,4 @@
+import { readQingyuStorage } from './storage'
 export interface VisitorGeo {
   ip: string
   isp: string
@@ -5,7 +6,7 @@ export interface VisitorGeo {
   countryCode: string
 }
 
-const CACHE_KEY = 'boxpro.visitor-geo.v1'
+const CACHE_KEY = 'qingyu.visitor-geo.v1'
 const CACHE_TTL = 15 * 60 * 1000
 
 export function detectClient(ua: string): { device: string; browser: string } {
@@ -39,7 +40,7 @@ export function parseVisitorGeo(value: unknown): VisitorGeo | null {
 
 function readCache(): VisitorGeo | null {
   try {
-    const value = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null')
+    const value = JSON.parse(readQingyuStorage(sessionStorage, CACHE_KEY) || 'null')
     if (value && typeof value.at === 'number' && Date.now() - value.at >= 0 && Date.now() - value.at < CACHE_TTL) {
       const geo = value.geo
       if (geo && typeof geo.ip === 'string' && typeof geo.isp === 'string' && typeof geo.location === 'string' && typeof geo.countryCode === 'string') return geo

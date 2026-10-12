@@ -1,4 +1,4 @@
-/* BoxPro — node detail, composited in the same theme tokens as the overview. */
+/* Qingyu — node detail, composited in the same theme tokens as the overview. */
 .node-card { cursor: pointer; display: flex; flex-direction: column; }
 /* Equal-height cards keep their last row level; tags and the more-info control share the footer line. */
 .node-card .node-card-body { flex: 1; }

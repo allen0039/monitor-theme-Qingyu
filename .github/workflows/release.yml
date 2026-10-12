@@ -44,7 +44,7 @@ jobs:
         run: |
           notes=".github/release-notes/$GITHUB_REF_NAME.md"
           if [ -f "$notes" ]; then
-            gh release create "$GITHUB_REF_NAME" theme.tar.gz theme.tar.gz.sha256 --verify-tag --title "Emerald Globe Pro · Monitor $GITHUB_REF_NAME" --notes-file "$notes" --repo "$GITHUB_REPOSITORY"
+            gh release create "$GITHUB_REF_NAME" theme.tar.gz theme.tar.gz.sha256 --verify-tag --title "青屿 · Qingyu $GITHUB_REF_NAME" --notes-file "$notes" --repo "$GITHUB_REPOSITORY"
           else
             gh release create "$GITHUB_REF_NAME" theme.tar.gz theme.tar.gz.sha256 --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
           fi

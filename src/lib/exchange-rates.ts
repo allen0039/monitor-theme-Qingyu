@@ -1,8 +1,9 @@
+import { readQingyuStorage } from './storage'
 import { onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { FINANCE_CURRENCIES, REFERENCE_RATES, type ExchangeRates } from './finance'
 import { record } from './data'
 
-const KEY = 'boxpro.finance.rates.v1'
+const KEY = 'qingyu.finance.rates.v1'
 export interface ExchangeRateSnapshot {
   rates: ExchangeRates
   date: string | null
@@ -24,7 +25,7 @@ export function sanitizeRates(value: unknown): ExchangeRates {
 }
 function cachedRates(): (ExchangeRateSnapshot & { fetchedDay: string }) | null {
   try {
-    const cached = record(JSON.parse(localStorage.getItem(KEY) ?? 'null'))
+    const cached = record(JSON.parse(readQingyuStorage(localStorage, KEY) ?? 'null'))
     if (cached.base !== 'CNY' || typeof cached.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(cached.date)) return null
     const rates = sanitizeRates(cached.rates)
     const quotedDate = typeof cached.quotedDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(cached.quotedDate) ? cached.quotedDate : cached.date

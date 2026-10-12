@@ -1,8 +1,8 @@
-# BoxPro · 三层服务器与延迟曲线 Logo v5
+# Qingyu · 三层服务器与延迟曲线 Logo v5
 
 根据用户反馈，将服务器改为三层，并让青色延迟波动曲线从中间横穿服务器。保留科技蓝配色与透明背景。
 
-文件：`boxpro-server-latency-logo-v5.png`。使用内置 image_gen 工具编辑 v4 设计稿，另存新版本，尚未接入主题。
+文件：`qingyu-server-latency-logo-v5.png`。使用内置 image_gen 工具编辑 v4 设计稿，另存新版本，尚未接入主题。
 
 ## 完整编辑提示词
 

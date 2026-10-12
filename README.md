@@ -29,11 +29,17 @@ sha256sum -c theme.tar.gz.sha256
 也可以将主题包解压到主控的主题目录：
 
 ```bash
-mkdir -p /opt/monitor/data/themes/boxpro
-tar -xzf theme.tar.gz -C /opt/monitor/data/themes/boxpro
+mkdir -p /opt/monitor/data/themes/qingyu
+tar -xzf theme.tar.gz -C /opt/monitor/data/themes/qingyu
 ```
 
 目录因部署方式而异；上面的路径适用于官方一键脚本。压缩包内的 `theme.json` 和 `dist/` 位于根目录，与官方默认主题发布包及 hub 安装器一致。不要上传源代码压缩包或 Komari 的 ZIP 包。
+
+## 升级到 Qingyu 命名
+
+项目包名统一为 `monitor-theme-qingyu`，主题安装标识为 `qingyu`，仓库和本地目录为 `monitor-theme-Qingyu`。
+
+从旧版升级时，Monitor 会按新标识安装为独立主题。上传新的 `theme.tar.gz` 后选择 **青屿 · Qingyu**，并在新主题的设置中重新填写原有公告、背景和其他自定义配置；确认生效后再删除旧主题。浏览器中的显示偏好、个人计算器选择、汇率缓存与延迟平滑选项会自动迁移到 `qingyu` 存储键，已有新偏好优先。
 
 ## 主控主题设置
 
@@ -128,7 +134,7 @@ theme.tar.gz.sha256
 | `GET /api/nodes` | 首次快照及轮询回退 |
 | `GET /api/ws?gzip` | 实时完整快照 |
 | `GET /api/nodes/{id}/metrics?hours=1&points=60&series=ping` | 首页网络延迟 |
-| `GET /api/themes/boxpro/config` | 全站主题设置 |
+| `GET /api/themes/qingyu/config` | 全站主题设置 |
 
 以 Monitor 官方主题开发文档、hub 的公开视图及官方主题站数据验证。兼容旧 hub 缺少分组、主题设置、到期剩余天数和离线时长的情况；新 hub 返回 `null` 时不会错误地回退到浏览器时钟。旧 hub 未提供整段窗口丢包率时显示 `—`。
 

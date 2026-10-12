@@ -1,9 +1,10 @@
+import { readQingyuStorage } from './storage'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { EarthMode, Layout, SortKey, ThemeConfig, ThemeMode } from '../types'
 import { record } from './data'
 import { applyDisplaySettings, normalizeDisplaySettings, validDisplaySetting, type DisplaySettingKey } from './display-settings'
 
-const KEY = 'boxpro.preferences'
+const KEY = 'qingyu.preferences'
 const MODES: EarthMode[] = ['earth', 'earth-stop', 'map', 'summary', 'hide']
 const SORTS: SortKey[] = ['default', 'name', 'cpu', 'memory', 'disk', 'traffic', 'upload', 'download']
 const THEMES: ThemeMode[] = ['auto', 'beijing', 'light', 'dark']
@@ -15,7 +16,7 @@ export function isDarkTheme(theme: ThemeMode, systemDark: boolean, now = new Dat
 
 export function usePreferences(siteConfig: { value: ThemeConfig }) {
   let saved: Record<string, unknown> = {}
-  try { saved = record(JSON.parse(localStorage.getItem(KEY) || '{}')) } catch {}
+  try { saved = record(JSON.parse(readQingyuStorage(localStorage, KEY) || '{}')) } catch {}
   const displayOverrides = ref(normalizeDisplaySettings(saved.display))
   const displayConfig = computed(() => applyDisplaySettings(siteConfig.value, displayOverrides.value))
   const storageAvailable = ref(true)

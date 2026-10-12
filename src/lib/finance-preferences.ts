@@ -1,13 +1,14 @@
+import { readQingyuStorage } from './storage'
 import { ref, watch } from 'vue'
 import { resolveFinanceCurrency, type FinanceCurrency } from './finance'
 import { record } from './data'
 
-const KEY = 'boxpro.finance.preferences.v1'
+const KEY = 'qingyu.finance.preferences.v1'
 interface FinancePreferences { selectedIds: number[] | null; currency: FinanceCurrency }
 const validId = (id: unknown): id is number => typeof id === 'number' && Number.isSafeInteger(id) && id >= 0
 export function readFinancePreferences(): FinancePreferences {
   try {
-    const saved = record(JSON.parse(localStorage.getItem(KEY) ?? 'null'))
+    const saved = record(JSON.parse(readQingyuStorage(localStorage, KEY) ?? 'null'))
     return {
       selectedIds: Array.isArray(saved.selectedIds) && saved.selectedIds.every(validId) ? [...new Set(saved.selectedIds)] : null,
       currency: typeof saved.currency === 'string' ? resolveFinanceCurrency(saved.currency) ?? 'CNY' : 'CNY',

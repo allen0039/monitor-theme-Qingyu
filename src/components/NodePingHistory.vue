@@ -3,15 +3,16 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { MonitorNode, PingNetwork, ThemeConfig } from '../types'
 import { ApiError } from '../lib/api'
 import { fetchHistory, historyRanges } from '../lib/history'
+import { readQingyuStorage } from '../lib/storage'
 import { selectPingNetworks } from '../lib/ping'
 import { latencyLabel, lossLabel } from '../lib/ping-display'
 import MetricChart, { type ChartPoint, type ChartLine } from './MetricChart.vue'
 const props = defineProps<{ node: MonitorNode; config: ThemeConfig; historyDays?: number }>()
 const options = computed(() => historyRanges(props.historyDays))
 const hours = ref(1), data = ref<PingNetwork[]>([]), selected = ref<number[]>([])
-function initialSmooth(): boolean { try { return localStorage.getItem('boxpro.ping.smooth') === '1' } catch { return false } }
+function initialSmooth(): boolean { try { return readQingyuStorage(localStorage, 'qingyu.ping.smooth') === '1' } catch { return false } }
 const smooth = ref(initialSmooth())
-watch(smooth, enabled => { try { localStorage.setItem('boxpro.ping.smooth', enabled ? '1' : '0') } catch { /* Browser storage unavailable. */ } })
+watch(smooth, enabled => { try { localStorage.setItem('qingyu.ping.smooth', enabled ? '1' : '0') } catch { /* Browser storage unavailable. */ } })
 const busy = ref(false), error = ref(''), updated = ref(0), cursor = ref<number | null>(null)
 let timer: ReturnType<typeof setInterval> | null = null, controller: AbortController | null = null, generation = 0, cooldown = 0
 function refresh(force = false) {
