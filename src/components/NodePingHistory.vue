@@ -61,7 +61,7 @@ const step = computed(() => {
 function toggle(id: number) { selected.value = selected.value.includes(id) ? selected.value.filter(k => k !== id) : [...selected.value, id] }
 </script>
 <template>
-  <section class="detail-section detail-history" aria-labelledby="ping-history-title">
+  <section class="detail-section detail-history detail-ping-history" aria-labelledby="ping-history-title">
     <div class="detail-section-head">
       <div><h2 id="ping-history-title">网络质量</h2><p>延迟历史与选定时间范围内的丢包率{{ updated ? ' · ' + new Date(updated).toLocaleTimeString('zh-CN') + ' 更新' : '' }}</p></div>
       <div class="detail-controls"><label>时间范围 <select v-model.number="hours" aria-label="延迟历史时间范围"><option v-for="r in options" :key="r.hours" :value="r.hours">{{ r.label }}</option></select></label><label class="detail-check detail-smooth-toggle" title="圆滑连接采样点；单次短暂缺测以虚线过渡，超时和长断档不会补齐"><input v-model="smooth" type="checkbox" role="switch" aria-label="平滑显示延迟曲线" /><span>平滑显示</span></label><button type="button" class="detail-control-button" :disabled="busy" @click="refresh(true)">刷新</button></div>

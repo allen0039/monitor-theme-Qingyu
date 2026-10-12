@@ -74,9 +74,12 @@
 .detail-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .detail-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 3px; }
 .detail-plot { position: relative; padding-top: 8px; }
-.chart-svg { width: 100%; aspect-ratio: 620 / 216; overflow: visible; touch-action: pan-y; cursor: crosshair; }
-.chart-gridline { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.chart-axis { fill: var(--muted); font-family: inherit; font-size: 10px; font-variant-numeric: tabular-nums; }
+.chart-svg { display: block; width: 100%; height: clamp(210px, 21vw, 270px); overflow: visible; touch-action: pan-y; cursor: crosshair; }
+.detail-ping-history .chart-svg { height: clamp(235px, 22vw, 310px); }
+.chart-gridline { stroke: var(--line); stroke-width: 1; opacity: .7; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.chart-axis { fill: var(--muted); font-family: inherit; font-size: 11px; font-weight: 400; letter-spacing: .01em; font-variant-numeric: tabular-nums; opacity: .88; }
+.chart-axis-x { font-size: 10.5px; }
+.chart-axis-y { font-size: 11px; }
 .chart-cursor { stroke: var(--foreground); opacity: .55; stroke-dasharray: 3 3; stroke-width: 1; vector-effect: non-scaling-stroke; }
 .chart-values { position: absolute; right: 4px; top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 7px 9px; max-width: 92%; background: var(--surface-solid); border: 1px solid var(--line); box-shadow: 0 5px 20px rgb(0 0 0 / 7%); border-radius: 7px; font-size: 10px; pointer-events: none; }
 .chart-values time { color: var(--muted); width: 100%; }
@@ -120,6 +123,8 @@
   .detail-section-head { align-items: flex-start; }
   .detail-controls { width: 100%; gap: 7px; }
   .detail-chart { padding: 13px 8px; }
+  .detail-ping-history .chart-svg { height: 218px; }
+  .detail-chart-grid .chart-svg { height: 210px; }
   .chart-values { position: static; margin: 0 4px 5px; }
   .detail-info-card { padding: 15px; }
   .detail-definition > div { grid-template-columns: minmax(78px,32%) minmax(0,1fr); gap: 8px; }
