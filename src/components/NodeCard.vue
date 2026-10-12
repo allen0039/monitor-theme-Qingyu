@@ -100,7 +100,6 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
           </div>
         </details>
       </div>
-      <a class="node-open-link" :href="`#/node/${node.id}`" @click.prevent="emit('open', node.id)">查看详情 →</a>
     </div>
   </article>
 </template>

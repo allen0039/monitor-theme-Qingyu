@@ -45,6 +45,33 @@ try{
   if(!navigated)throw Error('Node switch failed')
   await command('Page.navigate',{url:'http://127.0.0.1:4179/?smoke=1'})
   await untilJS("document.querySelectorAll('.node-card').length > 3")
+  const cardsBefore = await evalJS(`(() => {
+    const cards = [...document.querySelectorAll('.nodes-grid .node-card')]
+    const row = cards.slice(0, 3)
+    return { count: cards.length, links: document.querySelectorAll('.node-open-link').length,
+      visibleText: cards[0]?.innerText.includes('查看详情'),
+      footers: row.map(card => ({ y: Math.round(card.querySelector('.node-card-footer')?.getBoundingClientRect().bottom ?? -1),
+        tagCenter: (() => { const rect = card.querySelector('.remark-tags')?.getBoundingClientRect(); return rect ? rect.y + rect.height / 2 : null })(),
+        menuCenter: (() => { const rect = card.querySelector('.node-extra summary')?.getBoundingClientRect(); return rect ? rect.y + rect.height / 2 : null })() })) }
+  })()`)
+  if(cardsBefore.links || cardsBefore.visibleText || cardsBefore.count < 3) throw Error('Card detail CTA still shown: ' + JSON.stringify(cardsBefore))
+  const footerBottom = cardsBefore.footers.map(item => item.y).filter(y => y > 0)
+  if(footerBottom.length >= 2 && Math.max(...footerBottom)-Math.min(...footerBottom) > 3) throw Error('Card footer rows not level: ' + JSON.stringify(cardsBefore))
+  for(const footer of cardsBefore.footers) {
+    if(footer.tagCenter !== null && footer.menuCenter !== null && Math.abs(footer.tagCenter - footer.menuCenter) > 9) throw Error('Tags/menu not inline: ' + JSON.stringify(cardsBefore))
+  }
+  await evalJS("document.querySelector('.nodes-grid .node-card').scrollIntoView({block:'start'})")
+  await wait(250)
+  const cardShot = await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
+  writeFileSync('/tmp/boxpro-card-after.png',Buffer.from(cardShot.data,'base64'))
+  const originalHash = await evalJS('location.hash')
+  await evalJS("document.querySelector('.node-card .node-extra summary').click()")
+  if (await evalJS('location.hash') !== originalHash) throw Error('More-info caused navigation')
+  await evalJS("document.querySelector('.node-card .node-extra summary').click()")
+  await evalJS("document.querySelector('.node-card .node-resources').click()")
+  await untilJS("location.hash === '#/node/1'")
+  await command('Page.navigate',{url:'http://127.0.0.1:4179/?smoke=1'})
+  await untilJS("document.querySelectorAll('.node-card').length > 3")
   await evalJS("history.pushState({}, '', '/?from-list=1')")
   await evalJS("window.scrollTo(0,480); document.querySelector('.node-card-header a').click()")
   await untilJS("location.hash === '#/node/1'")
@@ -61,7 +88,14 @@ try{
   if(mobile.page>mobile.vw+1)throw Error('Mobile horizontal overflow '+JSON.stringify(mobile))
   const shot2=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
   writeFileSync('/tmp/boxpro-cdp-mobile.png',Buffer.from(shot2.data,'base64'))
-  console.log(JSON.stringify({passed:true,initial,navigated,mobile},null,2))
+  await command('Page.navigate',{url:'http://127.0.0.1:4179/?mobile-card=1'})
+  await untilJS("document.querySelectorAll('.node-card').length > 3")
+  const mobileCards = await evalJS("({pageWidth:document.documentElement.scrollWidth,viewWidth:innerWidth,hasCTA:document.querySelector('.node-open-link') !== null,footer:!!document.querySelector('.node-card-footer')})")
+  if(mobileCards.pageWidth > mobileCards.viewWidth + 1 || mobileCards.hasCTA || !mobileCards.footer) throw Error('Mobile cards invalid '+JSON.stringify(mobileCards))
+  await evalJS("document.querySelector('.node-card').scrollIntoView({block:'start'})")
+  const shot3=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
+  writeFileSync('/tmp/boxpro-card-mobile-after.png',Buffer.from(shot3.data,'base64'))
+  console.log(JSON.stringify({passed:true,initial,navigated,mobile,mobileCards,cardsBefore},null,2))
   ws.close()
 } catch(error){console.error(error);process.exitCode=1}
 finally {processChrome.kill('SIGKILL'); closeVite()}

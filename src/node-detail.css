@@ -1,6 +1,8 @@
 /* BoxPro — node detail, composited in the same theme tokens as the overview. */
-.node-open-link { display: inline-flex; width: max-content; align-self: flex-end; margin-top: auto; padding: 8px 0 0; color: var(--emerald); font-size: 11px; font-weight: 650; }
-.node-card { cursor: pointer; }
+.node-card { cursor: pointer; display: flex; flex-direction: column; }
+/* Equal-height cards keep their last row level; tags and the more-info control share the footer line. */
+.node-card .node-card-body { flex: 1; }
+.node-card .node-card-footer { margin-top: auto; }
 .node-card:has(a:focus-visible) { box-shadow: var(--shadow); }
 .node-card-header a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .node-table .table-node a { color: var(--foreground); text-decoration: underline; text-decoration-color: color-mix(in srgb,var(--emerald) 30%,transparent); text-underline-offset: 3px; }
@@ -116,5 +118,5 @@
   .ping-network-option small { margin-left: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .node-detail-page *, .node-open-link { scroll-behavior: auto; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  .node-detail-page * { scroll-behavior: auto; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
