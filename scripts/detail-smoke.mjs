@@ -35,6 +35,17 @@ try{
   await command('Page.navigate',{url:'http://127.0.0.1:4179/#/node/1'})
   await untilJS("!!document.querySelector('.node-detail-page') && !!document.querySelector('.detail-ping-networks')")
   await wait(700)
+  // Smooth switch changes only the ping-chart geometry; reload retains the choice.
+  const smoothSelector = 'input[aria-label="平滑显示延迟曲线"]'
+  const readPingGeometry = "() => document.querySelector('#ping-history-title')?.closest('.detail-history')?.querySelector('.detail-chart svg path[stroke]')?.getAttribute('d')"
+  const switchBefore = await evalJS(`({checked:document.querySelector('${smoothSelector}')?.checked,d:(${readPingGeometry})()})`)
+  if (switchBefore.checked !== false || switchBefore.d.includes('C')) throw Error('Default ping line mode should be angular: ' + JSON.stringify(switchBefore))
+  await evalJS(`document.querySelector('${smoothSelector}').click()`)
+  await untilJS(`document.querySelector('${smoothSelector}')?.checked && (${readPingGeometry})()?.includes('C')`)
+  await command('Page.navigate',{url:'http://127.0.0.1:4179/#/node/1'})
+  await untilJS(`document.querySelector('${smoothSelector}')?.checked && (${readPingGeometry})()?.includes('C')`)
+  await evalJS(`document.querySelector('${smoothSelector}').click()`)
+  await untilJS(`!document.querySelector('${smoothSelector}')?.checked && !(${readPingGeometry})()?.includes('C')`)
   const initial=await evalJS("({title:document.querySelector('.detail-identity h1')?.innerText,charts:document.querySelectorAll('.detail-chart').length,resourceLines:document.querySelectorAll('.detail-chart svg path[stroke]').length,body:document.querySelector('.node-detail-page')?.innerText.slice(0,600),overflow:document.documentElement.scrollWidth>innerWidth})")
   if(!initial.title || initial.charts!==5 || initial.overflow)throw Error('Desktop invalid '+JSON.stringify(initial))
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})

@@ -52,6 +52,15 @@
 .detail-controls label { color: var(--muted); font-size: 11px; display: flex; align-items: center; gap: 7px; }
 .detail-controls .detail-check { color: var(--foreground); }
 .detail-check input, .ping-network-option input { accent-color: var(--emerald); width: 16px; height: 16px; }
+/* The latency-chart switch changes geometry only and never rewrites measurements. */
+.detail-smooth-toggle { min-height: 34px; gap: 7px; cursor: pointer; white-space: nowrap; }
+.detail-smooth-toggle input { appearance: none; position: relative; flex: none; width: 32px; height: 19px; margin: 0; border: 1px solid var(--line); border-radius: 30px; background: color-mix(in srgb, var(--muted) 22%, var(--surface-solid)); cursor: pointer; transition: background .15s ease; }
+.detail-smooth-toggle input::before { content: ''; position: absolute; width: 13px; height: 13px; top: 2px; left: 2px; background: var(--surface-solid); border-radius: 50%; box-shadow: 0 1px 3px rgb(0 0 0 / 15%); transition: transform .15s ease; }
+.detail-smooth-toggle input:checked { background: var(--emerald); }
+.detail-smooth-toggle input:checked::before { transform: translateX(13px); }
+.detail-smooth-toggle input:focus-visible { outline: 2px solid var(--emerald); outline-offset: 3px; }
+.detail-smooth-note { margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) { .detail-smooth-toggle input, .detail-smooth-toggle input::before { transition: none; } }
 .detail-control-button { min-height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-solid); padding: 6px 12px; font-size: 11px; }
 .detail-control-button:disabled { opacity: .5; cursor: not-allowed; }
 .detail-control-button:hover:not(:disabled) { color: var(--emerald); }

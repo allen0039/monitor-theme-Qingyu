@@ -9,6 +9,9 @@ import MetricChart, { type ChartPoint, type ChartLine } from './MetricChart.vue'
 const props = defineProps<{ node: MonitorNode; config: ThemeConfig; historyDays?: number }>()
 const options = computed(() => historyRanges(props.historyDays))
 const hours = ref(1), data = ref<PingNetwork[]>([]), selected = ref<number[]>([])
+function initialSmooth(): boolean { try { return localStorage.getItem('boxpro.ping.smooth') === '1' } catch { return false } }
+const smooth = ref(initialSmooth())
+watch(smooth, enabled => { try { localStorage.setItem('boxpro.ping.smooth', enabled ? '1' : '0') } catch { /* Browser storage unavailable. */ } })
 const busy = ref(false), error = ref(''), updated = ref(0), cursor = ref<number | null>(null)
 let timer: ReturnType<typeof setInterval> | null = null, controller: AbortController | null = null, generation = 0, cooldown = 0
 function refresh(force = false) {
@@ -50,14 +53,18 @@ const rows = computed<ChartPoint[]>(() => {
   }
   return [...map.values()].sort((a, b) => a.ts - b.ts)
 })
-const step = computed(() => rows.value.length > 1 ? Math.max(60, rows.value[1]!.ts - rows.value[0]!.ts) : Math.max(60, hours.value * 3600 / 60))
+const step = computed(() => {
+  const timestamps = rows.value.map(p => p.ts)
+  const gaps = timestamps.slice(1).map((ts, i) => ts - timestamps[i]!).filter(g => g > 0).sort((a,b) => a-b)
+  return gaps.length ? Math.max(60, gaps[Math.floor((gaps.length - 1) / 2)]!) : Math.max(60, hours.value * 3600 / 60)
+})
 function toggle(id: number) { selected.value = selected.value.includes(id) ? selected.value.filter(k => k !== id) : [...selected.value, id] }
 </script>
 <template>
   <section class="detail-section detail-history" aria-labelledby="ping-history-title">
     <div class="detail-section-head">
       <div><h2 id="ping-history-title">网络质量</h2><p>延迟历史与选定时间范围内的丢包率{{ updated ? ' · ' + new Date(updated).toLocaleTimeString('zh-CN') + ' 更新' : '' }}</p></div>
-      <div class="detail-controls"><label>时间范围 <select v-model.number="hours" aria-label="延迟历史时间范围"><option v-for="r in options" :key="r.hours" :value="r.hours">{{ r.label }}</option></select></label><button type="button" class="detail-control-button" :disabled="busy" @click="refresh(true)">刷新</button></div>
+      <div class="detail-controls"><label>时间范围 <select v-model.number="hours" aria-label="延迟历史时间范围"><option v-for="r in options" :key="r.hours" :value="r.hours">{{ r.label }}</option></select></label><label class="detail-check detail-smooth-toggle" title="圆滑连接采样点；单次短暂缺测以虚线过渡，超时和长断档不会补齐"><input v-model="smooth" type="checkbox" role="switch" aria-label="平滑显示延迟曲线" /><span>平滑显示</span></label><button type="button" class="detail-control-button" :disabled="busy" @click="refresh(true)">刷新</button></div>
     </div>
     <div v-if="error" class="detail-fetch-error" role="status">{{ error }}<span v-if="data.length"> · 保留上次成功数据</span><button type="button" @click="refresh(true)">重试</button></div>
     <div v-if="busy && !data.length" class="chart-empty">正在加载线路延迟…</div>
@@ -70,8 +77,9 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
           <small>丢包 {{ lossLabel(network.loss) }}</small>
         </label>
       </div>
-      <MetricChart v-if="active.length" title="多线路延迟历史" :points="rows" :lines="lines" :step="step" unit="ms" :cursor="cursor" @cursor="cursor = $event" />
+      <MetricChart v-if="active.length" title="多线路延迟历史" :points="rows" :lines="lines" :step="step" unit="ms" :smooth="smooth" :cursor="cursor" @cursor="cursor = $event" />
       <div v-else class="chart-empty">{{ data.length ? '勾选线路以查看延迟趋势' : '当前节点没有配置的线路或历史记录' }}</div>
+      <p v-if="smooth && active.length" class="detail-smooth-note">平滑仅改变曲线绘制，不修改原始延迟和丢包数据；虚线代表单次短时缺测的视觉过渡，超时或长时间断档仍会断开。</p>
     </template>
   </section>
 </template>
