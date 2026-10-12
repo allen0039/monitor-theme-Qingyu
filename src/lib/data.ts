@@ -29,7 +29,7 @@ export function normalizeNodes(value: unknown): MonitorNode[] {
     const raw = record(n.metrics)
     const valid = n.metrics != null && CORE.every((key) => finite(raw[key])) && Array.isArray(raw.load) && raw.load.length === 3 && raw.load.every(finite)
     const online = n.online === true
-    const m = online && valid ? Object.fromEntries([...CORE, 'load'].map((key) => [key, raw[key]])) as unknown as Metrics : null
+    const m = online && valid ? { ...Object.fromEntries([...CORE, 'load'].map((key) => [key, raw[key]])), ...Object.fromEntries(['swap_total', 'swap_used', 'tcp', 'udp', 'procs'].map((key) => [key, finite(raw[key]) ? raw[key] : null])) } as unknown as Metrics : null
     // Older hubs lack these keys. Null on a current hub has a separate meaning.
     const expires = n.expires_in !== undefined ? n.expires_in
       : typeof n.expires_at === 'string' && !Number.isNaN(Date.parse(n.expires_at))
@@ -40,6 +40,7 @@ export function normalizeNodes(value: unknown): MonitorNode[] {
       id: n.id, name: text(n.name) || `节点 ${n.id}`, country: /^[A-Z]{2}$/.test(text(n.country).toUpperCase()) ? text(n.country).toUpperCase() : '',
       group: text(n.group), online, metrics: m, metrics_invalid: online && n.metrics != null && !valid,
       os: text(n.os), arch: text(n.arch), virt: text(n.virt), cpu_name: text(n.cpu_name), cpu_cores: number(n.cpu_cores),
+      kernel: text(n.kernel), agent_version: text(n.agent_version), ipv4: text(n.ipv4), ipv6: text(n.ipv6), swap_total: finite(n.swap_total) ? n.swap_total : null,
       mem_total: m?.mem_total ?? number(n.mem_total), disk_total: m?.disk_total ?? number(n.disk_total),
       total_rx: number(n.total_rx), total_tx: number(n.total_tx), month_rx: number(n.month_rx), month_tx: number(n.month_tx),
       month_used: monthlyUsed(n), traffic_limit: number(n.traffic_limit), traffic_mode: text(n.traffic_mode),
@@ -104,6 +105,7 @@ function mergeNode(target: MonitorNode, source: MonitorNode): void {
   if (currentMetrics.net_rx !== nextMetrics.net_rx) currentMetrics.net_rx = nextMetrics.net_rx
   if (currentMetrics.net_tx !== nextMetrics.net_tx) currentMetrics.net_tx = nextMetrics.net_tx
   if (currentMetrics.uptime !== nextMetrics.uptime) currentMetrics.uptime = nextMetrics.uptime
+  for (const key of ['swap_total', 'swap_used', 'tcp', 'udp', 'procs'] as const) if (currentMetrics[key] !== nextMetrics[key]) currentMetrics[key] = nextMetrics[key]
   if (currentMetrics.load.some((value, index) => value !== nextMetrics.load[index])) {
     currentMetrics.load = [...nextMetrics.load] as [number, number, number]
   }

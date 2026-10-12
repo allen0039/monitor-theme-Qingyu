@@ -8,6 +8,11 @@ export interface Metrics {
   net_rx: number
   net_tx: number
   uptime: number
+  swap_total?: number | null
+  swap_used?: number | null
+  tcp?: number | null
+  udp?: number | null
+  procs?: number | null
 }
 
 export interface MonitorNode {
@@ -23,6 +28,11 @@ export interface MonitorNode {
   virt: string
   cpu_name: string
   cpu_cores: number
+  kernel?: string
+  agent_version?: string
+  ipv4?: string
+  ipv6?: string
+  swap_total?: number | null
   mem_total: number
   disk_total: number
   total_rx: number

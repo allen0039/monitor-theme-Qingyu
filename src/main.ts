@@ -4,5 +4,6 @@ import './styles.css'
 import './finance.css'
 import './theme-refresh.css'
 import './display-settings.css'
+import './node-detail.css'
 
 createApp(App).mount('#app')

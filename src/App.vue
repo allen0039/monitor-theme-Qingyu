@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Activity, CircleAlert, Clock3, ExternalLink, Globe2, LayoutGrid, LoaderCircle, Megaphone, Monitor, Moon, RotateCcw, Search, Server, Settings, SlidersHorizontal, Sun, Table2, Wallet, X } from '@lucide/vue'
 import type { ConnectionState, MonitorNode, SiteInfo, ThemeConfig } from './types'
 import manifest from '../theme.json'
@@ -13,6 +13,8 @@ import GeoMap from './components/GeoMap.vue'
 import NodeGlobe from './components/NodeGlobe.vue'
 import NodeCard from './components/NodeCard.vue'
 import NodeList from './components/NodeList.vue'
+import NodeDetail from './components/NodeDetail.vue'
+import { nodeFromHash, nodeHref } from './lib/navigation'
 import SummaryCards from './components/SummaryCards.vue'
 import VisitorInfoCard from './components/VisitorInfoCard.vue'
 import NodeStatusBadges from './components/NodeStatusBadges.vue'
@@ -22,6 +24,9 @@ import { exchangeRateLabel, useExchangeRates } from './lib/exchange-rates'
 import { resolveFinanceCurrency } from './lib/finance'
 
 const nodes = ref<MonitorNode[] | null>(null)
+const routeNode = ref<number | null>(typeof location !== 'undefined' ? nodeFromHash(location.hash) : null)
+const entryOrder = ref<number[]>([])
+const restore = { scroll: 0, focus: null as number | null, fromHome: false }
 const site = ref<SiteInfo>({ site_name: 'Monitor', authed: false, public_page: true })
 const siteConfig = ref<ThemeConfig>(defaultConfig())
 const { config, theme, layout, earth, sort, group, offlineLast, pingDetails, dark, reduceMotion, storageAvailable, setPreference, cycleTheme, resetPreferences } = usePreferences(siteConfig)
@@ -43,6 +48,29 @@ const effectiveGroup = computed(() => config.value.show_group_tabs ? group.value
 const effectiveSearch = computed(() => config.value.show_search ? search.value : '')
 const grouped = computed(() => inGroup(nodes.value ?? [], effectiveGroup.value))
 const filtered = computed(() => filterNodes(grouped.value, effectiveSearch.value, config.value.show_sort ? sort.value : config.value.default_sort, offlineLast.value))
+const selectedNode = computed(() => nodes.value?.find(node => node.id === routeNode.value) ?? null)
+const detailSiblings = computed(() => {
+  const list = nodes.value ?? []
+  const ordered = entryOrder.value.map(id => list.find(n => n.id === id)).filter((n): n is MonitorNode => !!n)
+  return selectedNode.value && ordered.some(n => n.id === selectedNode.value!.id) ? ordered : filterNodes(list, '', config.value.show_sort ? sort.value : config.value.default_sort, offlineLast.value)
+})
+const detailScope = computed(() => selectedNode.value && filtered.value.some(n => n.id === selectedNode.value!.id) && effectiveGroup.value !== null ? effectiveGroup.value || '未分组' : '全部节点')
+function openNode(id: number) {
+  if (routeNode.value === null) { restore.scroll = window.scrollY; restore.fromHome = true; restore.focus = id; entryOrder.value = filtered.value.map(n => n.id) }
+  window.location.hash = nodeHref(id)
+  syncRoute()
+}
+function syncRoute() {
+  const next = nodeFromHash(window.location.hash)
+  const previous = routeNode.value
+  if (next !== null && previous === null && !restore.fromHome) { restore.scroll = window.scrollY; entryOrder.value = filtered.value.map(n => n.id) }
+  routeNode.value = next
+  if (next !== null) { void nextTick(() => window.scrollTo(0, 0)) }
+  else if (previous !== null && restore.fromHome) {
+    void nextTick(() => requestAnimationFrame(() => { window.scrollTo(0, restore.scroll); document.querySelector<HTMLElement>(`[data-node-entry="${restore.focus}"]`)?.focus({ preventScroll: true }); restore.fromHome = false }))
+  }
+}
+function backToList() { window.location.hash = ''; syncRoute() }
 const hasVisual = computed(() => ['earth', 'earth-stop', 'map'].includes(earth.value))
 const cards = computed(() => summaryKeys(config.value))
 const showSummary = computed(() => config.value.show_summary && cards.value.length > 0)
@@ -82,7 +110,7 @@ async function loadSite() {
   try {
     const value = record(await api<unknown>('/me'))
     if (!alive) return
-    site.value = { site_name: typeof value.site_name === 'string' && value.site_name ? value.site_name : 'Monitor', authed: value.authed === true, public_page: value.public_page !== false }
+    site.value = { site_name: typeof value.site_name === 'string' && value.site_name ? value.site_name : 'Monitor', authed: value.authed === true, public_page: value.public_page !== false, history_days: typeof value.history_days === 'number' && Number.isFinite(value.history_days) ? value.history_days : undefined }
     document.title = site.value.site_name
     infoError.value = null
   } catch (failure) {
@@ -112,8 +140,9 @@ onMounted(() => {
   connect()
   syncScroll()
   window.addEventListener('scroll', syncScroll, { passive: true })
+  window.addEventListener('hashchange', syncRoute)
 })
-onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener('scroll', syncScroll) })
+onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener('scroll', syncScroll); window.removeEventListener('hashchange', syncRoute) })
 </script>
 <template>
   <div class="app-shell" :class="{ 'reduced-motion': reduceMotion, 'visitor-safe-area': showVisitor }" :style="{ '--visitor-height': `${visitorHeight}px` }">
@@ -142,7 +171,9 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
     <main class="main-content">
       <div v-if="config.notice_enabled && (config.notice_title || config.notice)" class="notice"><Megaphone /><div><strong v-if="config.notice_title">{{ config.notice_title }}</strong><p v-if="config.notice">{{ config.notice }}</p></div></div>
       <div v-if="(error || infoError) && nodes !== null" class="error-banner" role="status"><CircleAlert /><span>{{ error || infoError }}；页面保留最近一次数据。</span><button type="button" @click="retry"><RotateCcw />重试</button></div>
-      <template v-if="nodes !== null">
+      <template v-if="routeNode !== null && nodes !== null && selectedNode"><NodeDetail :node="selectedNode" :siblings="detailSiblings" :scope-label="detailScope" :config="config" :show-price="showPrice" :authed="site.authed && !infoError" :history-days="site.history_days" @back="backToList" @navigate="openNode" /></template>
+      <div v-else-if="routeNode !== null && nodes !== null" class="empty-state" role="alert"><Server /><h2>节点不存在或无权查看</h2><button type="button" class="primary-button" @click="backToList">返回节点列表</button></div>
+      <template v-else-if="nodes !== null">
         <section v-if="showOverview" class="overview" :class="{ 'overview-compact': !hasVisual, 'overview-visual-only': !showSummary }" aria-label="节点概况">
           <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :show-price="showPrice" v-model:currency="summaryCurrency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" @public-open-change="publicFinanceOpen = $event" />
           <div v-if="hasVisual" class="overview-visual">
@@ -166,9 +197,9 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
           </div>
         </div>
         <div v-if="filtered.length && layout === 'card'" class="nodes-grid" :class="`card-size-${config.card_size}`">
-          <NodeCard v-for="node in filtered" :key="node.id" :node="node" :config="config" :show-ping="configLoaded && config.show_ping" :ping-details="pingDetails" :show-price="showPrice" />
+          <NodeCard v-for="node in filtered" :key="node.id" :node="node" :config="config" :show-ping="configLoaded && config.show_ping" :ping-details="pingDetails" :show-price="showPrice" @open="openNode" />
         </div>
-        <NodeList v-else-if="filtered.length" :nodes="filtered" :config="config" :show-price="showPrice" />
+        <NodeList v-else-if="filtered.length" :nodes="filtered" :config="config" :show-price="showPrice" @open="openNode" />
         <div v-else class="empty-state"><Search v-if="effectiveSearch || effectiveGroup !== null" /><Server v-else /><h2>{{ nodes.length ? '没有匹配的节点' : '暂无节点' }}</h2><p>{{ nodes.length ? '试试其它关键词或节点分组。' : '节点接入 Monitor 后会显示在这里。' }}</p><button v-if="nodes.length" type="button" class="text-button" @click="resetFilters">清除筛选</button><a v-else-if="site.authed" href="/admin">前往后台接入节点<ExternalLink /></a></div>
         <p v-if="filtered.length && effectiveSearch.trim()" class="search-count">找到 {{ filtered.length }} 个节点</p>
       </template>
@@ -178,6 +209,6 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
     <DisplaySettingsDialog v-if="settingsOpen" :config="config" :site-config="siteConfig" :price-allowed="priceAllowed" :storage-available="storageAvailable" @change="setPreference" @reset="resetPreferences" @close="settingsOpen = false" />
     <PersonalFinanceDialog v-if="financeOpen && canCalculate && nodes !== null" :nodes="nodes" :exchange="exchange" :rates-loading="ratesLoading" @close="financeOpen = false" />
     <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" @country="visitorCountry = $event" />
-    <footer class="site-footer"><div><span>Powered by <a href="https://github.com/monitor-probe/monitor" target="_blank" rel="noopener noreferrer">Monitor</a></span><span>Theme by <a :href="manifest.url" target="_blank" rel="noopener noreferrer" :title="`Monitor 移植版 v${manifest.version}`">Emerald Globe Pro</a></span></div><p v-if="config.footer_text"><a v-if="footerUrl" :href="footerUrl" target="_blank" rel="noopener noreferrer">{{ config.footer_text }}</a><span v-else>{{ config.footer_text }}</span></p></footer>
+    <footer class="site-footer"><div><span>Powered by <a href="https://github.com/monitor-probe/monitor" target="_blank" rel="noopener noreferrer">Monitor</a></span><span>Theme by <a :href="manifest.url" target="_blank" rel="noopener noreferrer" :title="`${manifest.name} v${manifest.version}`">{{ manifest.name }}</a></span></div><p v-if="config.footer_text"><a v-if="footerUrl" :href="footerUrl" target="_blank" rel="noopener noreferrer">{{ config.footer_text }}</a><span v-else>{{ config.footer_text }}</span></p></footer>
   </div>
 </template>

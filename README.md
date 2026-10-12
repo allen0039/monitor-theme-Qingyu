@@ -1,4 +1,4 @@
-# Emerald Globe Pro · Monitor
+# 青屿 · Qingyu
 
 将 [Komari Emerald Globe Pro](https://github.com/allen0039/komari-theme-emerald-globe-pro) 的首页迁移到 [Monitor](https://github.com/monitor-probe/monitor)。保留翡翠渐变网格、交互地球、汇总卡片、节点卡片与列表，只提供首页。
 
@@ -10,7 +10,7 @@
 
 1. 从 [最新 Release](https://github.com/allen0039/monitor-theme-boxpro/releases/latest) 下载 `theme.tar.gz`。
 2. 登录 Monitor 后台，在「主题」页上传这个文件。
-3. 选择 **Emerald Globe Pro · Monitor**，刷新公开首页。
+3. 选择 **青屿 · Qingyu**，刷新公开首页。
 4. 在主题卡片的设置入口配置外观、公告、地球、总览、节点指标、网络延迟和背景等。
 
 无需修改主控或探针。`/admin` 仍使用 Monitor 内置后台。

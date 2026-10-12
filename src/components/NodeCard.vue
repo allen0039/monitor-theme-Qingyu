@@ -10,6 +10,12 @@ import OsIcon from './OsIcon.vue'
 import ResourceMeter from './ResourceMeter.vue'
 import PingPanel from './PingPanel.vue'
 const props = defineProps<{ node: MonitorNode; config: ThemeConfig; showPing: boolean; pingDetails: boolean; showPrice: boolean }>()
+const emit = defineEmits<{ open: [number] }>()
+function openCard(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  if (target.closest('a,button,summary,details,input,textarea,select,[contenteditable]') || window.getSelection()?.toString()) return
+  emit('open', props.node.id)
+}
 const mem = computed(() => percentage(props.node.metrics?.mem_used, props.node.mem_total))
 const disk = computed(() => percentage(props.node.metrics?.disk_used, props.node.disk_total))
 const traffic = computed(() => percentage(props.node.month_used, props.node.traffic_limit))
@@ -41,10 +47,10 @@ const hasExtra = computed(() => hasHardware.value || (props.showPrice && !!remai
 const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null && props.node.expires_in > 0 && props.node.expires_in <= props.config.expiry_warning_days, expired: props.node.expires_in !== null && props.node.expires_in <= 0 }))
 </script>
 <template>
-  <article class="node-card" :class="{ 'node-offline': !node.online, 'node-waiting': node.online && !node.metrics }" :aria-label="`${node.name}，${nodeState(node)}`">
+  <article class="node-card" @click="openCard" :class="{ 'node-offline': !node.online, 'node-waiting': node.online && !node.metrics }" :aria-label="`${node.name}，${nodeState(node)}`">
     <div class="node-card-header">
       <span class="status-dot" :class="!node.online ? 'offline' : !node.metrics ? 'waiting' : ''" :title="nodeState(node)" />
-      <h2 :title="node.name">{{ node.name }}</h2>
+      <h2 :title="node.name"><a :href="`#/node/${node.id}`" :data-node-entry="node.id" @click.prevent="emit('open', node.id)">{{ node.name }}</a></h2>
       <OsIcon v-if="config.show_node_metadata" :os="node.os" />
       <img v-if="config.show_node_metadata && flagUrl(node.country)" :src="flagUrl(node.country)" :alt="regionName(node.country)" :title="regionName(node.country)" class="country-flag" />
     </div>
@@ -94,6 +100,7 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
           </div>
         </details>
       </div>
+      <a class="node-open-link" :href="`#/node/${node.id}`" @click.prevent="emit('open', node.id)">查看详情 →</a>
     </div>
   </article>
 </template>

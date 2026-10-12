@@ -1,8 +1,8 @@
 {
-  "name": "Emerald Globe Pro · Monitor",
+  "name": "青屿 · Qingyu",
   "short": "boxpro",
-  "description": "移植 Komari Emerald Globe Pro 首页：翡翠绿、交互地球、节点卡片和列表。",
-  "version": "0.2.11",
+  "description": "青屿 Qingyu：简约的翡翠绿 Monitor 主题，提供交互地球、节点卡片和列表。",
+  "version": "0.2.12",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-boxpro",
   "config": [
