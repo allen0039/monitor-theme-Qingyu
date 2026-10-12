@@ -15,6 +15,8 @@
 
 无需修改主控或探针。`/admin` 仍使用 Monitor 内置后台。
 
+默认图标采用三层服务器、延迟波动曲线和蓝绿扫描环，首页与浏览器标签页使用 `/favicon.svg`，主屏幕使用 `/apple-touch-icon.png`；另提供 `/favicon.ico`。后台「站点图标」留空时使用这套内置图标，也可填写自己的图片地址。
+
 也可以在 Monitor 的「从 GitHub 安装」中填写 `https://github.com/allen0039/monitor-theme-boxpro`。安装时使用 Release 中的主题包。
 
 下载 `theme.tar.gz.sha256` 后，可在主题包所在目录校验完整性：
@@ -51,7 +53,9 @@ tar -xzf theme.tar.gz -C /opt/monitor/data/themes/boxpro
 
 自定义总览选择「自定义」方案后，可用逗号、空格或换行排列 `remaining_value`、`memory`、`disk`、`online`、`offline`、`traffic`、`upload`、`download`、`cpu`、`regions`。重复和未知项会忽略，留空隐藏全部总览卡片。已有自定义在线／离线卡片继续有效。平均 CPU 只计算有有效指标的在线节点，地区数量按国家代码去重。隐藏总览仍可保留地球；隐藏整个头部则同时隐藏两者，在线状态数量移至节点工具栏。
 
-主控设置是站点默认值。访客手动选择的配色、布局、头部、排序、离线后置和延迟明细优先保存在当前浏览器；首页「显示设置 → 恢复站点默认」可清除这些选择。没有手动选择过的项目继续跟随主控默认值。关闭分组、搜索或排序入口时，会分别显示全部节点、忽略搜索词或使用主控默认排序。
+主控设置是站点默认值。首页「显示设置」采用七分类面板，提供 46 项浏览器个人设置：配色、视图、卡片尺寸、动画、断线刷新、地球与首页工具、总览、节点指标、网络延迟、费用、背景和访客气泡。修改后立即生效并自动保存在当前浏览器；没有手动修改的选项继续跟随主控默认值。「恢复站点默认」清除全部显示偏好，已有配色、布局、头部、排序、离线后置和延迟明细偏好仍兼容。自定义总览可用中文勾选和上下按钮排列，与首页快捷入口保持同步。
+
+个人设置不修改站点配置；站点图标、公告内容、页脚与登录隐私规则仍由后台管理。站点关闭的费用、个人计算入口和网络延迟无法通过个人设置开启；未登录隐藏费用规则始终生效。关闭分组、搜索或排序入口时，会分别显示全部节点、忽略搜索词或使用当前默认排序。浏览器存储不可用时，仍可调整当前页面，并显示未保存提示。
 
 升级会保留原来的 13 个配置键及其含义，新增选项自动补默认值。设置保存后刷新公开首页即可生效。主题目前只提供首页，设置中仅包含本主题已经实现的功能。
 
@@ -144,7 +148,7 @@ theme.tar.gz.sha256
 
 - 视觉、地球纹理和国家中心点：[Komari Emerald Globe Pro](https://github.com/allen0039/komari-theme-emerald-globe-pro)，保留 Tokinx / Davies_Allen 的 MIT 声明。
 - 接口参考、图标约定和安装格式：[Monitor 主题文档](https://monitor-document.pages.dev/dev/theme)、[默认主题](https://github.com/monitor-probe/monitor-theme-default)。
-- 开发预览脚本及 Apple Touch 图标：Monitor 官方项目，MIT，stqfdyr。
+- 开发预览脚本：Monitor 官方项目，MIT，stqfdyr；默认站点与 Apple Touch 图标使用本项目定制的服务器监控设计。
 - 本地点状地图：Natural Earth / World Atlas，许可证见 `THIRD_PARTY_LICENSES.md`。
 - 图标、国旗、地球依赖随构建本地提供，无运行时 CDN 请求。
 

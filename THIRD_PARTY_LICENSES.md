@@ -2,7 +2,7 @@
 
 ## Monitor preview and Apple Touch icon
 
-Copyright and license for `scripts/official-preview.js` and `public/apple-touch-icon.png`.
+Copyright and license for `scripts/official-preview.js` and the previously bundled Apple Touch icon. The current `public/apple-touch-icon.png` uses this project's custom server-monitoring design; the original notice is retained below.
 
 MIT License
 
