@@ -38,14 +38,26 @@ try{
   // Smooth switch changes only the ping-chart geometry; reload retains the choice.
   const smoothSelector = 'input[aria-label="平滑显示延迟曲线"]'
   const readPingGeometry = "() => document.querySelector('#ping-history-title')?.closest('.detail-history')?.querySelector('.detail-chart svg path[stroke]')?.getAttribute('d')"
+  const readResourceGeometry = "() => [...document.querySelectorAll('.detail-history:not(.detail-ping-history) svg path[stroke]')].map(path => path.getAttribute('d'))"
+  const resourceBefore = await evalJS(`(${readResourceGeometry})()`)
+  const networkValuesBefore = await evalJS("document.querySelector('.detail-ping-networks').innerText")
   const switchBefore = await evalJS(`({checked:document.querySelector('${smoothSelector}')?.checked,d:(${readPingGeometry})()})`)
   if (switchBefore.checked !== false || switchBefore.d.includes('C')) throw Error('Default ping line mode should be angular: ' + JSON.stringify(switchBefore))
   await evalJS(`document.querySelector('${smoothSelector}').click()`)
   await untilJS(`document.querySelector('${smoothSelector}')?.checked && (${readPingGeometry})()?.includes('C')`)
+  const smoothDrawing = await evalJS("[...document.querySelectorAll('.detail-ping-history svg path[stroke]')].map(path => ({ d: path.getAttribute('d'), dash: path.getAttribute('stroke-dasharray') }))")
+  if (smoothDrawing.length !== 3 || smoothDrawing.some(path => path.dash || !path.d.includes('C'))) throw Error('Smooth lines should use continuous solid curves: ' + JSON.stringify(smoothDrawing))
+  if (JSON.stringify(await evalJS(`(${readResourceGeometry})()`)) !== JSON.stringify(resourceBefore)) throw Error('Ping smoothing changed resource charts')
+  if (await evalJS("document.querySelector('.detail-ping-networks').innerText") !== networkValuesBefore) throw Error('Ping smoothing changed measured network values')
+  await evalJS("document.querySelector('.detail-ping-history').scrollIntoView({block:'start'})")
+  await wait(150)
+  const smoothShot = await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
+  writeFileSync('/tmp/qingyu-ping-smooth.png',Buffer.from(smoothShot.data,'base64'))
   await command('Page.navigate',{url:'http://127.0.0.1:4179/#/node/1'})
   await untilJS(`document.querySelector('${smoothSelector}')?.checked && (${readPingGeometry})()?.includes('C')`)
   await evalJS(`document.querySelector('${smoothSelector}').click()`)
   await untilJS(`!document.querySelector('${smoothSelector}')?.checked && !(${readPingGeometry})()?.includes('C')`)
+  if (await evalJS(`(${readPingGeometry})()`) !== switchBefore.d) throw Error('Disabling smoothing did not restore original line geometry')
   function checkChartAxes(metrics, label) {
     if (Math.abs(metrics.svgWidth - metrics.viewBoxWidth) > 2 || metrics.svgHeight > 330 || metrics.svgHeight < 205 ||
         metrics.axisFont > 12 || metrics.axisHeight > 15 || metrics.labelCollision || metrics.xLabels < 3 ||

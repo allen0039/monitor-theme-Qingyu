@@ -81,7 +81,6 @@ function move(event: MouseEvent | PointerEvent) {
         <g v-for="tick in ticks" :key="tick.y"><path :d="'M' + left + ' ' + tick.y + ' H' + (width - right)" class="chart-gridline" /><text :x="left - 7" :y="tick.y + 4" text-anchor="end" class="chart-axis chart-axis-y">{{ tick.label }}</text></g>
         <text v-for="tick in timeTicks" :key="tick.x" :x="tick.x" :y="height - 12" :text-anchor="tick.x === left ? 'start' : tick.x >= width - right - 1 ? 'end' : 'middle'" class="chart-axis chart-axis-x">{{ tick.label }}</text>
         <path v-for="line in lines" :key="line.key" :d="geometry[line.key]?.solid ?? ''" fill="none" :stroke="line.color" :stroke-dasharray="line.dashed ? '5 5' : undefined" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
-        <path v-for="line in smooth ? lines.filter(line => geometry[line.key]?.bridge) : []" :key="'bridge-' + line.key" :d="geometry[line.key]!.bridge" fill="none" :stroke="line.color" stroke-dasharray="3 5" opacity=".72" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"><title>短时缺测过渡，非实际测量</title></path>
         <path v-if="focused" :d="'M' + x(focused.ts) + ' ' + top + ' V' + (height - bottom)" class="chart-cursor" />
         <circle v-for="line in lines" v-if="focused" :key="line.key" :cx="x(focused.ts)" :cy="focused[line.key] === null ? -100 : y(focused[line.key]!)" r="3.6" :fill="line.color" stroke="var(--surface-solid)" stroke-width="2" vector-effect="non-scaling-stroke" />
       </svg>

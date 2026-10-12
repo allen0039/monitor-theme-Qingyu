@@ -1,7 +1,7 @@
 /** A presentation-only path generator. No missing or timed-out sample becomes a measurement. */
 export interface PlotSample { ts: number; [key: string]: number | null | undefined }
 export interface PlotXY { x: number; y: number }
-export interface LineGeometry { solid: string; bridge: string }
+export interface LineGeometry { solid: string }
 
 const r = (n: number) => Number(n.toFixed(2))
 const xy = (p: PlotXY) => `${r(p.x)} ${r(p.y)}`
@@ -40,44 +40,62 @@ export function monotonePath(points: PlotXY[]): string {
   return d
 }
 
+interface LineSample { ts: number; value: number }
+
+/** A time-weighted three-sample average reduces spikes only in the drawing copy. */
+function smoothSamples(samples: LineSample[], step: number): LineSample[] {
+  return samples.map((sample, i) => {
+    let sum = sample.value * 2, weight = 2
+    for (const neighbor of [samples[i - 1], samples[i + 1]]) {
+      if (!neighbor) continue
+      const w = Math.max(0, 2 - Math.abs(neighbor.ts - sample.ts) / step)
+      sum += neighbor.value * w
+      weight += w
+    }
+    return { ts: sample.ts, value: sum / weight }
+  })
+}
+
 /**
- * Missing timestamps may get a dashed short bridge only in smoothed mode.
- * An explicit null (probe timeout), long discontinuity, or out-of-range sample NEVER bridges.
+ * Smooth mode joins up to two missing/timeout cycles with the same continuous curve.
+ * Long outages and invalid values still split paths. Source samples remain untouched.
  */
 export function chartLineGeometry(
   points: PlotSample[], key: string, step: number,
   x: (ts: number) => number, y: (v: number) => number,
   smooth = false,
 ): LineGeometry {
-  const maxGap = Math.max(1, step) * 1.6
-  const bridgeMax = Math.max(1, step) * 2.25
-  const segments: PlotXY[][] = []
-  const bridges: string[] = []
-  let segment: PlotXY[] = []
-  let previous: { ts: number; p: PlotXY } | null = null
+  const cadence = Math.max(1, step)
+  const maxGap = cadence * (smooth ? 3.25 : 1.6)
+  const segments: LineSample[][] = []
+  let segment: LineSample[] = []
+  let previous: LineSample | null = null
   function finish() { if (segment.length) segments.push(segment); segment = [] }
   for (const row of points) {
     const value = row[key]
+    if (value === null && smooth) continue
     if (value === null || (value !== undefined && !Number.isFinite(value))) {
-      // A timeout is a hard barrier, even for the smooth setting.
       finish()
       previous = null
       continue
     }
     if (value === undefined) continue // Another line may have sampled at this timestamp.
-    const p = { x: x(row.ts), y: y(value) }
+    const sample = { ts: row.ts, value }
     if (!previous) {
-      segment = [p]
+      segment = [sample]
     } else {
       const delta = row.ts - previous.ts
       if (delta <= 0 || delta > maxGap) {
         finish()
-        if (smooth && delta > maxGap && delta <= bridgeMax) bridges.push(`M${xy(previous.p)} ${lineTo(p)}`)
-        segment = [p]
-      } else segment.push(p)
+        segment = [sample]
+      } else segment.push(sample)
     }
-    previous = { ts: row.ts, p }
+    previous = sample
   }
   finish()
-  return { solid: segments.map(segment => smooth ? monotonePath(segment) : `M${xy(segment[0]!)} ${segment.slice(1).map(lineTo).join(' ')}`).join(' '), bridge: bridges.join(' ') }
+  return { solid: segments.map(segment => {
+    const samples = smooth ? smoothSamples(segment, cadence) : segment
+    const plotted = samples.map(sample => ({ x: x(sample.ts), y: y(sample.value) }))
+    return smooth ? monotonePath(plotted) : `M${xy(plotted[0]!)} ${plotted.slice(1).map(lineTo).join(' ')}`
+  }).join(' ') }
 }
