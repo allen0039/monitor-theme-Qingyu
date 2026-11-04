@@ -75,6 +75,7 @@ try{
       svgWidth: bounds.width, svgHeight: bounds.height, viewBoxWidth: chart.viewBox.baseVal.width,
       axisFont: parseFloat(getComputedStyle(axis).fontSize), axisHeight: axis.getBoundingClientRect().height,
       xLabels: labels.length, labelCollision: labels.some((box, index) => index > 0 && labels[index - 1].right > box.left + 2),
+      yLabels: [...chart.querySelectorAll('.chart-axis-y')].map(el => el.textContent),
       overflow: document.documentElement.scrollWidth > innerWidth
     }
   })()`
@@ -148,6 +149,20 @@ try{
   await untilJS("Math.abs(document.querySelector('.detail-ping-history .chart-svg').viewBox.baseVal.width - document.querySelector('.detail-ping-history .chart-svg').getBoundingClientRect().width) < 2")
   const mobileAxes = await evalJS(chartAxesJS)
   checkChartAxes(mobileAxes, 'Mobile')
+  const mobileQuality = await evalJS(`(() => {
+    const table = document.querySelector('.ping-quality-table')
+    const rows = [...document.querySelectorAll('.ping-quality-row')]
+    return {
+      rows: rows.length,
+      metrics: rows.every(row => row.querySelectorAll('.ping-quality-metrics > span').length === 4),
+      cards: rows.every(row => getComputedStyle(row).gridTemplateColumns.split(' ').length === 1),
+      tableOverflow: !!table && table.scrollWidth > table.clientWidth + 1,
+      pageOverflow: document.documentElement.scrollWidth > innerWidth,
+    }
+  })()`)
+  if (mobileQuality.rows < 1 || !mobileQuality.metrics || !mobileQuality.cards || mobileQuality.tableOverflow || mobileQuality.pageOverflow) {
+    throw Error('Mobile ping quality layout failed: ' + JSON.stringify(mobileQuality))
+  }
   await evalJS("document.querySelector('.detail-ping-history').scrollIntoView({block:'start'})")
   await wait(150)
   const networkMobileShot = await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})

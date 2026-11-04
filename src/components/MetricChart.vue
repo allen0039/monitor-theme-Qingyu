@@ -53,9 +53,14 @@ const domain = computed(() => {
   const sorted = [...values.value].sort((a, b) => a - b)
   const fullMax = props.cap ?? Math.max(1, ...sorted, 1) * 1.13
   if (props.scale !== 'adaptive' || props.unit !== 'ms' || !sorted.length) return { min: 0, max: fullMax, clipped: 0 }
-  const low = percentile(sorted, .05), high = Math.max(...sorted), span = Math.max(100, high - low)
-  const step = niceStep(span / 4), min = Math.max(0, Math.floor(Math.max(0, low - step * .35) / step) * step)
-  const max = Math.max(min + step * 4, Math.ceil((high + step * .2) / step) * step)
+  const low = percentile(sorted, .05), high = Math.max(...sorted), span = Math.max(40, high - low)
+  const step = niceStep(span / 4)
+  const padding = Math.max(step * .25, span * .08)
+  const rawMin = Math.max(0, low - padding)
+  // Keep a zero baseline when the observed values are close to it; otherwise
+  // use the lower bound to preserve detail without wasting most of the plot.
+  const min = rawMin <= step * 2 ? 0 : Math.floor(rawMin / step) * step
+  const max = Math.max(min + step * 4, Math.ceil((high + padding) / step) * step)
   return { min, max, clipped: sorted.filter(value => value < min || value > max).length }
 })
 const x = (ts: number) => left.value + (ts - bounds.value.start) / (bounds.value.end - bounds.value.start) * plotW.value

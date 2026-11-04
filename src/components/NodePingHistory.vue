@@ -94,17 +94,19 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
       <div v-else class="chart-empty">{{ data.length ? '勾选线路以查看延迟趋势' : '当前节点没有配置的线路或历史记录' }}</div>
       <div v-if="data.length" class="ping-quality-table" role="table" aria-label="线路质量统计">
         <div class="ping-quality-head" role="row">
-          <span>目标</span><span>质量 / 丢包</span><span class="ping-quality-number-head">Avg</span><span class="ping-quality-number-head">Jitter</span><span class="ping-quality-number-head">Loss</span><span class="ping-quality-number-head">Last</span>
+          <span>目标</span><span>质量 / 丢包</span><div class="ping-quality-metrics-head"><span>平均</span><span>抖动</span><span>丢包</span><span>最新</span></div>
         </div>
         <div v-for="(network, index) in data" :key="network.id" class="ping-quality-row" :class="{ inactive: !selected.includes(network.id) }" role="row">
           <label class="ping-quality-target"><input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" /><i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span></label>
           <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量与丢包事件'">
             <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · 平均 ${latencyLabel(bucket.latency, !bucket.timeout)} · 峰值 ${latencyLabel(bucket.peak, bucket.peak !== null)} · 丢包 ${lossLabel(bucket.loss)}`"><b :class="`quality-tone-${bucket.timeout ? 'red' : qualityTone(bucket.peak)}`" /><i v-if="bucket.timeout || (bucket.loss !== null && bucket.loss > 0)" class="ping-loss-marker" aria-label="丢包或超时" /></span>
           </div>
-          <strong>{{ latencyLabel(stats(network).avg, stats(network).avg !== null) }}</strong>
-          <strong :title="stats(network).jitter !== null ? '按相邻有效采样的延迟差估算' : ''">{{ jitterLabel(network) }}</strong>
-          <strong>{{ lossLabel(network.loss) }}</strong>
-          <strong>{{ latencyLabel(stats(network).last, !!network.latest) }}</strong>
+          <div class="ping-quality-metrics">
+            <span><small>平均</small><strong>{{ latencyLabel(stats(network).avg, stats(network).avg !== null) }}</strong></span>
+            <span><small>抖动</small><strong :title="stats(network).jitter !== null ? '按相邻有效采样的延迟差估算' : ''">{{ jitterLabel(network) }}</strong></span>
+            <span><small>丢包</small><strong>{{ lossLabel(network.loss) }}</strong></span>
+            <span><small>最新</small><strong>{{ latencyLabel(stats(network).last, !!network.latest) }}</strong></span>
+          </div>
         </div>
       </div>
       <p v-if="smooth && active.length" class="detail-smooth-note">平滑会减轻尖峰，并连续连接短暂缺测或超时（最多两个采样周期）；长时间断档仍会断开。仅影响曲线显示，悬停读数和丢包率仍使用原始数据。</p>
