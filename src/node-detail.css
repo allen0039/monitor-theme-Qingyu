@@ -72,7 +72,9 @@
 .detail-chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
 .detail-chart { min-width: 0; padding: 17px 16px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }
 .detail-chart-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.detail-chart-title { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
 .detail-chart-top h3 { font-size: 13px; font-weight: 680; margin: 0; }
+.chart-scale-note { color: var(--muted); font-size: 10px; }
 .detail-legend { display: flex; gap: 11px; flex-wrap: wrap; font-size: 10px; color: var(--muted); }
 .detail-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .detail-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 3px; }
@@ -105,8 +107,11 @@
 .ping-quality-target i { width: 9px; height: 9px; flex: none; border-radius: 2px; }
 .ping-quality-target span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ping-quality-strip { display: flex; gap: 1px; min-width: 0; height: 12px; align-items: stretch; }
-.ping-quality-strip > span { flex: 1 1 0; min-width: 2px; border-radius: 1px; transition: transform .15s ease; }
-.ping-quality-strip > span:hover { transform: scaleY(1.7); z-index: 1; }
+.ping-quality-segment { position: relative; flex: 1 1 0; min-width: 2px; height: 12px; }
+.ping-quality-segment > b { display: block; width: 100%; height: 100%; border-radius: 1px; transition: transform .15s ease; }
+.ping-quality-segment:hover { z-index: 1; }
+.ping-quality-segment:hover > b { transform: scaleY(1.7); }
+.ping-loss-marker { position: absolute; top: -4px; left: 50%; width: 3px; height: 4px; border-radius: 2px 2px 0 0; background: var(--danger); transform: translateX(-50%); }
 .ping-quality-row > strong { text-align: right; font-weight: 650; white-space: nowrap; }
 .ping-quality-row > strong small { display: block; color: var(--muted); font-size: 9px; font-weight: 400; }
 .detail-bottom-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 25px; }

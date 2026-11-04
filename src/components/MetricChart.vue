@@ -4,7 +4,7 @@ import { formatBytes } from '../lib/format'
 import { chartLineGeometry } from '../lib/chart-lines'
 export interface ChartPoint { ts: number; [key: string]: number | null }
 export interface ChartLine { key: string; label: string; color: string; dashed?: boolean }
-const props = defineProps<{ title: string; points: ChartPoint[]; lines: ChartLine[]; step: number; unit: 'percent' | 'bytes' | 'rate' | 'ms'; cap?: number; cursor?: number | null; smooth?: boolean }>()
+const props = defineProps<{ title: string; points: ChartPoint[]; lines: ChartLine[]; step: number; unit: 'percent' | 'bytes' | 'rate' | 'ms'; cap?: number; cursor?: number | null; smooth?: boolean; scale?: 'full' | 'adaptive' }>()
 const emit = defineEmits<{ cursor: [number | null] }>()
 // Keep SVG drawing units in physical CSS pixels. A fixed 620-wide viewBox scaled
 // text along with the lines on desktop, producing oversized axis labels.
@@ -37,13 +37,32 @@ const bounds = computed(() => {
   const last = props.points.at(-1)?.ts ?? first + 3600
   return { start: first, end: Math.max(first + 1, last) }
 })
-const max = computed(() => props.cap ?? Math.max(1, ...props.points.flatMap(p => props.lines.map(line => p[line.key] ?? 0))) * 1.13)
+const values = computed(() => props.points.flatMap(point => props.lines.map(line => point[line.key]).filter((value): value is number => typeof value === 'number' && Number.isFinite(value))))
+function percentile(sorted: number[], fraction: number): number {
+  if (!sorted.length) return 0
+  const position = (sorted.length - 1) * fraction, lower = Math.floor(position), upper = Math.ceil(position)
+  return sorted[lower]! + (sorted[upper]! - sorted[lower]!) * (position - lower)
+}
+const domain = computed(() => {
+  const sorted = [...values.value].sort((a, b) => a - b)
+  const fullMax = props.cap ?? Math.max(1, ...sorted, 1) * 1.13
+  if (props.scale !== 'adaptive' || props.unit !== 'ms' || !sorted.length) return { min: 0, max: fullMax, clipped: 0 }
+  const low = percentile(sorted, .05), high = percentile(sorted, .95), spread = Math.max(20, high - low), pad = Math.max(8, spread * .15)
+  const min = Math.max(0, low - pad), max = Math.max(min + 40, high + pad)
+  return { min, max, clipped: sorted.filter(value => value < min || value > max).length }
+})
 const x = (ts: number) => left.value + (ts - bounds.value.start) / (bounds.value.end - bounds.value.start) * plotW.value
-const y = (value: number) => top + plotH.value - (Math.max(0, value) / max.value) * plotH.value
+const y = (value: number) => {
+  const fraction = Math.max(0, Math.min(1, (value - domain.value.min) / (domain.value.max - domain.value.min)))
+  return top + plotH.value - fraction * plotH.value
+}
 const geometry = computed(() => Object.fromEntries(
   props.lines.map(line => [line.key, chartLineGeometry(props.points, line.key, props.step, x, y, props.smooth === true)])
 ) as Record<string, ReturnType<typeof chartLineGeometry>>)
-const ticks = computed(() => [0, .25, .5, .75, 1].map(f => ({ y: y(f * max.value), label: display(f * max.value, true) })))
+const ticks = computed(() => [0, .25, .5, .75, 1].map(f => {
+  const value = domain.value.min + f * (domain.value.max - domain.value.min)
+  return { y: y(value), label: display(value, true) }
+}))
 const timeTicks = computed(() => {
   const count = width.value < 600 ? 3 : width.value < 980 ? 4 : 5
   const sameDay = new Date(bounds.value.start * 1000).toDateString() === new Date(bounds.value.end * 1000).toDateString()
@@ -75,7 +94,7 @@ function move(event: MouseEvent | PointerEvent) {
 </script>
 <template>
   <section class="detail-chart">
-    <div class="detail-chart-top"><h3>{{ title }}</h3><div class="detail-legend"><span v-for="line in lines" :key="line.key"><i :style="{ background: line.color }" />{{ line.label }}</span></div></div>
+    <div class="detail-chart-top"><div class="detail-chart-title"><h3>{{ title }}</h3><span v-if="props.scale === 'adaptive'" class="chart-scale-note">自适应刻度<span v-if="domain.clipped"> · {{ domain.clipped }} 个尖峰超出范围</span></span></div><div class="detail-legend"><span v-for="line in lines" :key="line.key"><i :style="{ background: line.color }" />{{ line.label }}</span></div></div>
     <div v-if="points.length" class="detail-plot">
       <svg ref="svgElement" class="chart-svg" :viewBox="'0 0 ' + width + ' ' + height" role="img" :aria-label="title + '历史趋势'" preserveAspectRatio="none" @pointermove="move" @pointerleave="leave" @click="move">
         <g v-for="tick in ticks" :key="tick.y"><path :d="'M' + left + ' ' + tick.y + ' H' + (width - right)" class="chart-gridline" /><text :x="left - 7" :y="tick.y + 4" text-anchor="end" class="chart-axis chart-axis-y">{{ tick.label }}</text></g>

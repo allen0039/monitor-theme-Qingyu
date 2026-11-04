@@ -10,9 +10,11 @@ import MetricChart, { type ChartPoint, type ChartLine } from './MetricChart.vue'
 const props = defineProps<{ node: MonitorNode; config: ThemeConfig; historyDays?: number }>()
 const options = computed(() => historyRanges(props.historyDays))
 const hours = ref(1), data = ref<PingNetwork[]>([]), selected = ref<number[]>([])
-function initialSmooth(): boolean { try { return readQingyuStorage(localStorage, 'qingyu.ping.smooth') === '1' } catch { return false } }
+const smoothStorageKey = 'qingyu.ping.smooth.v2'
+function initialSmooth(): boolean { try { return readQingyuStorage(localStorage, smoothStorageKey) === '1' } catch { return false } }
 const smooth = ref(initialSmooth())
-watch(smooth, enabled => { try { localStorage.setItem('qingyu.ping.smooth', enabled ? '1' : '0') } catch { /* Browser storage unavailable. */ } })
+const adaptive = ref(true)
+watch(smooth, enabled => { try { localStorage.setItem(smoothStorageKey, enabled ? '1' : '0') } catch { /* Browser storage unavailable. */ } })
 const busy = ref(false), error = ref(''), updated = ref(0), cursor = ref<number | null>(null)
 let timer: ReturnType<typeof setInterval> | null = null, controller: AbortController | null = null, generation = 0, cooldown = 0
 function refresh(force = false) {
@@ -71,7 +73,7 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
   <section class="detail-section detail-history detail-ping-history" aria-labelledby="ping-history-title">
     <div class="detail-section-head">
       <div><h2 id="ping-history-title">网络质量</h2><p>延迟历史与选定时间范围内的丢包率{{ updated ? ' · ' + new Date(updated).toLocaleTimeString('zh-CN') + ' 更新' : '' }}</p></div>
-      <div class="detail-controls"><div class="ping-range-tabs" role="tablist" aria-label="延迟历史时间范围"><button v-for="r in options" :key="r.hours" type="button" role="tab" :aria-selected="hours === r.hours" :class="{ active: hours === r.hours }" @click="hours = r.hours">{{ r.label }}</button></div><label class="detail-check detail-smooth-toggle" title="平缓尖峰并连续连接短暂缺测或超时；长时间断档仍会断开"><input v-model="smooth" type="checkbox" role="switch" aria-label="平滑显示延迟曲线" /><span>平滑显示</span></label><button type="button" class="detail-control-button" :disabled="busy" @click="refresh(true)">刷新</button></div>
+      <div class="detail-controls"><div class="ping-range-tabs" role="tablist" aria-label="延迟历史时间范围"><button v-for="r in options" :key="r.hours" type="button" role="tab" :aria-selected="hours === r.hours" :class="{ active: hours === r.hours }" @click="hours = r.hours">{{ r.label }}</button></div><button type="button" class="detail-control-button" :aria-pressed="adaptive" @click="adaptive = !adaptive">{{ adaptive ? '自适应刻度' : '全量刻度' }}</button><label class="detail-check detail-smooth-toggle" title="平缓尖峰并连续连接短暂缺测或超时；长时间断档仍会断开"><input v-model="smooth" type="checkbox" role="switch" aria-label="平滑显示延迟曲线" /><span>平滑显示</span></label><button type="button" class="detail-control-button" :disabled="busy" @click="refresh(true)">刷新</button></div>
     </div>
     <div v-if="error" class="detail-fetch-error" role="status">{{ error }}<span v-if="data.length"> · 保留上次成功数据</span><button type="button" @click="refresh(true)">重试</button></div>
     <div v-if="busy && !data.length" class="chart-empty">正在加载线路延迟…</div>
@@ -84,7 +86,7 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
           <small>丢包 {{ lossLabel(network.loss) }}</small>
         </label>
       </div>
-      <MetricChart v-if="active.length" title="多线路延迟历史" :points="rows" :lines="lines" :step="step" unit="ms" :smooth="smooth" :cursor="cursor" @cursor="cursor = $event" />
+      <MetricChart v-if="active.length" title="多线路延迟历史" :points="rows" :lines="lines" :step="step" unit="ms" :scale="adaptive ? 'adaptive' : 'full'" :smooth="smooth" :cursor="cursor" @cursor="cursor = $event" />
       <div v-else class="chart-empty">{{ data.length ? '勾选线路以查看延迟趋势' : '当前节点没有配置的线路或历史记录' }}</div>
       <div v-if="data.length" class="ping-quality-table" role="table" aria-label="线路质量统计">
         <div class="ping-quality-head" role="row">
@@ -92,8 +94,8 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
         </div>
         <div v-for="(network, index) in data" :key="network.id" class="ping-quality-row" :class="{ inactive: !selected.includes(network.id) }" role="row">
           <label class="ping-quality-target"><input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" /><i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span></label>
-          <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量分段'">
-            <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" :class="`ping-tone-${bucket.timeout ? 'bad' : pingTone(bucket.latency, 'latency')}`" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · ${latencyLabel(bucket.latency, !bucket.timeout)} · 丢包 ${lossLabel(bucket.loss)}`" />
+          <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量与丢包事件'">
+            <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · ${latencyLabel(bucket.latency, !bucket.timeout)} · 丢包 ${lossLabel(bucket.loss)}`"><b :class="`ping-tone-${bucket.timeout ? 'bad' : pingTone(bucket.latency, 'latency')}`" /><i v-if="bucket.timeout || (bucket.loss !== null && bucket.loss > 0)" class="ping-loss-marker" aria-label="丢包或超时" /></span>
           </div>
           <strong>{{ latencyLabel(stats(network).avg, stats(network).avg !== null) }}</strong>
           <strong>{{ jitterLabel(network) }}<small v-if="stats(network).jitter !== null">估算</small></strong>
