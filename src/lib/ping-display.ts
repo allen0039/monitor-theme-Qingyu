@@ -1,6 +1,6 @@
 import type { PingNetwork, PingRow } from '../types'
 
-export interface PingBucket { start: number; end: number; latency: number | null; loss: number | null; timeout: boolean }
+export interface PingBucket { start: number; end: number; latency: number | null; peak: number | null; loss: number | null; timeout: boolean }
 export interface PingStats { avg: number | null; jitter: number | null; last: number | null; jitterEstimated: boolean }
 export function mean(values: (number | null | undefined)[]): number | null {
   const valid = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
@@ -33,7 +33,7 @@ export function historyBuckets(rows: PingRow[]): PingBucket[] {
     const start = first + width * index, end = index === count - 1 ? last + 1 : start + width
     const samples = sorted.filter(row => row.ts >= start && row.ts < end)
     return {
-      start, end, latency: mean(samples.map(row => row.latency)),
+      start, end, latency: mean(samples.map(row => row.latency)), peak: mean(samples.map(row => row.latency)),
       // Summary of returned buckets, not reconstructed window loss.
       loss: samples.length && samples.every(row => row.loss !== undefined) ? mean(samples.map(row => row.loss)) : null,
       timeout: samples.length > 0 && samples.every(row => row.latency === null),
@@ -50,9 +50,17 @@ export function qualityBuckets(rows: PingRow[], max = 96): PingBucket[] {
   return Array.from({ length: count }, (_, index) => {
     const start = timestamps[0]! + width * index, end = index === count - 1 ? timestamps.at(-1)! + 1 : start + width
     const samples = sorted.filter(row => row.ts >= start && row.ts < end)
-    const values = samples.map(row => row.latency)
-    return { start, end, latency: mean(values), loss: samples.length && samples.every(row => row.loss !== undefined) ? mean(samples.map(row => row.loss)) : null, timeout: samples.some(row => row.latency === null) }
+    const values = samples.map(row => row.latency), valid = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+    return { start, end, latency: mean(values), peak: valid.length ? Math.max(...valid) : null, loss: samples.length && samples.every(row => row.loss !== undefined) ? mean(samples.map(row => row.loss)) : null, timeout: samples.some(row => row.latency === null) }
   })
+}
+
+export function qualityTone(value: number | null | undefined): 'green' | 'yellow' | 'orange' | 'red' | 'unknown' {
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'unknown'
+  if (value <= 180) return 'green'
+  if (value <= 220) return 'yellow'
+  if (value <= 280) return 'orange'
+  return 'red'
 }
 
 export function pingTone(value: number | null | undefined, metric: 'latency' | 'loss'): string {

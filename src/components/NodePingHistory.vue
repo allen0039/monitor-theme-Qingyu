@@ -5,7 +5,7 @@ import { ApiError } from '../lib/api'
 import { fetchHistory, historyRanges } from '../lib/history'
 import { readQingyuStorage } from '../lib/storage'
 import { selectPingNetworks } from '../lib/ping'
-import { latencyLabel, lossLabel, networkStats, pingTone, qualityBuckets } from '../lib/ping-display'
+import { latencyLabel, lossLabel, networkStats, qualityBuckets, qualityTone } from '../lib/ping-display'
 import MetricChart, { type ChartPoint, type ChartLine } from './MetricChart.vue'
 const props = defineProps<{ node: MonitorNode; config: ThemeConfig; historyDays?: number }>()
 const options = computed(() => historyRanges(props.historyDays))
@@ -99,10 +99,10 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
         <div v-for="(network, index) in data" :key="network.id" class="ping-quality-row" :class="{ inactive: !selected.includes(network.id) }" role="row">
           <label class="ping-quality-target"><input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" /><i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span></label>
           <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量与丢包事件'">
-            <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · ${latencyLabel(bucket.latency, !bucket.timeout)} · 丢包 ${lossLabel(bucket.loss)}`"><b :class="`ping-tone-${bucket.timeout ? 'bad' : pingTone(bucket.latency, 'latency')}`" /><i v-if="bucket.timeout || (bucket.loss !== null && bucket.loss > 0)" class="ping-loss-marker" aria-label="丢包或超时" /></span>
+            <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · 平均 ${latencyLabel(bucket.latency, !bucket.timeout)} · 峰值 ${latencyLabel(bucket.peak, bucket.peak !== null)} · 丢包 ${lossLabel(bucket.loss)}`"><b :class="`quality-tone-${bucket.timeout ? 'red' : qualityTone(bucket.peak)}`" /><i v-if="bucket.timeout || (bucket.loss !== null && bucket.loss > 0)" class="ping-loss-marker" aria-label="丢包或超时" /></span>
           </div>
           <strong>{{ latencyLabel(stats(network).avg, stats(network).avg !== null) }}</strong>
-          <strong>{{ jitterLabel(network) }}<small v-if="stats(network).jitter !== null">估算</small></strong>
+          <strong :title="stats(network).jitter !== null ? '按相邻有效采样的延迟差估算' : ''">{{ jitterLabel(network) }}</strong>
           <strong>{{ lossLabel(network.loss) }}</strong>
           <strong>{{ latencyLabel(stats(network).last, !!network.latest) }}</strong>
         </div>

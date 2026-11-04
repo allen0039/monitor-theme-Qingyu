@@ -108,15 +108,21 @@
 .ping-quality-row { font-size: 11px; font-variant-numeric: tabular-nums; }
 .ping-quality-row.inactive { opacity: .48; }
 .ping-quality-target { display: flex; align-items: center; gap: 7px; min-width: 0; cursor: pointer; }
-.ping-quality-target input { accent-color: var(--emerald); width: 15px; height: 15px; }
+.ping-quality-target input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.ping-quality-target:focus-within { outline: 2px solid var(--emerald); outline-offset: 3px; border-radius: 4px; }
 .ping-quality-target i { width: 9px; height: 9px; flex: none; border-radius: 2px; }
 .ping-quality-target span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ping-quality-strip { display: flex; gap: 0; min-width: 0; height: 14px; align-items: stretch; background: color-mix(in srgb,var(--emerald) 10%,transparent); }
+.ping-quality-strip { display: flex; gap: 0; min-width: 0; height: 14px; align-items: stretch; background: #eef3f1; }
 .ping-quality-segment { position: relative; flex: 1 1 0; min-width: 2px; height: 14px; }
 .ping-quality-segment > b { display: block; width: 100%; height: 100%; border-radius: 1px; transition: transform .15s ease; }
 .ping-quality-segment:hover { z-index: 1; }
 .ping-quality-segment:hover > b { transform: scaleY(1.7); }
 .ping-loss-marker { position: absolute; top: -4px; left: 50%; width: 3px; height: 4px; border-radius: 2px 2px 0 0; background: var(--danger); transform: translateX(-50%); }
+.quality-tone-green { background: #a4ed3a; }
+.quality-tone-yellow { background: #f5df28; }
+.quality-tone-orange { background: #ff9d2e; }
+.quality-tone-red { background: #ef4b4b; }
+.quality-tone-unknown { background: color-mix(in srgb,var(--muted) 24%,transparent); }
 .ping-quality-row > strong { text-align: right; font-weight: 650; white-space: nowrap; }
 .ping-quality-row > strong small { display: block; color: var(--muted); font-size: 9px; font-weight: 400; }
 .detail-bottom-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 25px; }
