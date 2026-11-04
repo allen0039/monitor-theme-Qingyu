@@ -94,7 +94,7 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
       <div v-else class="chart-empty">{{ data.length ? '勾选线路以查看延迟趋势' : '当前节点没有配置的线路或历史记录' }}</div>
       <div v-if="data.length" class="ping-quality-table" role="table" aria-label="线路质量统计">
         <div class="ping-quality-head" role="row">
-          <span>目标</span><span>质量 / 丢包</span><span>Avg</span><span>Jitter</span><span>Loss</span><span>Last</span>
+          <span>目标</span><span>质量 / 丢包</span><span class="ping-quality-number-head">Avg</span><span class="ping-quality-number-head">Jitter</span><span class="ping-quality-number-head">Loss</span><span class="ping-quality-number-head">Last</span>
         </div>
         <div v-for="(network, index) in data" :key="network.id" class="ping-quality-row" :class="{ inactive: !selected.includes(network.id) }" role="row">
           <label class="ping-quality-target"><input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" /><i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span></label>
