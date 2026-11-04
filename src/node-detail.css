@@ -51,6 +51,9 @@
 .detail-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .detail-controls label { color: var(--muted); font-size: 11px; display: flex; align-items: center; gap: 7px; }
 .detail-controls .detail-check { color: var(--foreground); }
+.ping-range-tabs { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.ping-range-tabs button { min-height: 27px; padding: 3px 9px; border-radius: 6px; color: var(--muted); background: transparent; font-size: 10px; }
+.ping-range-tabs button.active { color: var(--foreground); background: var(--surface-solid); box-shadow: 0 1px 4px rgb(0 0 0 / 8%); font-weight: 700; }
 .detail-check input, .ping-network-option input { accent-color: var(--emerald); width: 16px; height: 16px; }
 /* The latency-chart switch changes geometry only and never rewrites measurements. */
 .detail-smooth-toggle { min-height: 34px; gap: 7px; cursor: pointer; white-space: nowrap; }
@@ -91,6 +94,21 @@
 .ping-network-option i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .ping-network-option strong { font-variant-numeric: tabular-nums; margin-left: 5px; }
 .ping-network-option small { font-size: 10px; color: var(--muted); }
+.ping-quality-table { margin-top: 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+.ping-quality-head, .ping-quality-row { display: grid; grid-template-columns: minmax(84px,.7fr) minmax(180px,3fr) 70px 82px 62px 70px; align-items: center; gap: 12px; min-width: 670px; padding: 10px 13px; }
+.ping-quality-head { color: var(--muted); font-size: 10px; border-bottom: 1px solid var(--line); text-transform: none; }
+.ping-quality-row + .ping-quality-row { border-top: 1px solid color-mix(in srgb,var(--line) 70%,transparent); }
+.ping-quality-row { font-size: 11px; font-variant-numeric: tabular-nums; }
+.ping-quality-row.inactive { opacity: .48; }
+.ping-quality-target { display: flex; align-items: center; gap: 7px; min-width: 0; cursor: pointer; }
+.ping-quality-target input { accent-color: var(--emerald); width: 15px; height: 15px; }
+.ping-quality-target i { width: 9px; height: 9px; flex: none; border-radius: 2px; }
+.ping-quality-target span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ping-quality-strip { display: flex; gap: 1px; min-width: 0; height: 12px; align-items: stretch; }
+.ping-quality-strip > span { flex: 1 1 0; min-width: 2px; border-radius: 1px; transition: transform .15s ease; }
+.ping-quality-strip > span:hover { transform: scaleY(1.7); z-index: 1; }
+.ping-quality-row > strong { text-align: right; font-weight: 650; white-space: nowrap; }
+.ping-quality-row > strong small { display: block; color: var(--muted); font-size: 9px; font-weight: 400; }
 .detail-bottom-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 25px; }
 .detail-info-card { margin-top: 0; min-width: 0; border-radius: 13px; border: 1px solid var(--line); background: var(--surface); padding: 21px 20px; }
 .detail-info-card .detail-section-head { margin-bottom: 8px; }
@@ -130,6 +148,7 @@
   .detail-definition > div { grid-template-columns: minmax(78px,32%) minmax(0,1fr); gap: 8px; }
   .ping-network-option { width: 100%; }
   .ping-network-option small { margin-left: auto; }
+  .ping-quality-head, .ping-quality-row { gap: 8px; padding-left: 9px; padding-right: 9px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .node-detail-page * { scroll-behavior: auto; transition-duration: .01ms !important; animation-duration: .01ms !important; }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createSSRApp } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import { parsePing } from './ping'
-import { historyBuckets, latencyLabel, networkLatency, windowSummary } from './ping-display'
+import { historyBuckets, latencyLabel, networkLatency, networkStats, qualityBuckets, windowSummary } from './ping-display'
 import { cardBytes, cardExpiry, cardPrice, remarkParts } from './format'
 import PingHistoryBars from '../components/PingHistoryBars.vue'
 
@@ -44,6 +44,16 @@ describe('原版式网络摘要', () => {
     const broken = parsePing({ ping: [{ task_id: 1, ts: 60, latency: 20, loss: 'wrong' }], loss: { 1: 'wrong' } })
     expect(windowSummary(broken).loss).toBeNull()
     expect(historyBuckets(broken[0]!.rows)[0]?.loss).toBeNull()
+  })
+  it('保留接口波动范围，并计算相邻采样抖动', () => {
+    const network = parsePing({ probes: { 1: '电信' }, ping: [
+      { task_id: 1, ts: 0, latency: 20, band: [18, 24] },
+      { task_id: 1, ts: 60, latency: 35, band: [30, 40] },
+      { task_id: 1, ts: 120, latency: null, loss: 100 },
+    ], loss: { 1: 25 } })[0]!
+    expect(network.rows[0]!.band).toEqual([18, 24])
+    expect(networkStats(network)).toMatchObject({ avg: 27.5, jitter: 15, last: null, jitterEstimated: true })
+    expect(qualityBuckets(network.rows, 2)).toHaveLength(2)
   })
   it('最多十段，时间乱序与最后一个样本均正确计入', () => {
     const rows = Array.from({ length: 60 }, (_, index) => ({ ts: index * 60, task_id: 1, latency: index, loss: 0 })).reverse()

@@ -127,6 +127,7 @@ export interface PingRow {
   task_id: number
   latency: number | null
   loss?: number
+  band?: [number, number]
 }
 export interface PingNetwork {
   id: number

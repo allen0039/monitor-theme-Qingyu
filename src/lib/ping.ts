@@ -9,7 +9,10 @@ export function parsePing(value: unknown): PingNetwork[] {
   const rows: PingRow[] = Array.isArray(data.ping) ? data.ping.flatMap((entry) => {
     const r = record(entry)
     if (!finite(r.ts) || !Number.isSafeInteger(r.task_id) || !finite(r.task_id) || (r.latency !== null && !finite(r.latency))) return []
+    const band = Array.isArray(r.band) && r.band.length === 2 && finite(r.band[0]) && finite(r.band[1])
+      ? [Math.min(r.band[0], r.band[1]), Math.max(r.band[0], r.band[1])] as [number, number] : undefined
     return [{ ts: r.ts, task_id: r.task_id, latency: r.latency,
+      ...(band ? { band } : {}),
       ...(finite(r.loss) ? { loss: Math.min(100, r.loss) } : hasLoss && r.loss === undefined ? { loss: r.latency === null ? 100 : 0 } : {}) }]
   }) : []
   const ids = [...new Set([...rows.map((r) => r.task_id), ...Object.keys(probes).map(Number).filter(finite)])]
