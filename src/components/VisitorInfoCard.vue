@@ -57,7 +57,7 @@ onBeforeUnmount(() => { alive = false; request?.abort(); observer?.disconnect();
           <span v-else class="visitor-icon"><Globe2 /></span>
           <span aria-live="polite">{{ country }}</span>
         </span>
-        <span class="visitor-item" :title="client.device"><span class="visitor-icon"><Monitor /></span><span>{{ client.device }}</span></span>
+        <span class="visitor-item" :title="client.browser"><span class="visitor-icon"><PanelsTopLeft /></span><span>{{ client.browser }}</span></span>
       </button>
       <div v-if="expanded" id="visitor-info-details" class="visitor-details">
         <div class="visitor-item"><span class="visitor-icon"><Monitor /></span><span>{{ client.device }}</span></div>
