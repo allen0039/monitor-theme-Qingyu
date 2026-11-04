@@ -9,11 +9,12 @@ import { latencyLabel, lossLabel, networkStats, pingTone, qualityBuckets } from 
 import MetricChart, { type ChartPoint, type ChartLine } from './MetricChart.vue'
 const props = defineProps<{ node: MonitorNode; config: ThemeConfig; historyDays?: number }>()
 const options = computed(() => historyRanges(props.historyDays))
-const hours = ref(1), data = ref<PingNetwork[]>([]), selected = ref<number[]>([])
+const hours = ref(24), data = ref<PingNetwork[]>([]), selected = ref<number[]>([])
 const smoothStorageKey = 'qingyu.ping.smooth.v2'
 function initialSmooth(): boolean { try { return readQingyuStorage(localStorage, smoothStorageKey) === '1' } catch { return false } }
 const smooth = ref(initialSmooth())
 const adaptive = ref(true)
+const moreOpen = ref(false)
 watch(smooth, enabled => { try { localStorage.setItem(smoothStorageKey, enabled ? '1' : '0') } catch { /* Browser storage unavailable. */ } })
 const busy = ref(false), error = ref(''), updated = ref(0), cursor = ref<number | null>(null)
 let timer: ReturnType<typeof setInterval> | null = null, controller: AbortController | null = null, generation = 0, cooldown = 0
@@ -45,6 +46,9 @@ onBeforeUnmount(() => { ++generation; controller?.abort(); if (timer) clearInter
 watch([() => props.node.id, hours, () => props.config.ping_tasks], () => { data.value = []; selected.value = []; cursor.value = null; refresh() }, { immediate: true })
 watch(options, list => { if (!list.some(r => r.hours === hours.value)) hours.value = list[0]!.hours })
 const colors = ['#14aa86', '#3f96d7', '#d68c44', '#9d80d7', '#c45e86', '#3aa0a1', '#b5a148', '#789da7']
+function rangeLabel(hours: number, fallback: string): string {
+  return ({ 1: '实时', 6: '6h', 24: '24h', 168: '7d', 720: '30d' } as Record<number, string>)[hours] ?? fallback
+}
 const active = computed(() => data.value.filter(n => selected.value.includes(n.id)))
 const stats = (network: PingNetwork) => networkStats(network)
 const quality = (network: PingNetwork) => qualityBuckets(network.rows)
@@ -73,7 +77,7 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
   <section class="detail-section detail-history detail-ping-history" aria-labelledby="ping-history-title">
     <div class="detail-section-head">
       <div><h2 id="ping-history-title">网络质量</h2><p>延迟历史与选定时间范围内的丢包率{{ updated ? ' · ' + new Date(updated).toLocaleTimeString('zh-CN') + ' 更新' : '' }}</p></div>
-      <div class="detail-controls"><div class="ping-range-tabs" role="tablist" aria-label="延迟历史时间范围"><button v-for="r in options" :key="r.hours" type="button" role="tab" :aria-selected="hours === r.hours" :class="{ active: hours === r.hours }" @click="hours = r.hours">{{ r.label }}</button></div><button type="button" class="detail-control-button" :aria-pressed="adaptive" @click="adaptive = !adaptive">{{ adaptive ? '自适应刻度' : '全量刻度' }}</button><label class="detail-check detail-smooth-toggle" title="平缓尖峰并连续连接短暂缺测或超时；长时间断档仍会断开"><input v-model="smooth" type="checkbox" role="switch" aria-label="平滑显示延迟曲线" /><span>平滑显示</span></label><button type="button" class="detail-control-button" :disabled="busy" @click="refresh(true)">刷新</button></div>
+      <div class="detail-controls"><div class="ping-range-tabs" role="tablist" aria-label="延迟历史时间范围"><button v-for="r in options" :key="r.hours" type="button" role="tab" :aria-selected="hours === r.hours" :class="{ active: hours === r.hours }" @click="hours = r.hours">{{ rangeLabel(r.hours, r.label) }}</button></div><div class="ping-more-wrap"><button type="button" class="detail-control-button ping-more-button" :aria-expanded="moreOpen" aria-label="更多图表选项" @click="moreOpen = !moreOpen">•••</button><div v-if="moreOpen" class="ping-more-menu"><button type="button" :class="{ active: adaptive }" @click="adaptive = !adaptive">{{ adaptive ? '自适应刻度' : '全量刻度' }}</button><label class="detail-check detail-smooth-toggle" title="平缓尖峰并连续连接短暂缺测或超时；长时间断档仍会断开"><input v-model="smooth" type="checkbox" role="switch" aria-label="平滑显示延迟曲线" /><span>平滑显示</span></label></div></div><button type="button" class="detail-control-button" :disabled="busy" @click="refresh(true)">刷新</button></div>
     </div>
     <div v-if="error" class="detail-fetch-error" role="status">{{ error }}<span v-if="data.length"> · 保留上次成功数据</span><button type="button" @click="refresh(true)">重试</button></div>
     <div v-if="busy && !data.length" class="chart-empty">正在加载线路延迟…</div>

@@ -36,6 +36,7 @@ try{
   await untilJS("!!document.querySelector('.node-detail-page') && !!document.querySelector('.detail-ping-networks')")
   await wait(700)
   // Smooth switch changes only the ping-chart geometry; reload retains the choice.
+  await evalJS("document.querySelector('.ping-more-menu') || document.querySelector('.ping-more-button')?.click()")
   const smoothSelector = 'input[aria-label="平滑显示延迟曲线"]'
   const readPingGeometry = "() => document.querySelector('#ping-history-title')?.closest('.detail-history')?.querySelector('.detail-chart svg path[stroke]')?.getAttribute('d')"
   const readResourceGeometry = "() => [...document.querySelectorAll('.detail-history:not(.detail-ping-history) svg path[stroke]')].map(path => path.getAttribute('d'))"
@@ -54,12 +55,14 @@ try{
   const smoothShot = await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
   writeFileSync('/tmp/qingyu-ping-smooth.png',Buffer.from(smoothShot.data,'base64'))
   await command('Page.navigate',{url:'http://127.0.0.1:4179/#/node/1'})
+  await untilJS("!!document.querySelector('.node-detail-page') && !!document.querySelector('.detail-ping-networks')")
+  await evalJS("document.querySelector('.ping-more-menu') || document.querySelector('.ping-more-button')?.click()")
   await untilJS(`document.querySelector('${smoothSelector}')?.checked && (${readPingGeometry})()?.includes('C')`)
   await evalJS(`document.querySelector('${smoothSelector}').click()`)
   await untilJS(`!document.querySelector('${smoothSelector}')?.checked && !(${readPingGeometry})()?.includes('C')`)
   if (await evalJS(`(${readPingGeometry})()`) !== switchBefore.d) throw Error('Disabling smoothing did not restore original line geometry')
   function checkChartAxes(metrics, label) {
-    if (Math.abs(metrics.svgWidth - metrics.viewBoxWidth) > 2 || metrics.svgHeight > 330 || metrics.svgHeight < 205 ||
+    if (Math.abs(metrics.svgWidth - metrics.viewBoxWidth) > 2 || metrics.svgHeight > 450 || metrics.svgHeight < 205 ||
         metrics.axisFont > 12 || metrics.axisHeight > 15 || metrics.labelCollision || metrics.xLabels < 3 ||
         metrics.overflow) throw Error(label + ' axes failed visual bounds checks: ' + JSON.stringify(metrics))
   }

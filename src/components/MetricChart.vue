@@ -43,12 +43,19 @@ function percentile(sorted: number[], fraction: number): number {
   const position = (sorted.length - 1) * fraction, lower = Math.floor(position), upper = Math.ceil(position)
   return sorted[lower]! + (sorted[upper]! - sorted[lower]!) * (position - lower)
 }
+function niceStep(value: number): number {
+  const exponent = Math.floor(Math.log10(Math.max(1, value)))
+  const base = 10 ** exponent
+  const unit = value / base
+  return (unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 5 ? 5 : 10) * base
+}
 const domain = computed(() => {
   const sorted = [...values.value].sort((a, b) => a - b)
   const fullMax = props.cap ?? Math.max(1, ...sorted, 1) * 1.13
   if (props.scale !== 'adaptive' || props.unit !== 'ms' || !sorted.length) return { min: 0, max: fullMax, clipped: 0 }
-  const low = percentile(sorted, .05), high = percentile(sorted, .95), spread = Math.max(20, high - low), pad = Math.max(8, spread * .15)
-  const min = Math.max(0, low - pad), max = Math.max(min + 40, high + pad)
+  const low = percentile(sorted, .05), high = Math.max(...sorted), span = Math.max(100, high - low)
+  const step = niceStep(span / 4), min = Math.max(0, Math.floor(Math.max(0, low - step * .35) / step) * step)
+  const max = Math.max(min + step * 4, Math.ceil((high + step * .2) / step) * step)
   return { min, max, clipped: sorted.filter(value => value < min || value > max).length }
 })
 const x = (ts: number) => left.value + (ts - bounds.value.start) / (bounds.value.end - bounds.value.start) * plotW.value
@@ -94,7 +101,7 @@ function move(event: MouseEvent | PointerEvent) {
 </script>
 <template>
   <section class="detail-chart">
-    <div class="detail-chart-top"><div class="detail-chart-title"><h3>{{ title }}</h3><span v-if="props.scale === 'adaptive'" class="chart-scale-note">自适应刻度<span v-if="domain.clipped"> · {{ domain.clipped }} 个尖峰超出范围</span></span></div><div class="detail-legend"><span v-for="line in lines" :key="line.key"><i :style="{ background: line.color }" />{{ line.label }}</span></div></div>
+    <div class="detail-chart-top"><div class="detail-chart-title"><h3>{{ title }}</h3><span v-if="props.scale === 'adaptive' && domain.clipped" class="chart-scale-note">{{ domain.clipped }} 个尖峰超出当前范围</span></div><div class="detail-legend"><span v-for="line in lines" :key="line.key"><i :style="{ background: line.color }" />{{ line.label }}</span></div></div>
     <div v-if="points.length" class="detail-plot">
       <svg ref="svgElement" class="chart-svg" :viewBox="'0 0 ' + width + ' ' + height" role="img" :aria-label="title + '历史趋势'" preserveAspectRatio="none" @pointermove="move" @pointerleave="leave" @click="move">
         <g v-for="tick in ticks" :key="tick.y"><path :d="'M' + left + ' ' + tick.y + ' H' + (width - right)" class="chart-gridline" /><text :x="left - 7" :y="tick.y + 4" text-anchor="end" class="chart-axis chart-axis-y">{{ tick.label }}</text></g>

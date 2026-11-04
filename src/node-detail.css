@@ -67,6 +67,11 @@
 .detail-control-button { min-height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-solid); padding: 6px 12px; font-size: 11px; }
 .detail-control-button:disabled { opacity: .5; cursor: not-allowed; }
 .detail-control-button:hover:not(:disabled) { color: var(--emerald); }
+.ping-more-wrap { position: relative; }
+.ping-more-button { min-width: 38px; padding-left: 8px; padding-right: 8px; letter-spacing: 2px; }
+.ping-more-menu { position: absolute; z-index: 4; top: calc(100% + 7px); right: 0; display: grid; gap: 8px; min-width: 150px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-solid); box-shadow: 0 10px 30px rgb(0 0 0 / 12%); }
+.ping-more-menu > button { padding: 7px 8px; border-radius: 7px; color: var(--muted); background: transparent; text-align: left; font-size: 11px; }
+.ping-more-menu > button.active, .ping-more-menu > button:hover { color: var(--foreground); background: color-mix(in srgb,var(--emerald) 10%,transparent); }
 .detail-fetch-error { border: 1px solid color-mix(in srgb,var(--warning) 24%,transparent); background: var(--surface); color: var(--warning); font-size: 12px; padding: 10px 12px; border-radius: 8px; margin-bottom: 10px; }
 .detail-fetch-error button { color: var(--emerald); background: transparent; font-weight: 700; padding: 3px 8px; }
 .detail-chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
@@ -80,7 +85,7 @@
 .detail-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 3px; }
 .detail-plot { position: relative; padding-top: 8px; }
 .chart-svg { display: block; width: 100%; height: clamp(210px, 21vw, 270px); overflow: visible; touch-action: pan-y; cursor: crosshair; }
-.detail-ping-history .chart-svg { height: clamp(235px, 22vw, 310px); }
+.detail-ping-history .chart-svg { height: clamp(320px, 30vw, 420px); }
 .chart-gridline { stroke: var(--line); stroke-width: 1; opacity: .7; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
 .chart-axis { fill: var(--muted); font-family: inherit; font-size: 11px; font-weight: 400; letter-spacing: .01em; font-variant-numeric: tabular-nums; opacity: .88; }
 .chart-axis-x { font-size: 10.5px; }
@@ -106,8 +111,8 @@
 .ping-quality-target input { accent-color: var(--emerald); width: 15px; height: 15px; }
 .ping-quality-target i { width: 9px; height: 9px; flex: none; border-radius: 2px; }
 .ping-quality-target span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ping-quality-strip { display: flex; gap: 1px; min-width: 0; height: 12px; align-items: stretch; }
-.ping-quality-segment { position: relative; flex: 1 1 0; min-width: 2px; height: 12px; }
+.ping-quality-strip { display: flex; gap: 0; min-width: 0; height: 14px; align-items: stretch; background: color-mix(in srgb,var(--emerald) 10%,transparent); }
+.ping-quality-segment { position: relative; flex: 1 1 0; min-width: 2px; height: 14px; }
 .ping-quality-segment > b { display: block; width: 100%; height: 100%; border-radius: 1px; transition: transform .15s ease; }
 .ping-quality-segment:hover { z-index: 1; }
 .ping-quality-segment:hover > b { transform: scaleY(1.7); }
@@ -146,7 +151,7 @@
   .detail-section-head { align-items: flex-start; }
   .detail-controls { width: 100%; gap: 7px; }
   .detail-chart { padding: 13px 8px; }
-  .detail-ping-history .chart-svg { height: 218px; }
+  .detail-ping-history .chart-svg { height: 255px; }
   .detail-chart-grid .chart-svg { height: 210px; }
   .chart-values { position: static; margin: 0 4px 5px; }
   .detail-info-card { padding: 15px; }
