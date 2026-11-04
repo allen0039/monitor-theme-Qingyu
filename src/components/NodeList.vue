@@ -8,13 +8,18 @@ import OsIcon from './OsIcon.vue'
 import ResourceMeter from './ResourceMeter.vue'
 defineProps<{ nodes: MonitorNode[]; config: ThemeConfig; showPrice: boolean }>()
 const emit = defineEmits<{ open: [number] }>()
+function openRow(event: MouseEvent | KeyboardEvent, id: number) {
+  const target = event.target as HTMLElement
+  if (target.closest('a,button,summary,details,input,textarea,select,[contenteditable]')) return
+  emit('open', id)
+}
 </script>
 <template>
   <div class="node-table-scroll" tabindex="0" aria-label="节点列表，可横向滚动">
     <table class="node-table">
       <thead><tr><th>节点</th><th>状态</th><th v-if="config.show_cpu">CPU</th><th v-if="config.show_memory">内存</th><th v-if="config.show_disk">硬盘</th><th v-if="config.show_traffic">本期流量</th><th v-if="config.show_speed">实时速率</th><th v-if="config.show_uptime">在线时长</th><th v-if="showPrice">费用</th><th v-if="config.show_expiry">到期</th></tr></thead>
       <tbody>
-        <tr v-for="node in nodes" :key="node.id" :class="{ 'row-offline': !node.online }">
+        <tr v-for="node in nodes" :key="node.id" class="row-clickable" tabindex="0" :aria-label="`${node.name}，${nodeState(node)}，打开详情`" :class="{ 'row-offline': !node.online }" @click="openRow($event, node.id)" @keydown.enter.prevent="openRow($event, node.id)" @keydown.space.prevent="openRow($event, node.id)">
           <td class="table-node"><div><span class="status-dot" :class="!node.online ? 'offline' : !node.metrics ? 'waiting' : ''" /><strong :title="node.name"><a :href="`#/node/${node.id}`" :data-node-entry="node.id" @click.prevent="emit('open', node.id)">{{ node.name }}</a></strong></div><div v-if="config.show_node_metadata" class="table-node-sub"><OsIcon :os="node.os" /><img v-if="flagUrl(node.country)" :src="flagUrl(node.country)" class="country-flag" :alt="regionName(node.country)" /><span>{{ node.group || '未分组' }}</span></div></td>
           <td><span class="state-label" :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ nodeState(node) }}</span></td>
           <td v-if="config.show_cpu"><ResourceMeter label="CPU" :value="node.metrics?.cpu ?? null" /></td>

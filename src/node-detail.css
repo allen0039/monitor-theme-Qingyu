@@ -7,6 +7,8 @@
 .node-card-header a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .node-table .table-node a { color: var(--foreground); text-decoration: underline; text-decoration-color: color-mix(in srgb,var(--emerald) 30%,transparent); text-underline-offset: 3px; }
 .node-table .table-node a:hover, .node-table .table-node a:focus-visible { color: var(--emerald); }
+.node-table tbody tr.row-clickable { cursor: pointer; }
+.node-table tbody tr.row-clickable:focus-visible { outline: 2px solid var(--emerald); outline-offset: -2px; }
 .node-detail-page { padding: 19px 0 52px; min-width: 0; }
 .detail-navigation { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
 .detail-back { display: inline-flex; align-items: center; gap: 8px; padding: 9px 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 650; }
