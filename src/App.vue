@@ -208,7 +208,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
     </main>
     <DisplaySettingsDialog v-if="settingsOpen" :config="config" :site-config="siteConfig" :price-allowed="priceAllowed" :storage-available="storageAvailable" @change="setPreference" @reset="resetPreferences" @close="settingsOpen = false" />
     <PersonalFinanceDialog v-if="financeOpen && canCalculate && nodes !== null" :nodes="nodes" :exchange="exchange" :rates-loading="ratesLoading" @close="financeOpen = false" />
-    <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" @country="visitorCountry = $event" />
+    <VisitorInfoCard v-if="showVisitor" :detail="routeNode !== null" @height="visitorHeight = $event" @country="visitorCountry = $event" />
     <footer class="site-footer"><div><span>Powered by <a href="https://github.com/monitor-probe/monitor" target="_blank" rel="noopener noreferrer">Monitor</a></span><span>Theme by <a :href="manifest.url" target="_blank" rel="noopener noreferrer" :title="`${manifest.name} v${manifest.version}`">{{ manifest.name }}</a></span></div><p v-if="config.footer_text"><a v-if="footerUrl" :href="footerUrl" target="_blank" rel="noopener noreferrer">{{ config.footer_text }}</a><span v-else>{{ config.footer_text }}</span></p></footer>
   </div>
 </template>

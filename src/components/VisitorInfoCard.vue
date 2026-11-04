@@ -4,6 +4,7 @@ import { Building2, Clock3, Globe2, Monitor, Network, PanelsTopLeft, RotateCcw }
 import { flagUrl } from '../lib/assets'
 import { detectClient, fetchVisitorGeo, type VisitorGeo } from '../lib/visitor'
 
+const props = withDefaults(defineProps<{ detail?: boolean }>(), { detail: false })
 const emit = defineEmits<{ height: [value: number]; country: [value: string] }>()
 const client = detectClient(navigator.userAgent)
 const expanded = ref(false), loading = ref(true), flagFailed = ref(false)
@@ -15,6 +16,10 @@ const flag = computed(() => geo.value?.countryCode ? flagUrl(geo.value.countryCo
 let request: AbortController | null = null
 let observer: ResizeObserver | null = null
 let alive = true
+
+function collapseOnScroll() {
+  if (expanded.value) expanded.value = false
+}
 
 async function locate(force = false) {
   request?.abort()
@@ -34,11 +39,12 @@ onMounted(() => {
     observer = new ResizeObserver(([entry]) => { if (entry) emit('height', Math.ceil(entry.contentRect.height)) })
     observer.observe(shell.value)
   }
+  window.addEventListener('scroll', collapseOnScroll, { passive: true })
 })
-onBeforeUnmount(() => { alive = false; request?.abort(); observer?.disconnect(); emit('height', 0); emit('country', '') })
+onBeforeUnmount(() => { alive = false; request?.abort(); observer?.disconnect(); window.removeEventListener('scroll', collapseOnScroll); emit('height', 0); emit('country', '') })
 </script>
 <template>
-  <aside ref="shell" class="visitor-shell" aria-label="访客信息">
+  <aside ref="shell" class="visitor-shell" :class="{ 'visitor-detail-mode': props.detail }" aria-label="访客信息">
     <div id="visitor-info-card" class="visitor-card" :class="{ 'visitor-expanded': expanded }">
       <button class="visitor-summary" type="button" :aria-expanded="expanded" aria-controls="visitor-info-details" :aria-label="expanded ? '收起访客详细信息' : '展开访客详细信息'" @click="expanded = !expanded" @keydown.esc="expanded = false">
         <span class="visitor-item" :title="`${location}（网络出口地区）`">
