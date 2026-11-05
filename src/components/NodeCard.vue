@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { CalendarDays, ChevronDown, ChevronUp, Coins, Download, Ellipsis, Upload } from '@lucide/vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { flagUrl } from '../lib/assets'
-import { nodeState, regionName } from '../lib/data'
+import { nodeState, regionName, trafficModeLabel } from '../lib/data'
 import { calculateNodeFinance, financeAmount, financeIssueText } from '../lib/finance'
 import { bytes, cardBytes, duration, expiryLabel, formatBytes, percentage, priceLabel, remarkParts } from '../lib/format'
 import OsIcon from './OsIcon.vue'
@@ -26,6 +26,14 @@ const remaining = computed(() => financeAmount(finance.value.remaining, props.no
 const remainingIssue = computed(() => financeIssueText(finance.value.issues.remaining))
 const remainingTitle = computed(() => `剩余价值 ${financeAmount(finance.value.remaining, props.node.currency)} ${props.node.currency} · ${remainingIssue.value || '按剩余天数折算'}`)
 const monthLabel = computed(() => props.node.traffic_reset_day && props.node.traffic_reset_day !== 1 ? '当期流量' : '当月流量')
+const trafficMode = computed(() => trafficModeLabel(props.node.traffic_mode) === '—' ? '主控规则' : trafficModeLabel(props.node.traffic_mode))
+const trafficAccountingNote = computed(() => trafficMode.value === '上下行合计'
+  ? '上下行分别按卡片精度四舍五入，显示值相加可能有舍入差异。'
+  : trafficMode.value === '主控规则'
+    ? '本值使用主控返回的计费量；上下行是独立明细。'
+    : '本值按主控计费规则计算，不等于上下行简单相加。')
+const trafficTitle = computed(() => `本期计费流量 ${formatBytes(props.node.month_used)} / ${props.node.traffic_limit ? formatBytes(props.node.traffic_limit) : '无限制'} · 计费口径：${trafficMode.value}。${trafficAccountingNote.value}`)
+const monthTrafficTitle = computed(() => `${monthLabel.value}显示上行/下行明细；计费口径：${trafficMode.value}。${trafficAccountingNote.value}`)
 const hasExpiry = computed(() => props.config.show_expiry && props.node.expires_in !== null)
 const hasBilling = computed(() => props.showPrice || hasExpiry.value)
 const highlightCount = computed(() => Number(props.config.show_speed) + Number(props.config.show_total_traffic) + Number(hasBilling.value))
@@ -63,7 +71,7 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
         <ResourceMeter v-if="config.show_cpu" icon="cpu" label="CPU" :value="node.metrics?.cpu ?? null" :detail="node.metrics ? node.metrics.load.map(n => n.toFixed(2)).join(', ') : '暂无指标'" :warning-at="60" :danger-at="80" />
         <ResourceMeter v-if="config.show_memory" icon="memory" label="内存" :value="mem" :detail="`${cardBytes(node.metrics?.mem_used)} / ${cardBytes(node.mem_total)}`" :detail-title="`${formatBytes(node.metrics?.mem_used)} / ${formatBytes(node.mem_total)}`" :warning-at="60" :danger-at="80" />
         <ResourceMeter v-if="config.show_disk" icon="disk" label="硬盘" :value="disk" :detail="`${cardBytes(node.metrics?.disk_used)} / ${cardBytes(node.disk_total)}`" :detail-title="`${formatBytes(node.metrics?.disk_used)} / ${formatBytes(node.disk_total)}`" :warning-at="60" :danger-at="80" />
-        <ResourceMeter v-if="config.show_traffic" icon="traffic" label="本期流量" :value="traffic" :detail="`${cardBytes(node.month_used)} / ${node.traffic_limit ? cardBytes(node.traffic_limit) : '∞'}`" :detail-title="`${formatBytes(node.month_used)} / ${node.traffic_limit ? formatBytes(node.traffic_limit) : '∞'}`" :warning-at="80" :danger-at="100" />
+        <ResourceMeter v-if="config.show_traffic" icon="traffic" label="本期流量" :value="traffic" :detail="`${cardBytes(node.month_used)} / ${node.traffic_limit ? cardBytes(node.traffic_limit) : '∞'}`" :detail-title="trafficTitle" :warning-at="80" :danger-at="100" />
       </div>
       <div v-if="highlightCount" class="node-highlights" :class="{ 'node-highlights-three': highlightCount === 3 }" :style="{ '--highlight-count': highlightCount }">
         <div v-if="config.show_speed" class="highlight-tile highlight-speed" role="group" aria-label="实时速率">
@@ -71,10 +79,10 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
           <span class="highlight-value up" :class="{ 'highlight-empty': !node.metrics }" :title="`实时上传 ${formatBytes(node.metrics?.net_tx, true)}`"><ChevronUp />{{ tileRate(node.metrics?.net_tx) }}</span>
           <span class="highlight-value down" :class="{ 'highlight-empty': !node.metrics }" :title="`实时下载 ${formatBytes(node.metrics?.net_rx, true)}`"><ChevronDown />{{ tileRate(node.metrics?.net_rx) }}</span>
         </div>
-        <div v-if="config.show_total_traffic" class="highlight-tile highlight-month" role="group" :aria-label="monthLabel">
-          <span class="highlight-label">{{ monthLabel }}</span>
-          <span class="highlight-value" :title="`${monthLabel} · 上传 ${formatBytes(node.month_tx)}`"><Upload />{{ cardBytes(node.month_tx) }}</span>
-          <span class="highlight-value" :title="`${monthLabel} · 下载 ${formatBytes(node.month_rx)}`"><Download />{{ cardBytes(node.month_rx) }}</span>
+        <div v-if="config.show_total_traffic" class="highlight-tile highlight-month" role="group" :aria-label="monthTrafficTitle">
+          <span class="highlight-label" :title="monthTrafficTitle">{{ monthLabel }}</span>
+          <span class="highlight-value" :title="`${monthLabel} · 上传 ${formatBytes(node.month_tx)}；${trafficAccountingNote}`"><Upload />{{ cardBytes(node.month_tx) }}</span>
+          <span class="highlight-value" :title="`${monthLabel} · 下载 ${formatBytes(node.month_rx)}；${trafficAccountingNote}`"><Download />{{ cardBytes(node.month_rx) }}</span>
         </div>
         <div v-if="hasBilling" class="highlight-tile highlight-billing" role="group" :aria-label="showPrice && hasExpiry ? '到期与剩余价值' : showPrice ? '剩余价值' : '到期'">
           <span class="highlight-label">{{ showPrice && hasExpiry ? '到期与价值' : showPrice ? '剩余价值' : '到期' }}</span>

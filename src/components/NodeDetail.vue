@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { ArrowLeft, ChevronLeft, ChevronRight, Cpu, MemoryStick, HardDrive, ArrowDownToLine, ArrowUpFromLine, Server, Clock3 } from '@lucide/vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { flagUrl } from '../lib/assets'
-import { nodeState, regionName } from '../lib/data'
+import { nodeState, regionName, trafficModeLabel } from '../lib/data'
 import { calculateNodeFinance, financeAmount, financeIssueText } from '../lib/finance'
 import { duration, expiryLabel, formatBytes, percentage, priceLabel } from '../lib/format'
 import NodeHistoryCharts from './NodeHistoryCharts.vue'
@@ -25,7 +25,7 @@ const cost = computed(() => priceLabel(props.node.price, props.node.currency, pr
 const showNet = computed(() => props.config.show_speed)
 const hasTraffic = computed(() => props.config.show_traffic || props.config.show_total_traffic || props.config.show_expiry || props.showPrice)
 const monthLabel = computed(() => props.node.traffic_reset_day && props.node.traffic_reset_day !== 1 ? '当期' : '当月')
-const mode = computed(() => ({ sum: '上下行合计', up: '仅上传', down: '仅下载', max: '取较大值', min: '取较小值' } as Record<string, string>)[props.node.traffic_mode] || known(props.node.traffic_mode))
+const mode = computed(() => trafficModeLabel(props.node.traffic_mode))
 </script>
 <template>
   <div class="node-detail-page">

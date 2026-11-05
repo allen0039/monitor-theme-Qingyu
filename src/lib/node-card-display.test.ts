@@ -47,4 +47,8 @@ describe('节点信息带与费用隐私', () => {
     expect(await render({ traffic_reset_day: 15 })).toContain('当期流量 · 上传')
     expect(await render({ traffic_reset_day: 33 })).toContain('当月流量 · 上传')
   })
+  it('流量提示说明计费口径与独立四舍五入，避免误把两处当作同一显示值', async () => {
+    expect(await render({ traffic_mode: 'sum' })).toContain('显示值相加可能有舍入差异')
+    expect(await render({ traffic_mode: 'max' })).toContain('不等于上下行简单相加')
+  })
 })

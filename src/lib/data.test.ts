@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterNodes, groupsOf, inGroup, mergeNodes, monthlyUsed, nodeState, normalizeNodes, summarize } from './data'
+import { filterNodes, groupsOf, inGroup, mergeNodes, monthlyUsed, nodeState, normalizeNodes, summarize, trafficModeLabel } from './data'
 import { expiryLabel, percentage, priceLabel, safeUrl } from './format'
 import { defaultConfig, parseConfig } from './config'
 import { parsePing } from './ping'
@@ -43,6 +43,12 @@ describe('Monitor 节点数据', () => {
     expect(monthlyUsed({ month_rx: 100, month_tx: 200, traffic_mode: 'up' })).toBe(200)
     expect(monthlyUsed({ month_rx: 100, month_tx: 200, traffic_mode: 'down' })).toBe(100)
     expect(percentage(0, 0)).toBeNull()
+  })
+  it('为计费方向提供稳定的中文说明，未知值保留主控原文', () => {
+    expect(trafficModeLabel('sum')).toBe('上下行合计')
+    expect(trafficModeLabel('max')).toBe('取较大值')
+    expect(trafficModeLabel('custom')).toBe('custom')
+    expect(trafficModeLabel('')).toBe('—')
   })
   it('搜索包含国家名称和公开备注，降序排序把未知指标放在末尾', () => {
     const nodes = normalizeNodes([sample(1, { online: false }), sample(2, { public_remark: '晚高峰直连' }), sample(3, { metrics: { ...metrics, cpu: 90 } })])

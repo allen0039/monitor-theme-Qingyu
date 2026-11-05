@@ -19,6 +19,11 @@ export function monthlyUsed(node: Record<string, unknown>): number {
   }
 }
 
+/** Human-readable names for the hub's traffic accounting rules. */
+export function trafficModeLabel(mode: string): string {
+  return ({ sum: '上下行合计', up: '仅上传', down: '仅下载', max: '取较大值', min: '取较小值' } as Record<string, string>)[mode] || mode || '—'
+}
+
 export function normalizeNodes(value: unknown): MonitorNode[] {
   if (!Array.isArray(value)) throw new Error('收到的节点列表格式不正确')
   const seen = new Set<number>()
