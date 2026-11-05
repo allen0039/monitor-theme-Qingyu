@@ -79,7 +79,7 @@ svg { flex-shrink: 0; }
 .error-banner svg { width: 15px; height: 15px; }
 .error-banner span { flex: 1; }
 .error-banner button { background: transparent; display: flex; gap: 5px; align-items: center; font-size: 11px; white-space: nowrap; }
-.overview { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px 0; min-height: 232px; align-items: start; overflow: clip; }
+.overview { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px 0; min-height: 232px; align-items: start; }
 .summary-grid { display: grid; grid-template-columns: repeat(var(--summary-columns, 3), minmax(0, 1fr)); gap: 8px; }
 .summary-card { position: relative; min-width: 0; height: 96px; padding: 12px 12px 16px; border-radius: 6px; background: var(--surface); display: flex; flex-direction: column; gap: 4px; transition: background .2s; }
 .summary-card:hover { background: var(--surface-solid); }
@@ -139,7 +139,7 @@ svg { flex-shrink: 0; }
 .search-field input::-webkit-search-cancel-button { display: none; }
 .search-clear { position: absolute; display: grid; place-items: center; top: 4px; right: 4px; width: 24px; height: 24px; color: var(--muted); background: transparent; }
 .search-clear svg { width: 12px; height: 12px; }
-.nodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min, 292px)), 1fr)); gap: 12px; position: relative; z-index: 1; }
+.nodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min, 292px)), 1fr)); gap: 12px; position: relative; z-index: 2; }
 .node-card { min-width: 0; background: var(--surface); border: 1px solid transparent; border-radius: 8px; align-self: stretch; transition: background .2s, box-shadow .2s; }
 .node-card:hover { background: var(--surface-solid); box-shadow: var(--shadow); }
 .node-card.node-offline { border-color: color-mix(in srgb, var(--danger) 24%, transparent); }
@@ -244,7 +244,7 @@ svg { flex-shrink: 0; }
 .visitor-retry:disabled { opacity: .6; cursor: wait; }
 .visitor-retry svg { width: 12px; height: 12px; }
 @keyframes visitor-enter { from { opacity: 0; transform: translateY(5px); } }
-.node-table-scroll { width: 100%; overflow-x: auto; border-radius: 6px; background: var(--surface); }
+.node-table-scroll { width: 100%; overflow-x: auto; border-radius: 6px; background: var(--surface); position: relative; z-index: 2; }
 .node-table { width: 100%; border-collapse: collapse; font-size: 10px; }
 .node-table th { text-align: left; padding: 12px; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .node-table td { padding: 13px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
