@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { CalendarDays, ChevronDown, ChevronUp, Coins, Download, Ellipsis, Upload } from '@lucide/vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { flagUrl } from '../lib/assets'
 import { nodeState, regionName, trafficModeLabel } from '../lib/data'
 import { calculateNodeFinance, financeAmount, financeIssueText } from '../lib/finance'
 import { bytes, cardBytes, duration, expiryLabel, formatBytes, percentage, priceLabel, remarkParts } from '../lib/format'
+import type { PingHealthLevel } from '../lib/ping-display'
 import OsIcon from './OsIcon.vue'
 import ResourceMeter from './ResourceMeter.vue'
 import PingPanel from './PingPanel.vue'
@@ -53,9 +54,10 @@ const remark = computed(() => remarkParts(props.node.public_remark))
 const hasHardware = computed(() => props.config.show_node_metadata && !!(props.node.cpu_cores || props.node.arch))
 const hasExtra = computed(() => hasHardware.value || (props.showPrice && !!remainingIssue.value))
 const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null && props.node.expires_in > 0 && props.node.expires_in <= props.config.expiry_warning_days, expired: props.node.expires_in !== null && props.node.expires_in <= 0 }))
+const pingHealthLevel = ref<PingHealthLevel>('unknown')
 </script>
 <template>
-  <article class="node-card" @click="openCard" :class="{ 'node-offline': !node.online, 'node-waiting': node.online && !node.metrics }" :aria-label="`${node.name}，${nodeState(node)}`">
+  <article class="node-card" @click="openCard" :class="{ 'node-offline': !node.online, 'node-waiting': node.online && !node.metrics, 'node-ping-warn': showPing && node.online && node.metrics && pingHealthLevel === 'warn', 'node-ping-alert': showPing && node.online && node.metrics && pingHealthLevel === 'alert' }" :aria-label="`${node.name}，${nodeState(node)}`">
     <div class="node-card-header">
       <span class="status-dot" :class="!node.online ? 'offline' : !node.metrics ? 'waiting' : ''" :title="nodeState(node)" />
       <h2 :title="node.name"><a :href="`#/node/${node.id}`" :data-node-entry="node.id" @click.prevent="emit('open', node.id)">{{ node.name }}</a></h2>
@@ -63,7 +65,7 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
       <img v-if="config.show_node_metadata && flagUrl(node.country)" :src="flagUrl(node.country)" :alt="regionName(node.country)" :title="regionName(node.country)" class="country-flag" />
     </div>
     <div v-if="config.show_uptime || (showPrice && node.price !== null)" class="node-card-chips">
-      <span v-if="config.show_uptime" :class="{ danger: !node.online, warning: node.online && !node.metrics }" :title="node.metrics ? duration(node.metrics.uptime) : nodeState(node)">{{ node.metrics ? `在线 ${Math.floor(node.metrics.uptime / 86400)} 天` : nodeState(node) }}</span>
+      <span v-if="config.show_uptime" :class="{ danger: !node.online, warning: node.online && !node.metrics }" :title="node.metrics ? duration(node.metrics.uptime) : nodeState(node)">{{ node.metrics ? `在线 ${duration(node.metrics.uptime)}` : nodeState(node) }}</span>
       <span v-if="showPrice && node.price !== null" :title="`${cost} (${node.currency})`">{{ cost }}</span>
     </div>
     <div class="node-card-body">
@@ -90,11 +92,8 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
           <span v-if="showPrice" class="highlight-value highlight-cost" :title="remainingTitle"><Coins /><span class="highlight-cost-text">{{ remaining }}</span></span>
         </div>
       </div>
-      <div v-if="config.show_uptime || showPing" class="node-detail-section">
-        <div v-if="config.show_uptime" class="node-facts">
-          <div v-if="config.show_uptime" class="fact-row"><span>在线</span><i /><span :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ node.metrics ? duration(node.metrics.uptime) : nodeState(node) }}</span></div>
-        </div>
-        <div v-if="showPing" class="node-ping-section"><PingPanel :node="node" :details="pingDetails" :config="config" /></div>
+      <div v-if="showPing" class="node-detail-section">
+        <div class="node-ping-section"><PingPanel :node="node" :details="pingDetails" :config="config" @health="pingHealthLevel = $event" /></div>
       </div>
       <div v-if="(config.show_remark && node.public_remark) || hasExtra" class="node-card-footer">
         <div v-if="config.show_remark && remark.tags.length" class="remark-tags"><span v-for="tag in remark.tags" :key="tag" :title="tag">{{ tag }}</span></div>

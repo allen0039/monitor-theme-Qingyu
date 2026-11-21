@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createSSRApp } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import { parsePing } from './ping'
-import { historyBuckets, latencyLabel, networkLatency, networkStats, qualityBuckets, windowSummary } from './ping-display'
+import { historyBuckets, latencyLabel, networkLatency, networkStats, networkTone, pingHealth, pingTone, qualityBuckets, shortProbeName, windowSummary } from './ping-display'
 import { cardBytes, cardExpiry, cardPrice, remarkParts } from './format'
 import PingHistoryBars from '../components/PingHistoryBars.vue'
 
@@ -63,6 +63,47 @@ describe('原版式网络摘要', () => {
     expect(buckets.at(-1)?.latency).toBe(56.5)
     const gap = historyBuckets([rows[0]!, rows.at(-1)!])
     expect(gap).toHaveLength(2)
+  })
+  it('收紧丢包阈值、提炼线路短名并识别单线异常，不被三网平均值稀释', () => {
+    expect(pingTone(0, 'loss')).toBe('good')
+    expect(pingTone(0.56, 'loss')).toBe('moderate')
+    expect(pingTone(1.5, 'loss')).toBe('slow')
+    expect(pingTone(2, 'loss')).toBe('bad')
+    expect(pingTone(75, 'latency')).toBe('good')
+    expect(pingTone(135, 'latency')).toBe('fair')
+    expect(pingTone(230, 'latency')).toBe('slow')
+
+    expect(shortProbeName('浙江电信')).toBe('电信')
+    expect(shortProbeName('浙江联通')).toBe('联通')
+    expect(shortProbeName('RFC HK')).toBe('RFC HK')
+    expect(shortProbeName('电信')).toBe('电信')
+
+    const healthy = parsePing({ probes: { 1: '浙江电信', 2: '浙江联通' }, ping: [{ task_id: 1, ts: 60, latency: 30, loss: 0 }, { task_id: 2, ts: 60, latency: 35, loss: 0 }], loss: { 1: 0, 2: 0 } })
+    expect(pingHealth(healthy)).toEqual({ level: 'ok', label: '网络稳定' })
+
+    const mild = parsePing({ probes: { 1: '浙江电信', 2: '浙江联通' }, ping: [{ task_id: 1, ts: 60, latency: 136, loss: 0 }, { task_id: 2, ts: 60, latency: 143, loss: 1.7 }], loss: { 1: 0, 2: 1.7 } })
+    expect(pingHealth(mild)).toEqual({ level: 'warn', label: '轻度波动' })
+    expect(networkTone(mild[1]!)).toBe('warn')
+
+    const singleLineLoss = parsePing({
+      probes: { 1: '浙江电信', 2: '浙江联通', 3: '浙江移动' },
+      ping: [
+        { task_id: 1, ts: 60, latency: 37, loss: 0 },
+        { task_id: 2, ts: 60, latency: 43, loss: 100 },
+        { task_id: 3, ts: 60, latency: 36, loss: 0 },
+      ],
+      loss: { 1: 0, 2: 3.3, 3: 0 },
+    })
+    expect(pingHealth(singleLineLoss)).toEqual({ level: 'alert', label: '联通丢包 3.3%' })
+    expect(networkTone(singleLineLoss[0]!)).toBe('ok')
+    expect(networkTone(singleLineLoss[1]!)).toBe('alert')
+
+    const partialTimeout = parsePing({ probes: { 1: '浙江电信' }, ping: [{ task_id: 1, ts: 60, latency: 40 }, { task_id: 1, ts: 120, latency: null }] })
+    expect(networkTone(partialTimeout[0]!)).toBe('warn')
+    expect(pingHealth(partialTimeout)).toEqual({ level: 'warn', label: '轻度波动' })
+    const buckets = historyBuckets(singleLineLoss.flatMap(n => n.rows))
+    expect(buckets[0]).toMatchObject({ anyLoss: true, maxLoss: 100, peak: 43 })
+    expect(pingHealth([])).toEqual({ level: 'unknown', label: '等待采样' })
   })
 })
 
