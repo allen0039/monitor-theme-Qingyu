@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { AlertTriangle } from '@lucide/vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { selectPingNetworks, useNodePing } from '../lib/ping'
-import { historyBuckets, latencyLabel, lossLabel, networkLatency, networkTone, pingHealth, pingTone, shortProbeName, windowSummary, type PingHealthLevel } from '../lib/ping-display'
+import { historyBuckets, latencyLabel, lossLabel, networkLatency, networkTone, pingHealth, pingTone, shortProbeName, windowSummary } from '../lib/ping-display'
 import PingHistoryBars from './PingHistoryBars.vue'
 const props = defineProps<{ node: MonitorNode; details: boolean; config: ThemeConfig }>()
-const emit = defineEmits<{ health: [PingHealthLevel] }>()
 const element = ref<HTMLElement | null>(null)
-const snapshot = useNodePing(element, () => props.node.id, () => props.node.online && props.node.metrics !== null, () => props.config.ping_refresh_interval)
-const networks = computed(() => selectPingNetworks(snapshot.value?.networks ?? [], props.config.ping_tasks, props.config.ping_max_lines))
+const canRead = computed(() => props.node.online && props.node.metrics !== null)
+const snapshot = useNodePing(element, () => props.node.id, () => canRead.value, () => props.config.ping_refresh_interval)
+const networks = computed(() => canRead.value ? selectPingNetworks(snapshot.value?.networks ?? [], props.config.ping_tasks, props.config.ping_max_lines) : [])
 const summary = computed(() => windowSummary(networks.value))
 const buckets = computed(() => historyBuckets(networks.value.flatMap(network => network.rows)))
+const detailBuckets = computed(() => new Map(networks.value.map(network => [network.id, historyBuckets(network.rows)])))
 const hasRows = computed(() => networks.value.some(network => network.rows.length))
 const emptyTitle = computed(() => !props.node.online ? '节点离线' : !props.node.metrics ? '等待指标上报'
   : !snapshot.value || snapshot.value.state === 'loading' ? '正在采集网络监控'
@@ -20,12 +21,11 @@ const placeholderNetworkCount = computed(() => Math.max(1, Math.min(3, Math.floo
 const networkLabel = computed(() => (networks.value.length || placeholderNetworkCount.value) === 3 ? '三网' : (networks.value.length || placeholderNetworkCount.value) === 2 ? '双线' : '线路')
 const ispColumns = computed(() => Math.min(3, Math.max(1, networks.value.length || placeholderNetworkCount.value)))
 const health = computed(() => pingHealth(networks.value))
-const healthClass = computed(() => health.value.level === 'unknown' ? '' : `ping-panel-${health.value.level}`)
-const statusText = computed(() => !props.node.online ? '节点离线' : !props.node.metrics ? '等待指标' : health.value.label)
-watch(() => health.value.level, level => emit('health', level), { immediate: true })
+const statusText = computed(() => !props.node.online ? '节点离线' : !props.node.metrics ? '等待指标'
+  : snapshot.value?.state === 'error' ? '数据不可用' : health.value.label)
 </script>
 <template>
-  <div ref="element" class="ping-panel" :class="healthClass">
+  <div ref="element" class="ping-panel">
     <div class="ping-panel-head">
       <span class="ping-panel-title" :title="emptyTitle">{{ details ? '网络明细 · 近 1h' : `${networkLabel}监控 · 近 1h` }}</span>
       <span class="ping-health-badge" :class="`is-${health.level}`" :title="emptyTitle">
@@ -37,7 +37,7 @@ watch(() => health.value.level, level => emit('health', level), { immediate: tru
     <template v-if="!details">
       <div class="ping-isp-grid" :style="{ '--isp-cols': ispColumns }">
         <template v-if="networks.length">
-          <div v-for="network in networks" :key="network.id" class="ping-isp-card" :class="networkTone(network) !== 'ok' && networkTone(network) !== 'unknown' ? `is-${networkTone(network)}` : ''" :title="`${network.name} · 近 1 小时平均延迟 ${latencyLabel(networkLatency(network), !!network.rows.length)} · 丢包 ${lossLabel(network.loss)}`">
+          <div v-for="network in networks" :key="network.id" class="ping-isp-card" :title="`${network.name} · 近 1 小时平均延迟 ${latencyLabel(networkLatency(network), !!network.rows.length)} · 丢包 ${lossLabel(network.loss)}`">
             <div class="ping-isp-top">
               <span class="ping-isp-name">{{ shortProbeName(network.name) }}</span>
               <span class="ping-loss-pill" :class="`ping-pill-${pingTone(network.loss, 'loss')}`">{{ lossLabel(network.loss) }}</span>
@@ -69,9 +69,12 @@ watch(() => health.value.level, level => emit('health', level), { immediate: tru
           <span class="ping-detail-name"><i class="ping-line-dot is-unknown" /><span>{{ emptyTitle }}</span></span>
           <span class="ping-detail-metrics"><span class="ping-metric-pill ping-pill-unknown">—</span><span class="ping-metric-pill ping-pill-unknown">丢包 —</span></span>
         </div>
-        <PingHistoryBars :buckets="[]" metric="combined" label="近期网络波动分段" :empty-title="emptyTitle" />
+        <div class="ping-panels">
+          <PingHistoryBars :buckets="[]" metric="latency" label="近期延迟分段" :empty-title="emptyTitle" />
+          <PingHistoryBars :buckets="[]" metric="loss" label="近期丢包分段" :empty-title="emptyTitle" />
+        </div>
       </div>
-      <div v-for="network in networks" :key="network.id" class="ping-detail-network" :class="networkTone(network) !== 'ok' && networkTone(network) !== 'unknown' ? `is-${networkTone(network)}` : ''">
+      <div v-for="network in networks" :key="network.id" class="ping-detail-network">
         <div class="ping-detail-heading">
           <span class="ping-detail-name" :title="network.name"><i class="ping-line-dot" :class="`is-${networkTone(network)}`" /><span>{{ network.name }}</span></span>
           <span class="ping-detail-metrics">
@@ -79,7 +82,10 @@ watch(() => health.value.level, level => emit('health', level), { immediate: tru
             <span class="ping-metric-pill" :class="`ping-pill-${pingTone(network.loss, 'loss')}`">丢包 {{ lossLabel(network.loss) }}</span>
           </span>
         </div>
-        <PingHistoryBars :buckets="historyBuckets(network.rows)" metric="combined" :label="`${network.name} 网络波动分段`" :empty-title="emptyTitle" />
+        <div class="ping-panels">
+          <PingHistoryBars :buckets="detailBuckets.get(network.id) ?? []" metric="latency" :label="`${network.name} 延迟分段`" :empty-title="emptyTitle" />
+          <PingHistoryBars :buckets="detailBuckets.get(network.id) ?? []" metric="loss" :label="`${network.name} 丢包分段`" :empty-title="emptyTitle" />
+        </div>
       </div>
     </div>
   </div>

@@ -80,7 +80,7 @@ const ticks = computed(() => {
   })
 })
 const timeTicks = computed(() => {
-  const count = plotW.value < 165 ? 2 : width.value < 600 ? 3 : width.value < 980 ? 4 : 5
+  const count = plotW.value < 182 ? 2 : width.value < 600 ? 3 : width.value < 980 ? 4 : 5
   const sameDay = new Date(bounds.value.start * 1000).toDateString() === new Date(bounds.value.end * 1000).toDateString()
   return Array.from({ length: count }, (_, i) => {
     const fraction = i / (count - 1)

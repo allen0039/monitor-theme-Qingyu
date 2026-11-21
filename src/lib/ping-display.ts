@@ -78,7 +78,7 @@ export function pingTone(value: number | null | undefined, metric: 'latency' | '
     if (value < 2) return 'slow'
     return 'bad'
   }
-  const thresholds = [80, 140, 200, 260]
+  const thresholds = [90, 180, 240, 300]
   const index = thresholds.findIndex(threshold => value <= threshold)
   return ['good', 'fair', 'moderate', 'slow', 'bad'][index < 0 ? 4 : index]!
 }
@@ -101,11 +101,11 @@ function inspectNetwork(network: PingNetwork) {
   if (!hasRows && !hasLossData) {
     return { level: 'unknown' as PingHealthLevel, reason: 'none' as const, latency, loss }
   }
-  if ((hasLossData && loss >= 2) || allTimeout || (latency !== null && latency > 220)) {
+  if ((hasLossData && loss >= 2) || allTimeout || (latency !== null && latency > 260)) {
     const reason = allTimeout ? 'timeout' : (hasLossData && loss >= 2) ? 'loss' : 'latency'
     return { level: 'alert' as PingHealthLevel, reason, latency, loss }
   }
-  if (hasTimeout || (hasLossData && loss > 0) || (latency !== null && latency > 120)) {
+  if (hasTimeout || (hasLossData && loss > 0) || (latency !== null && latency > 180)) {
     return { level: 'warn' as PingHealthLevel, reason: hasTimeout ? 'timeout' as const : 'warn' as const, latency, loss }
   }
   return { level: 'ok' as PingHealthLevel, reason: 'ok' as const, latency, loss }

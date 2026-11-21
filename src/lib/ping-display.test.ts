@@ -40,6 +40,19 @@ describe('原版式网络摘要', () => {
     expect(html.match(/ping-tone-unknown/g)).toHaveLength(10)
     expect(html).toContain('未配置网络探针')
   })
+  it('延迟条按平均延迟着色，丢包条独立反映逐段最高丢包', async () => {
+    const buckets = [{ start: 60, end: 120, latency: 80, peak: 320, loss: 1, maxLoss: 5, timeout: false }]
+    const latency = await renderToString(createSSRApp(PingHistoryBars, { buckets, metric: 'latency', label: '延迟分段' }))
+    const loss = await renderToString(createSSRApp(PingHistoryBars, { buckets, metric: 'loss', label: '丢包分段' }))
+    expect(latency).toContain('ping-tone-good')
+    expect(latency).toContain('峰值 320 ms')
+    expect(loss).toContain('ping-tone-bad')
+    expect(loss).toContain('最高丢包 5.0%')
+  })
+  it.each([[180, 'ok'], [181, 'warn'], [260, 'warn'], [261, 'alert']])('平均延迟 %d ms 时线路健康为 %s', (latency, level) => {
+    const [network] = parsePing({ ping: [{ task_id: 1, ts: 60, latency }], loss: { 1: 0 } })
+    expect(networkTone(network!)).toBe(level)
+  })
   it('损坏的丢包字段保持未知，不按省略的零丢包处理', () => {
     const broken = parsePing({ ping: [{ task_id: 1, ts: 60, latency: 20, loss: 'wrong' }], loss: { 1: 'wrong' } })
     expect(windowSummary(broken).loss).toBeNull()
@@ -71,7 +84,8 @@ describe('原版式网络摘要', () => {
     expect(pingTone(2, 'loss')).toBe('bad')
     expect(pingTone(75, 'latency')).toBe('good')
     expect(pingTone(135, 'latency')).toBe('fair')
-    expect(pingTone(230, 'latency')).toBe('slow')
+    expect(pingTone(200, 'latency')).toBe('moderate')
+    expect(pingTone(250, 'latency')).toBe('slow')
 
     expect(shortProbeName('浙江电信')).toBe('电信')
     expect(shortProbeName('浙江联通')).toBe('联通')
