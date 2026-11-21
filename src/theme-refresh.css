@@ -318,7 +318,7 @@ body { min-width: 0; }
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface-solid) 86%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--foreground) 7.5%, transparent);
@@ -329,7 +329,7 @@ body { min-width: 0; }
   border-color: color-mix(in srgb, var(--foreground) 10%, transparent);
   box-shadow: 0 2px 12px rgb(0 0 0 / 18%);
 }
-.geo-map-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: none; margin-bottom: 4px; min-height: 24px; }
+.geo-map-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: none; margin-bottom: 4px; min-height: 22px; }
 .geo-map-status { display: flex; align-items: center; min-width: 0; }
 .node-status-badges { position: relative; display: inline-flex; }
 .node-status-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 20px; padding: 2px 8px; border-radius: 4px; background: var(--surface); backdrop-filter: blur(8px); }
@@ -364,8 +364,9 @@ body { min-width: 0; }
 }
 .visual-node-status .node-status-offline .status-dot { background: #f59e0b; }
 .toolbar-node-status .node-status-detail { left: auto; right: 0; }
+.geo-map-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
 .geo-map-count {
-  margin-left: auto;
+  margin-left: 0;
   padding: 2.5px 10px;
   border-radius: 99px;
   background: color-mix(in srgb, var(--muted) 7%, transparent);
@@ -376,6 +377,35 @@ body { min-width: 0; }
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+.geo-map-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 3px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--muted) 7%, transparent);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.geo-pager-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0;
+  transition: background .15s, color .15s;
+}
+.geo-pager-btn:hover:not(:disabled) { background: var(--surface-solid); color: var(--emerald); }
+.geo-pager-btn:disabled { opacity: .35; cursor: default; }
+.geo-pager-index { padding: 0 3px; font-weight: 550; }
 .geo-map-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 10px; align-items: center; }
 .overview-visual-only .geo-map-body { grid-template-columns: minmax(0, 1fr) 268px; }
 .geo-map-stage { width: 100%; height: 100%; min-width: 0; min-height: 0; display: grid; place-items: center; }
@@ -438,14 +468,15 @@ body { min-width: 0; }
 .geo-marker-pill.is-offline .geo-marker-count { background: #94a3b8; }
 .geo-marker-flag { width: 13px; height: 9.5px; border-radius: 1.5px; object-fit: cover; display: block; box-shadow: 0 0 0 0.5px rgb(15 23 42 / 10%); flex-shrink: 0; }
 .geo-marker-code { font-size: 8px; font-weight: 600; color: var(--muted); padding-right: 1px; }
-.geo-region-list { height: 100%; min-width: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 4px; padding-right: 2px; scrollbar-width: thin; }
+.geo-region-list { height: 100%; min-width: 0; overflow: hidden; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); gap: 2px; padding-right: 0; }
 .geo-region-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  min-height: 24px;
-  padding: 2px 6px;
+  min-height: 0;
+  height: 100%;
+  padding: 0 6px;
   border-radius: 6px;
   background: transparent;
   font-size: 10px;
@@ -489,7 +520,7 @@ body { min-width: 0; }
 }
 @media (max-width: 640px) {
   .geo-map-body, .overview-visual-only .geo-map-body { grid-template-columns: 1fr; gap: 8px; }
-  .geo-region-list { max-height: 118px; }
+  .geo-region-list { height: auto; max-height: none; grid-template-rows: none; grid-auto-rows: 24px; }
 }
 @media (max-width: 600px) {
   .highlight-label { font-size: 10px; }

@@ -91,5 +91,19 @@ describe('地球访客连线', () => {
     const emptyHtml = await renderToString(createSSRApp(GeoMap, { nodes: [], showLabels: true }))
     expect(emptyHtml).not.toContain('geo-region-list')
     expect(emptyHtml).toContain('geo-map-body-full')
+
+    const sixCodes = ['US', 'JP', 'HK', 'CN', 'SG', 'DE']
+    const sixNodes = normalizeNodes(sixCodes.map((country, id) => ({ id: id + 1, name: country, country, online: true, metrics })))
+    const sixHtml = await renderToString(createSSRApp(GeoMap, { nodes: sixNodes, showLabels: true }))
+    expect(sixHtml.match(/geo-region-row/g)).toHaveLength(6)
+    expect(sixHtml).not.toContain('geo-map-pager')
+
+    const eightCodes = [...sixCodes, 'GB', 'AU']
+    const eightNodes = normalizeNodes(eightCodes.map((country, id) => ({ id: id + 1, name: country, country, online: true, metrics })))
+    const eightHtml = await renderToString(createSSRApp(GeoMap, { nodes: eightNodes, showLabels: true }))
+    expect(eightHtml.match(/geo-region-row/g)).toHaveLength(6)
+    expect(eightHtml.match(/geo-marker-pill/g)).toHaveLength(8)
+    expect(eightHtml).toContain('geo-map-pager')
+    expect(eightHtml).toContain('1/2')
   })
 })

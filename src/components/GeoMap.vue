@@ -36,12 +36,36 @@ function compactRate(value: number): string {
   if (part.unit === 'B/s' || n >= 100) return `${Math.round(n)} ${part.unit}`
   return `${Number(n.toFixed(1))} ${part.unit}`
 }
+const PAGE_SIZE = 6
+const page = ref(0)
+const totalPages = computed(() => Math.max(1, Math.ceil(clusters.value.length / PAGE_SIZE)))
+const currentPage = computed(() => Math.min(page.value, totalPages.value - 1))
+const pagedClusters = computed(() => clusters.value.slice(currentPage.value * PAGE_SIZE, (currentPage.value + 1) * PAGE_SIZE))
+function setPage(next: number) {
+  page.value = Math.min(totalPages.value - 1, Math.max(0, next))
+}
+let lastWheelAt = 0
+function onListWheel(event: WheelEvent) {
+  if (totalPages.value <= 1 || Math.abs(event.deltaY) < 8) return
+  event.preventDefault()
+  const now = Date.now()
+  if (now - lastWheelAt < 180) return
+  lastWheelAt = now
+  setPage(currentPage.value + (event.deltaY > 0 ? 1 : -1))
+}
 </script>
 <template>
   <div class="geo-map" aria-label="节点所在国家和地区">
     <div class="geo-map-header">
       <div class="geo-map-status"><slot name="status" /></div>
-      <span class="geo-map-count">{{ clusters.length }} 个国家和地区</span>
+      <div class="geo-map-actions">
+        <span class="geo-map-count">{{ clusters.length }} 个国家和地区</span>
+        <div v-if="totalPages > 1" class="geo-map-pager" role="group" aria-label="地区列表翻页">
+          <button type="button" class="geo-pager-btn" :disabled="currentPage <= 0" aria-label="上一页" title="上一页" @click="setPage(currentPage - 1)">‹</button>
+          <span class="geo-pager-index">{{ currentPage + 1 }}/{{ totalPages }}</span>
+          <button type="button" class="geo-pager-btn" :disabled="currentPage >= totalPages - 1" aria-label="下一页" title="下一页" @click="setPage(currentPage + 1)">›</button>
+        </div>
+      </div>
     </div>
     <div class="geo-map-body" :class="{ 'geo-map-body-full': !clusters.length }">
       <div class="geo-map-stage">
@@ -76,8 +100,8 @@ function compactRate(value: number): string {
           </div>
         </div>
       </div>
-      <div v-if="clusters.length" class="geo-region-list" role="list" aria-label="各地区在线与实时速率">
-        <div v-for="cluster in clusters" :key="cluster.code" class="geo-region-row" :class="{ 'is-offline': !cluster.online, 'is-hovered': hoveredCode === cluster.code }" role="listitem" :title="`${cluster.name} · ${cluster.online}/${cluster.total} 在线 · ↑ ${formatBytes(cluster.tx, true)} ↓ ${formatBytes(cluster.rx, true)}`" @mouseenter="hoveredCode = cluster.code" @mouseleave="hoveredCode = null">
+      <div v-if="clusters.length" class="geo-region-list" role="list" aria-label="各地区在线与实时速率" @wheel="onListWheel">
+        <div v-for="cluster in pagedClusters" :key="cluster.code" class="geo-region-row" :class="{ 'is-offline': !cluster.online, 'is-hovered': hoveredCode === cluster.code }" role="listitem" :title="`${cluster.name} · ${cluster.online}/${cluster.total} 在线 · ↑ ${formatBytes(cluster.tx, true)} ↓ ${formatBytes(cluster.rx, true)}`" @mouseenter="hoveredCode = cluster.code" @mouseleave="hoveredCode = null">
           <span class="geo-region-name">
             <img v-if="flagUrl(cluster.code)" :src="flagUrl(cluster.code)" :alt="cluster.name" class="geo-region-flag" />
             <span>{{ cluster.name }}</span>

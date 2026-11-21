@@ -159,12 +159,25 @@ try{
       pingOverflow: pingRows.some(el => el.scrollWidth > el.clientWidth + 1),
       geoPills: document.querySelectorAll('.geo-marker-pill').length,
       geoRows: regionRows.length,
+      geoClipped: (() => {
+        const listBox = document.querySelector('.geo-region-list')?.getBoundingClientRect()
+        return !listBox || regionRows.some(el => {
+          const r = el.getBoundingClientRect()
+          return r.height < 18 || r.top < listBox.top - 1 || r.bottom > listBox.bottom + 1
+        })
+      })(),
       geoOverflow: !!geoMap && (geoMap.scrollWidth > geoMap.clientWidth + 1 || regionRows.some(el => el.scrollWidth > el.clientWidth + 1)),
       footers: row.map(card => ({ y: Math.round(card.querySelector('.node-card-footer')?.getBoundingClientRect().bottom ?? -1) })) }
   })()`)
   if(cardsBefore.links || cardsBefore.visibleText || cardsBefore.count < 5) throw Error('Card detail CTA still shown: ' + JSON.stringify(cardsBefore))
   if(cardsBefore.cardsPerRow !== 5 || cardsBefore.extraCount || cardsBefore.chipsCount !== 5 || !cardsBefore.pingCols.every(count => count === 2) || cardsBefore.pingOverflow) throw Error('Card chips/ping cols invalid: ' + JSON.stringify(cardsBefore))
-  if(cardsBefore.geoPills < 1 || cardsBefore.geoRows < 1 || cardsBefore.geoOverflow) throw Error('GeoMap layout invalid: ' + JSON.stringify(cardsBefore))
+  if(cardsBefore.geoPills < 1 || cardsBefore.geoRows !== 6 || cardsBefore.geoClipped || cardsBefore.geoOverflow) throw Error('GeoMap layout invalid: ' + JSON.stringify(cardsBefore))
+  await evalJS("document.querySelector('.geo-pager-btn:last-of-type')?.click()")
+  await untilJS("document.querySelectorAll('.geo-region-row').length === 4")
+  const page2Clipped = await evalJS("(() => { const listBox = document.querySelector('.geo-region-list').getBoundingClientRect(); return [...document.querySelectorAll('.geo-region-row')].some(el => { const r = el.getBoundingClientRect(); return r.height < 18 || r.top < listBox.top - 1 || r.bottom > listBox.bottom + 1 }) })()")
+  if (page2Clipped) throw Error('GeoMap page 2 rows clipped')
+  await evalJS("document.querySelector('.geo-pager-btn:first-of-type')?.click()")
+  await untilJS("document.querySelectorAll('.geo-region-row').length === 6")
   const footerBottom = cardsBefore.footers.map(item => item.y).filter(y => y > 0)
   if(footerBottom.length >= 2 && Math.max(...footerBottom)-Math.min(...footerBottom) > 3) throw Error('Card footer rows not level: ' + JSON.stringify(cardsBefore))
   await evalJS("document.querySelector('.nodes-grid .node-card').scrollIntoView({block:'start'})")
