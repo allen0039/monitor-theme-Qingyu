@@ -2,7 +2,7 @@
   "name": "青屿 · Qingyu",
   "short": "qingyu",
   "description": "青屿 Qingyu：简约的翡翠绿 Monitor 主题，提供交互地球、节点卡片和列表。",
-  "version": "0.2.35",
+  "version": "0.2.36",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-Qingyu",
   "config": [
@@ -379,7 +379,7 @@
       "type": "boolean",
       "label": "显示节点信息",
       "default": true,
-      "help": "卡片标题显示系统与国旗，核心数和架构位于右下角「附加信息」；列表显示系统、国旗和分组。关闭后仍可搜索这些字段。"
+      "help": "卡片标题显示系统与国旗，节点详情页显示 CPU 型号、核心数、架构与虚拟化等资料；列表显示系统、国旗和分组。关闭后仍可搜索这些字段。"
     },
     {
       "key": "show_expiry",

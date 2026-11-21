@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createSSRApp } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import { parsePing } from './ping'
+import { defaultConfig } from './config'
+import { normalizeNodes } from './data'
 import { historyBuckets, latencyLabel, networkLatency, networkStats, networkTone, pingHealth, pingTone, qualityBuckets, shortProbeName, windowSummary } from './ping-display'
 import { cardBytes, cardExpiry, cardPrice, remarkParts } from './format'
 import PingHistoryBars from '../components/PingHistoryBars.vue'
+import PingPanel from '../components/PingPanel.vue'
 
 describe('原版式网络摘要', () => {
   it('使用线路平均值再取平均，不让高频线路压过其他线路', () => {
@@ -118,6 +121,20 @@ describe('原版式网络摘要', () => {
     const buckets = historyBuckets(singleLineLoss.flatMap(n => n.rows))
     expect(buckets[0]).toMatchObject({ anyLoss: true, maxLoss: 100, peak: 43 })
     expect(pingHealth([])).toEqual({ level: 'unknown', label: '等待采样' })
+  })
+  it('摘要模式渲染线路延迟与丢包两行汇总，无采样时展示对应占位符', async () => {
+    vi.stubGlobal('document', { hidden: false })
+    try {
+      const node = normalizeNodes([{ id: 1, name: '东京', online: true }])[0]!
+      const html = await renderToString(createSSRApp(PingPanel, { node, details: false, config: defaultConfig() }))
+      expect(html.match(/fact-row ping-summary/g)).toHaveLength(2)
+      expect(html).toContain('>三网</span>')
+      expect(html).toContain('— · — · —')
+      expect(html).toContain('>丢包</span>')
+      expect(html).toContain('—% · —% · —%')
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
 

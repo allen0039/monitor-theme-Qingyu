@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CalendarDays, ChevronDown, ChevronUp, Coins, Download, Ellipsis, Upload } from '@lucide/vue'
+import { CalendarDays, ChevronDown, ChevronUp, Coins, Download, Upload } from '@lucide/vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { flagUrl } from '../lib/assets'
 import { nodeState, regionName, trafficModeLabel } from '../lib/data'
@@ -50,8 +50,6 @@ function tileRate(value: number | null | undefined): string {
   return Number(part.value) >= 1000 ? `${Number((Number(part.value) / 1024).toFixed(1))} MB/s` : `${Math.round(Number(part.value))} KB/s`
 }
 const remark = computed(() => remarkParts(props.node.public_remark))
-const hasHardware = computed(() => props.config.show_node_metadata && !!(props.node.cpu_cores || props.node.arch))
-const hasExtra = computed(() => hasHardware.value || (props.showPrice && !!remainingIssue.value))
 const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null && props.node.expires_in > 0 && props.node.expires_in <= props.config.expiry_warning_days, expired: props.node.expires_in !== null && props.node.expires_in <= 0 }))
 </script>
 <template>
@@ -93,16 +91,9 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
         </div>
         <div v-if="showPing" class="node-ping-section"><PingPanel :node="node" :details="pingDetails" :config="config" /></div>
       </div>
-      <div v-if="(config.show_remark && node.public_remark) || hasExtra" class="node-card-footer">
-        <div v-if="config.show_remark && remark.tags.length" class="remark-tags"><span v-for="tag in remark.tags" :key="tag" :title="tag">{{ tag }}</span></div>
-        <p v-if="config.show_remark && remark.text" class="node-remark" :title="remark.text">{{ remark.text }}</p>
-        <details v-if="hasExtra" class="node-extra">
-          <summary :aria-label="`${node.name} 附加信息`" title="附加信息"><Ellipsis /></summary>
-          <div class="node-extra-content">
-            <div v-if="hasHardware" class="node-tags"><span v-if="node.cpu_cores" :title="node.cpu_name">{{ node.cpu_cores }} 核</span><span v-if="node.arch">{{ node.arch }}</span></div>
-            <div v-if="showPrice && remainingIssue" class="node-extra-issue">剩余价值：{{ remainingIssue }}</div>
-          </div>
-        </details>
+      <div v-if="config.show_remark && (remark.tags.length || remark.text)" class="node-card-footer">
+        <div v-if="remark.tags.length" class="remark-tags"><span v-for="tag in remark.tags" :key="tag" :title="tag">{{ tag }}</span></div>
+        <p v-if="remark.text" class="node-remark" :title="remark.text">{{ remark.text }}</p>
       </div>
     </div>
   </article>

@@ -28,9 +28,11 @@ describe('节点信息带与费用隐私', () => {
   })
   it('离线仍计算剩余价值，缺到期信息显示未知并说明原因', async () => {
     expect(await render({ online: false })).toContain('剩余价值 ¥11.96 CNY')
-    const html = await render({ expires_in: null })
+    const html = await render({ expires_in: null, cpu_cores: 4, arch: 'x86_64' }, { show_node_metadata: true })
     expect(html).toContain('缺少到期信息')
     expect(html).not.toContain('¥0.00')
+    expect(html).not.toContain('<details')
+    expect(html).not.toContain('node-extra')
   })
   it('完整在线时长与当期流量直接展示，关闭硬件信息不影响数据，显隐开关仍生效', async () => {
     const changes = { metrics: { cpu: 1, load: [0, 0, 0], mem_total: GB, mem_used: 0, disk_total: GB, disk_used: 0, net_tx: 0, net_rx: 0, uptime: 14 * 86400 + 5 * 3600 } }

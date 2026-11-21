@@ -183,10 +183,8 @@ body { min-width: 0; }
 .ping-tone-moderate { background: #f59e0b; }
 .ping-tone-slow { background: #f97316; }
 .ping-tone-bad { background: #ef4444; }
-.node-card .node-card-footer { margin-top: 0; }
+.node-card .node-card-footer { margin-top: 0; padding-right: 0; }
 .remark-tags > span { border-radius: 5px; background: color-mix(in srgb, var(--subtle) 50%, transparent); }
-.node-extra-issue { margin-top: 8px; color: var(--muted); font-size: 10px; line-height: 1.5; }
-.node-extra-content { max-width: min(270px, calc(100vw - 28px)); overflow-wrap: anywhere; }
 .node-status-badges { position: relative; display: inline-flex; }
 .node-status-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 20px; padding: 2px 8px; border-radius: 4px; background: var(--surface); backdrop-filter: blur(8px); }
 .node-status-badge { gap: 4px; padding: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 10px; line-height: 1.4; }

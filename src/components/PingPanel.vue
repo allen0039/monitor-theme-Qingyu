@@ -19,6 +19,7 @@ const emptyTitle = computed(() => !props.node.online ? '节点离线' : !props.n
   : snapshot.value.state === 'error' ? '延迟数据暂时不可用' : !networks.value.length ? '未配置网络探针' : !hasRows.value ? '暂无网络采样' : '暂无记录')
 const placeholderNetworkCount = computed(() => Math.max(1, Math.min(3, Math.floor(props.config.ping_max_lines || 3))))
 const placeholderLatency = computed(() => Array.from({ length: placeholderNetworkCount.value }, () => '—').join(' · '))
+const placeholderLoss = computed(() => Array.from({ length: placeholderNetworkCount.value }, () => '—%').join(' · '))
 const networkLabel = computed(() => (networks.value.length || placeholderNetworkCount.value) === 3 ? '三网' : '线路')
 function latencyClass(value: number | null, hasSamples: boolean): string {
   return `ping-text-${value === null && hasSamples ? 'bad' : pingTone(value, 'latency')}`
@@ -34,6 +35,15 @@ function latencyClass(value: number | null, hasSamples: boolean): string {
             <span v-for="(network, index) in networks" :key="network.id" :class="latencyClass(networkLatency(network), !!network.rows.length)" :title="`${network.name} · 近 1 小时平均延迟 ${latencyLabel(networkLatency(network), !!network.rows.length)} · 丢包 ${lossLabel(network.loss)}`">{{ latencyLabel(networkLatency(network), !!network.rows.length, true) }}<b v-if="index < networks.length - 1">·</b></span>
           </template>
           <span v-else class="ping-text-unknown ping-placeholder" :title="emptyTitle">{{ placeholderLatency }}</span>
+        </div>
+      </div>
+      <div class="fact-row ping-summary">
+        <span :title="emptyTitle">丢包</span><i />
+        <div class="ping-summary-values">
+          <template v-if="networks.length">
+            <span v-for="(network, index) in networks" :key="network.id" :class="`ping-text-${pingTone(network.loss, 'loss')}`" :title="`${network.name} · 近 1 小时整段窗口丢包率`">{{ lossLabel(network.loss) }}<b v-if="index < networks.length - 1">·</b></span>
+          </template>
+          <span v-else class="ping-text-unknown ping-placeholder" :title="emptyTitle">{{ placeholderLoss }}</span>
         </div>
       </div>
       <div class="ping-panels">
