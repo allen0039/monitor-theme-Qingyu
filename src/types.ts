@@ -59,7 +59,7 @@ export interface SiteInfo {
   history_days?: number
 }
 
-export type EarthMode = 'earth' | 'earth-stop' | 'map' | 'summary' | 'hide'
+export type EarthMode = 'map' | 'summary' | 'hide'
 export type Layout = 'card' | 'list'
 export type ThemeMode = 'auto' | 'beijing' | 'light' | 'dark'
 export type SummaryKey = 'memory' | 'disk' | 'online' | 'offline' | 'traffic' | 'upload' | 'download' | 'cpu' | 'regions' | 'remaining_value'
@@ -75,9 +75,7 @@ export interface ThemeConfig {
   notice_title: string
   notice: string
   earth_mode: EarthMode
-  earth_rotation_speed: number
   earth_show_labels: boolean
-  earth_show_rates: boolean
   show_node_status: boolean
   show_group_tabs: boolean
   show_search: boolean

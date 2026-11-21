@@ -28,7 +28,7 @@ SOFTWARE.
 
 ## World Atlas
 
-`src/assets/world-map.json` is projected from World Atlas 2 countries-110m, derived from Natural Earth public-domain geography.
+`src/assets/world-map.json` is projected from World Atlas 2 countries-110m, derived from Natural Earth public-domain geography. `src/assets/world-map-countries.json` is the matching generated country-to-path index used by the theme.
 
 Copyright 2013-2019 Michael Bostock
 

@@ -5,7 +5,7 @@ import { record } from './data'
 import { applyDisplaySettings, normalizeDisplaySettings, validDisplaySetting, type DisplaySettingKey } from './display-settings'
 
 const KEY = 'qingyu.preferences'
-const MODES: EarthMode[] = ['earth', 'earth-stop', 'map', 'summary', 'hide']
+const MODES: EarthMode[] = ['map', 'summary', 'hide']
 const SORTS: SortKey[] = ['default', 'name', 'cpu', 'memory', 'disk', 'traffic', 'upload', 'download']
 const THEMES: ThemeMode[] = ['auto', 'beijing', 'light', 'dark']
 
@@ -22,7 +22,7 @@ export function usePreferences(siteConfig: { value: ThemeConfig }) {
   const storageAvailable = ref(true)
   const themeOverride = ref<ThemeMode | null>(THEMES.includes(saved.theme as ThemeMode) ? saved.theme as ThemeMode : null)
   const layoutOverride = ref<Layout | null>(['card', 'list'].includes(String(saved.layout)) ? saved.layout as Layout : null)
-  const earthOverride = ref<EarthMode | null>(MODES.includes(saved.earth as EarthMode) ? saved.earth as EarthMode : null)
+  const earthOverride = ref<EarthMode | null>(saved.earth === 'earth' || saved.earth === 'earth-stop' ? 'map' : MODES.includes(saved.earth as EarthMode) ? saved.earth as EarthMode : null)
   const offlineOverride = ref<boolean | null>(typeof saved.offlineLast === 'boolean' ? saved.offlineLast : null)
   const sortOverride = ref<SortKey | null>(SORTS.includes(saved.sort as SortKey) ? saved.sort as SortKey : null)
   const pingOverride = ref<boolean | null>(typeof saved.pingDetails === 'boolean' ? saved.pingDetails : null)

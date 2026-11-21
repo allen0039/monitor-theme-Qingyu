@@ -37,7 +37,10 @@ describe('节点信息带与费用隐私', () => {
   it('完整在线时长与当期流量直接展示，关闭硬件信息不影响数据，显隐开关仍生效', async () => {
     const changes = { metrics: { cpu: 1, load: [0, 0, 0], mem_total: GB, mem_used: 0, disk_total: GB, disk_used: 0, net_tx: 0, net_rx: 0, uptime: 14 * 86400 + 5 * 3600 } }
     const html = await render(changes, { show_node_metadata: false })
+    expect(html).toContain('node-card-chips')
+    expect(html).not.toContain('node-facts')
     expect(html).toContain('14 天 5 小时')
+    expect(html).toContain('¥29.90 / 月')
     expect(html).not.toContain('<span>累计</span>')
     expect(html).not.toContain('累计上传 1.85 TB')
     expect(html).not.toContain('累计下载 3.70 TB')

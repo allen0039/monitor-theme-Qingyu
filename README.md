@@ -1,10 +1,10 @@
 # 青屿 · Qingyu
 
-Qingyu 是 [Monitor](https://github.com/monitor-probe/monitor) 的服务器监控主题，以翡翠绿、交互地球和半透明卡片展示节点状态，提供节点详情、资源趋势、网络延迟历史和费用计算。支持桌面与移动端、浅色与深色外观。
+Qingyu 是 [Monitor](https://github.com/monitor-probe/monitor) 的服务器监控主题，以翡翠绿、点状地图和半透明卡片展示节点状态，提供节点详情、资源趋势、网络延迟历史和费用计算。支持桌面与移动端、浅色与深色外观。
 
 [下载最新版本](https://github.com/allen0039/monitor-theme-Qingyu/releases/latest) · [更新日志](CHANGELOG.md) · [反馈问题](https://github.com/allen0039/monitor-theme-Qingyu/issues)
 
-![Qingyu 首页：交互地球、资源总览和节点卡片](preview.png)
+![Qingyu 首页：点状地图、资源总览和节点卡片](preview.png)
 
 预览图使用 Monitor 官方示例数据，访客地区为模拟结果。
 
@@ -56,7 +56,7 @@ tar -xzf theme.tar.gz -C /opt/monitor/data/themes/qingyu
 
 ### 首页与节点浏览
 
-- 交互地球、静止地球、点状地图、仅总览和隐藏头部五种展示模式；WebGL 不可用时自动回退到地图。地区标记使用国家中心点。
+- 点状地图、仅总览和隐藏头部三种展示模式。地区标记使用国家中心点。
 - 默认展示内存、剩余价值、上传、硬盘、累计流量和下载六张总览卡片，可自定义指标、顺序及当前分组／全站范围。
 - 节点卡片与列表切换、四种卡片尺寸、分组筛选、搜索、排序和离线后置。
 - CPU、负载、内存、硬盘、实时速率、本期与累计流量、在线时长、到期提醒和公开备注。
@@ -86,7 +86,7 @@ tar -xzf theme.tar.gz -C /opt/monitor/data/themes/qingyu
 | 分区 | 主要选项 |
 | --- | --- |
 | 基础与外观 | 配色、卡片／列表、卡片尺寸、站点图标、断线刷新、减弱动画 |
-| 首页布局与地球 | 公告、头部模式、地球自转、国旗、地区速率、在线状态、分组与搜索 |
+| 首页布局与地图 | 公告、头部模式、地图国旗、在线状态、分组与搜索 |
 | 首页总览 | 指标方案、自定义指标与顺序、当前分组／全站统计 |
 | 节点卡片与列表 | 排序、离线后置、资源与流量显隐、主机信息、到期与备注 |
 | 网络延迟 | 摘要／明细、线路顺序、线路数量、缓存与刷新间隔 |
@@ -100,8 +100,8 @@ tar -xzf theme.tar.gz -C /opt/monitor/data/themes/qingyu
 ### 外部请求与显示边界
 
 - 汇率使用 Frankfurter 和 open.er-api；费用功能不需要汇率时不会请求。
-- 访客气泡向 ip.sb 查询网络出口地区，失败时回退 ipwho.is；当前标签页缓存 15 分钟。关闭访客气泡后不请求定位，也不显示地球访客连线。
-- 图标、国旗和地球资源随构建提供，运行时无需通过 CDN 加载这些资源。
+- 访客气泡向 ip.sb 查询网络出口地区，失败时回退 ipwho.is；当前标签页缓存 15 分钟。关闭访客气泡后不请求定位。
+- 图标、国旗和地图资源随构建提供，运行时无需通过 CDN 加载这些资源。
 - 主题设置控制页面展示；隐藏费用或后台入口不会改变主控 API 权限，私有字段由 Monitor 后端控制。
 
 ## 本地开发
@@ -144,6 +144,6 @@ npm run package
 
 ## 来源与许可
 
-Qingyu 基于 [Komari Emerald Globe Pro](https://github.com/allen0039/komari-theme-emerald-globe-pro) 的视觉设计、地球纹理与国家中心点适配到 Monitor，保留 Tokinx / Davies_Allen 的 MIT 署名。接口与安装格式参考 [Monitor](https://github.com/monitor-probe/monitor) 及其 [默认主题](https://github.com/monitor-probe/monitor-theme-default)，开发示例脚本来自 [Monitor 官方主题站](https://github.com/monitor-probe/themes)。
+Qingyu 基于 [Komari Emerald Globe Pro](https://github.com/allen0039/komari-theme-emerald-globe-pro) 的视觉设计与国家中心点适配到 Monitor，保留 Tokinx / Davies_Allen 的 MIT 署名。接口与安装格式参考 [Monitor](https://github.com/monitor-probe/monitor) 及其 [默认主题](https://github.com/monitor-probe/monitor-theme-default)，开发示例脚本来自 [Monitor 官方主题站](https://github.com/monitor-probe/themes)。
 
 项目采用 [MIT 许可证](LICENSE)。地图、图标、国旗及其他依赖的声明见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。

@@ -66,10 +66,10 @@ describe('站点默认与浏览器偏好', () => {
     prefs.setPreference('show_cpu', false)
     prefs.setPreference('summary_preset', 'custom')
     prefs.setPreference('summary_cards', 'disk memory')
-    prefs.setPreference('earth_rotation_speed', 2.5)
+    prefs.setPreference('earth_show_labels', false)
     await nextTick()
-    expect(prefs.config.value).toMatchObject({ card_size: 'large', show_cpu: false, summary_preset: 'custom', summary_cards: 'disk memory', earth_rotation_speed: 2.5 })
-    expect(JSON.parse(stored!).display).toMatchObject({ card_size: 'large', show_cpu: false, earth_rotation_speed: 2.5 })
+    expect(prefs.config.value).toMatchObject({ card_size: 'large', show_cpu: false, summary_preset: 'custom', summary_cards: 'disk memory', earth_show_labels: false })
+    expect(JSON.parse(stored!).display).toMatchObject({ card_size: 'large', show_cpu: false, earth_show_labels: false })
     config.value = parseConfig({ card_size: 'mini', show_cpu: true, show_memory: false, summary_scope: 'all' })
     expect(prefs.config.value).toMatchObject({ card_size: 'large', show_cpu: false, show_memory: false, summary_scope: 'all' })
     prefs.resetPreferences()
@@ -98,7 +98,7 @@ describe('站点默认与浏览器偏好', () => {
     stored = JSON.stringify({ display: { card_size: 'large', show_price: true, show_personal_finance: true, show_ping: true, hide_price_logged_out: false, hide_admin: false, site_icon: 'https://example.com/other.png', poll_interval: 0, earth_rotation_speed: 9, ping_max_lines: 3.5 } })
     const { config, prefs } = mountPreferences()
     config.value = parseConfig({ show_price: false, show_personal_finance: false, show_ping: false, hide_price_logged_out: true, hide_admin: true, site_icon: '/site.png' })
-    expect(prefs.config.value).toMatchObject({ card_size: 'large', show_price: false, show_personal_finance: false, show_ping: false, hide_price_logged_out: true, hide_admin: true, site_icon: '/site.png', poll_interval: 5, earth_rotation_speed: 1.6, ping_max_lines: 3 })
+    expect(prefs.config.value).toMatchObject({ card_size: 'large', show_price: false, show_personal_finance: false, show_ping: false, hide_price_logged_out: true, hide_admin: true, site_icon: '/site.png', poll_interval: 5, ping_max_lines: 3 })
   })
 
   it('有效零值和关闭状态会保留，非法数字与未知字段不会覆盖站点设置', () => {

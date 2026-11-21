@@ -10,7 +10,6 @@ import { safeImageUrl, safeUrl } from './lib/format'
 import { usePreferences } from './lib/preferences'
 import { startStream } from './lib/stream'
 import GeoMap from './components/GeoMap.vue'
-import NodeGlobe from './components/NodeGlobe.vue'
 import NodeCard from './components/NodeCard.vue'
 import NodeList from './components/NodeList.vue'
 import NodeDetail from './components/NodeDetail.vue'
@@ -32,7 +31,6 @@ const siteConfig = ref<ThemeConfig>(defaultConfig())
 const { config, theme, layout, earth, sort, group, offlineLast, pingDetails, dark, reduceMotion, storageAvailable, setPreference, cycleTheme, resetPreferences } = usePreferences(siteConfig)
 const configLoaded = ref(false)
 const visitorHeight = ref(36)
-const visitorCountry = ref('')
 const scrolled = ref(false)
 const showVisitor = computed(() => configLoaded.value && config.value.visitor_info_enabled)
 const connection = ref<ConnectionState>('connecting'), error = ref<string | null>(null), closed = ref(false)
@@ -71,7 +69,7 @@ function syncRoute() {
   }
 }
 function backToList() { window.location.hash = ''; syncRoute() }
-const hasVisual = computed(() => ['earth', 'earth-stop', 'map'].includes(earth.value))
+const hasVisual = computed(() => earth.value === 'map')
 const cards = computed(() => summaryKeys(config.value))
 const showSummary = computed(() => config.value.show_summary && cards.value.length > 0)
 const showOverview = computed(() => earth.value !== 'hide' && (hasVisual.value || showSummary.value))
@@ -177,9 +175,11 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
         <section v-if="showOverview" class="overview" :class="{ 'overview-compact': !hasVisual, 'overview-visual-only': !showSummary }" aria-label="节点概况">
           <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :show-price="showPrice" v-model:currency="summaryCurrency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" @public-open-change="publicFinanceOpen = $event" />
           <div v-if="hasVisual" class="overview-visual">
-            <NodeStatusBadges v-if="config.show_node_status" class="visual-node-status" :nodes="grouped" :group="effectiveGroup" />
-            <GeoMap v-if="earth === 'map'" :nodes="grouped" :show-labels="config.earth_show_labels" />
-            <NodeGlobe v-else :nodes="grouped" :rotate="earth === 'earth'" :dark="dark" :reduce-motion="reduceMotion" :rotation-speed="config.earth_rotation_speed" :show-labels="config.earth_show_labels" :show-rates="config.earth_show_rates" :visitor-country="showVisitor ? visitorCountry : ''" />
+            <GeoMap :nodes="grouped" :show-labels="config.earth_show_labels">
+              <template #status>
+                <NodeStatusBadges v-if="config.show_node_status" class="visual-node-status" :nodes="grouped" :group="effectiveGroup" />
+              </template>
+            </GeoMap>
           </div>
         </section>
         <div class="node-toolbar" :class="{ 'toolbar-without-overview': !showOverview }">
@@ -208,7 +208,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
     </main>
     <DisplaySettingsDialog v-if="settingsOpen" :config="config" :site-config="siteConfig" :price-allowed="priceAllowed" :storage-available="storageAvailable" @change="setPreference" @reset="resetPreferences" @close="settingsOpen = false" />
     <PersonalFinanceDialog v-if="financeOpen && canCalculate && nodes !== null" :nodes="nodes" :exchange="exchange" :rates-loading="ratesLoading" @close="financeOpen = false" />
-    <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" @country="visitorCountry = $event" />
+    <VisitorInfoCard v-if="showVisitor" @height="visitorHeight = $event" />
     <footer class="site-footer"><div><span>Powered by <a href="https://github.com/monitor-probe/monitor" target="_blank" rel="noopener noreferrer">Monitor</a></span><span>Theme by <a :href="manifest.url" target="_blank" rel="noopener noreferrer" :title="`${manifest.name} v${manifest.version}`">{{ manifest.name }}</a></span></div><p v-if="config.footer_text"><a v-if="footerUrl" :href="footerUrl" target="_blank" rel="noopener noreferrer">{{ config.footer_text }}</a><span v-else>{{ config.footer_text }}</span></p></footer>
   </div>
 </template>

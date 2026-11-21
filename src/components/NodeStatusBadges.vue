@@ -13,7 +13,7 @@ watch(() => props.group, () => { expanded.value = false })
   <div class="node-status-badges" role="group" aria-label="节点在线状态" @keydown.esc="expanded = false">
     <button type="button" class="node-status-toggle" :aria-label="label" :aria-expanded="expanded" :title="label" @click="expanded = !expanded">
       <span class="node-status-badge up"><span class="status-dot" aria-hidden="true" /><strong>{{ totals.online }}</strong></span>
-      <span v-if="offline > 0" class="node-status-badge node-status-offline"><span class="status-dot" aria-hidden="true" /><strong>{{ offline }}</strong></span>
+      <span v-if="offline > 0" class="node-status-badge node-status-offline"><span class="status-dot" aria-hidden="true" /><strong>{{ offline }}</strong><span class="node-status-word">离线</span></span>
     </button>
     <span v-if="expanded" class="node-status-detail" role="status">{{ label }}</span>
   </div>

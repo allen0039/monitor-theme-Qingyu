@@ -5,7 +5,7 @@ import { record } from './data'
 
 export const DISPLAY_SECTIONS = [
   { id: 'appearance', label: '基础与外观', description: '调整配色、节点视图和阅读密度。', keys: ['theme_mode', 'layout', 'card_size', 'reduce_motion', 'poll_interval'] },
-  { id: 'layout', label: '首页布局与地球', description: '选择头部展示方式，以及首页需要保留的工具。', keys: ['earth_mode', 'earth_rotation_speed', 'earth_show_labels', 'earth_show_rates', 'show_node_status', 'show_group_tabs', 'show_search', 'show_sort', 'notice_enabled'] },
+  { id: 'layout', label: '首页布局与地图', description: '选择头部展示方式，以及首页需要保留的工具。', keys: ['earth_mode', 'earth_show_labels', 'show_node_status', 'show_group_tabs', 'show_search', 'show_sort', 'notice_enabled'] },
   { id: 'summary', label: '首页总览卡片', description: '选择统计卡片、排列顺序和汇总范围。', keys: ['show_summary', 'summary_preset', 'summary_cards', 'summary_scope'] },
   { id: 'nodes', label: '节点卡片与列表', description: '按自己的阅读习惯选择节点指标。', keys: ['default_sort', 'offline_last', 'show_cpu', 'show_memory', 'show_disk', 'show_traffic', 'show_speed', 'show_uptime', 'show_total_traffic', 'show_node_metadata', 'show_expiry', 'expiry_warning_days', 'show_remark'] },
   { id: 'network', label: '首页网络延迟', description: '选择延迟视图、探测线路和刷新频率。', keys: ['show_ping', 'ping_mode', 'ping_max_lines', 'ping_tasks', 'ping_refresh_interval'] },
@@ -34,9 +34,9 @@ const help: Partial<Record<DisplaySettingKey, string>> = {
   theme_mode: '跟随系统，或按北京时间 06:00–18:00 使用浅色。',
   layout: '在卡片和列表之间切换，与首页工具栏保持同步。',
   card_size: '调整卡片宽度、字号和间距；列表视图不受影响。',
-  reduce_motion: '停止地球自转并减弱过渡；系统的减少动态效果始终生效。',
+  reduce_motion: '减弱过渡；系统的减少动态效果始终生效。',
   poll_interval: '实时连接中断后的刷新间隔，正常连接仍实时更新。',
-  earth_mode: '地球、地图、仅总览或隐藏整个头部。',
+  earth_mode: '地图、仅总览或隐藏整个头部。',
   notice_enabled: '显示或隐藏站点公告，公告内容由站点提供。',
   summary_cards: '勾选需要显示的卡片，再用上下按钮调整顺序。全部取消时隐藏总览。',
   default_sort: '与首页排序选择同步；离线节点可单独排到末尾。',
@@ -59,7 +59,7 @@ export function validDisplaySetting(key: string, value: unknown): key is Display
   if (!field) return false
   if (field.type === 'boolean') return typeof value === 'boolean'
   if (field.type === 'select') return field.options!.some(option => option.value === value)
-  if (field.type === 'number') return typeof value === 'number' && Number.isFinite(value) && value >= field.min! && value <= field.max! && (key === 'earth_rotation_speed' || Number.isInteger(value))
+  if (field.type === 'number') return typeof value === 'number' && Number.isFinite(value) && value >= field.min! && value <= field.max! && Number.isInteger(value)
   return typeof value === 'string'
 }
 export function normalizeDisplaySettings(value: unknown): DisplayOverrides {

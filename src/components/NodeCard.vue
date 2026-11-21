@@ -60,6 +60,10 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
       <OsIcon v-if="config.show_node_metadata" :os="node.os" />
       <img v-if="config.show_node_metadata && flagUrl(node.country)" :src="flagUrl(node.country)" :alt="regionName(node.country)" :title="regionName(node.country)" class="country-flag" />
     </div>
+    <div v-if="config.show_uptime || (showPrice && node.price !== null)" class="node-card-chips">
+      <span v-if="config.show_uptime" :class="{ danger: !node.online, warning: node.online && !node.metrics }" :title="node.metrics ? `在线 ${duration(node.metrics.uptime)}` : nodeState(node)">{{ node.metrics ? `在线 ${duration(node.metrics.uptime)}` : nodeState(node) }}</span>
+      <span v-if="showPrice && node.price !== null" class="card-cost" :title="`${cost} (${node.currency})`">{{ cost }}</span>
+    </div>
     <div class="node-card-body">
       <div v-if="config.show_cpu || config.show_memory || config.show_disk || config.show_traffic" class="node-resources">
         <ResourceMeter v-if="config.show_cpu" icon="cpu" label="CPU" :value="node.metrics?.cpu ?? null" :detail="node.metrics ? node.metrics.load.map(n => n.toFixed(2)).join(', ') : '暂无指标'" :warning-at="60" :danger-at="80" />
@@ -84,12 +88,8 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
           <span v-if="showPrice" class="highlight-value highlight-cost" :title="remainingTitle"><Coins /><span class="highlight-cost-text">{{ remaining }}</span></span>
         </div>
       </div>
-      <div v-if="config.show_uptime || (showPrice && node.price !== null) || showPing" class="node-detail-section">
-        <div v-if="config.show_uptime || (showPrice && node.price !== null)" class="node-facts">
-          <div v-if="config.show_uptime" class="fact-row"><span>在线</span><i /><span :class="{ danger: !node.online, warning: node.online && !node.metrics }">{{ node.metrics ? duration(node.metrics.uptime) : nodeState(node) }}</span></div>
-          <div v-if="showPrice && node.price !== null" class="fact-row"><span>费用</span><i /><span class="card-cost" :title="`${cost} (${node.currency})`">{{ cost }}</span></div>
-        </div>
-        <div v-if="showPing" class="node-ping-section"><PingPanel :node="node" :details="pingDetails" :config="config" /></div>
+      <div v-if="showPing" class="node-detail-section">
+        <div class="node-ping-section"><PingPanel :node="node" :details="pingDetails" :config="config" /></div>
       </div>
       <div v-if="config.show_remark && (remark.tags.length || remark.text)" class="node-card-footer">
         <div v-if="remark.tags.length" class="remark-tags"><span v-for="tag in remark.tags" :key="tag" :title="tag">{{ tag }}</span></div>

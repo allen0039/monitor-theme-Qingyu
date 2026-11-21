@@ -1,8 +1,8 @@
 {
   "name": "青屿 · Qingyu",
   "short": "qingyu",
-  "description": "青屿 Qingyu：简约的翡翠绿 Monitor 主题，提供交互地球、节点卡片和列表。",
-  "version": "0.2.36",
+  "description": "青屿 Qingyu：简约的翡翠绿 Monitor 主题，提供点状地图、节点卡片和列表。",
+  "version": "0.2.37",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-Qingyu",
   "config": [
@@ -98,11 +98,11 @@
       "type": "boolean",
       "label": "减弱动画",
       "default": false,
-      "help": "停止地球自转并关闭页面过渡；浏览器或系统启用「减少动态效果」时也会自动生效。"
+      "help": "关闭页面过渡；浏览器或系统启用「减少动态效果」时也会自动生效。"
     },
     {
       "type": "title",
-      "label": "02 · 首页布局与地球"
+      "label": "02 · 首页布局与地图"
     },
     {
       "key": "notice_enabled",
@@ -129,16 +129,8 @@
       "key": "earth_mode",
       "type": "select",
       "label": "默认头部展示",
-      "default": "earth",
+      "default": "map",
       "options": [
-        {
-          "value": "earth",
-          "label": "自转地球"
-        },
-        {
-          "value": "earth-stop",
-          "label": "静止地球"
-        },
         {
           "value": "map",
           "label": "点状世界地图"
@@ -152,37 +144,21 @@
           "label": "隐藏整个头部"
         }
       ],
-      "help": "静止地球仍可拖动；无法使用 WebGL 时自动显示本地点状地图。访客已保存的头部选择优先。"
-    },
-    {
-      "key": "earth_rotation_speed",
-      "type": "number",
-      "label": "地球自转速度",
-      "default": 1.6,
-      "min": 0.1,
-      "max": 5,
-      "help": "范围 0.1–5，数值越大转得越快；仅在自转地球模式下生效，减弱动画时停止。"
+      "help": "访客已保存的头部选择优先。"
     },
     {
       "key": "earth_show_labels",
       "type": "boolean",
-      "label": "显示地球与地图国旗",
+      "label": "显示地图国旗",
       "default": true,
       "help": "显示节点所在国家和地区的国旗；关闭后保留位置标记。位置使用国家中心点。"
-    },
-    {
-      "key": "earth_show_rates",
-      "type": "boolean",
-      "label": "显示地球实时上下行",
-      "default": true,
-      "help": "在地球国旗旁显示当前地区合计速率；需要同时开启国旗，手机窄屏自动隐藏速率面板。"
     },
     {
       "key": "show_node_status",
       "type": "boolean",
       "label": "显示在线状态数量",
       "default": true,
-      "help": "在地球或地图左上角以绿色在线数与琥珀色离线数显示当前分组状态，只有离线数大于 0 时显示离线项；点击可查看说明，隐藏地球时移至节点工具栏。"
+      "help": "在地图左上角以绿色在线数与琥珀色离线数显示当前分组状态，只有离线数大于 0 时显示离线项；点击可查看说明，隐藏地图时移至节点工具栏。"
     },
     {
       "key": "show_group_tabs",
@@ -214,7 +190,7 @@
       "type": "boolean",
       "label": "显示总览卡片",
       "default": true,
-      "help": "控制头部的资源和节点汇总卡片；关闭后仍可单独显示地球或地图。隐藏整个头部时此项不生效。"
+      "help": "控制头部的资源和节点汇总卡片；关闭后仍可单独显示地图。隐藏整个头部时此项不生效。"
     },
     {
       "key": "summary_preset",
@@ -271,7 +247,7 @@
           "label": "全部节点"
         }
       ],
-      "help": "只控制总览卡片；地球和地图始终展示当前分组，搜索和排序不改变汇总。离线节点计入总容量，实时用量只计算已有上报的在线节点。"
+      "help": "只控制总览卡片；地图始终展示当前分组，搜索和排序不改变汇总。离线节点计入总容量，实时用量只计算已有上报的在线节点。"
     },
     {
       "type": "title",
@@ -358,7 +334,7 @@
       "type": "boolean",
       "label": "显示实时上下行",
       "default": true,
-      "help": "控制卡片和列表中的上传、下载速率；地球速率和总览卡片单独配置。"
+      "help": "控制卡片和列表中的上传、下载速率；总览卡片单独配置。"
     },
     {
       "key": "show_uptime",

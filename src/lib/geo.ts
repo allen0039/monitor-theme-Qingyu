@@ -286,6 +286,96 @@ export function arcsToCountry(clusters: RegionCluster[], country: string): Globe
   }))
 }
 
+export const MAP_VIEWBOX = { width: 800, yMin: 10, height: 322, antarcticaIndex: 159 } as const
+
+export interface MapMarkerLayout {
+  cluster: RegionCluster
+  anchorX: number
+  anchorY: number
+  x: number
+  y: number
+  leftPct: number
+  topPct: number
+}
+
+export function sortClusters(clusters: RegionCluster[]): RegionCluster[] {
+  return [...clusters].sort((a, b) =>
+    (b.online - a.online)
+    || (b.total - a.total)
+    || ((b.tx + b.rx) - (a.tx + a.rx))
+    || a.code.localeCompare(b.code),
+  )
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+export function layoutMapMarkers(clusters: RegionCluster[]): MapMarkerLayout[] {
+  const ordered = sortClusters(clusters)
+  const items = ordered.map((cluster) => {
+    const anchorX = 400 + cluster.lng * 800 / 360
+    const anchorY = 200 - cluster.lat * 800 / 360
+    return {
+      cluster,
+      anchorX,
+      anchorY,
+      x: clamp(anchorX, 42, 758),
+      y: clamp(anchorY, 28, 314),
+    }
+  })
+
+  const minDx = 62
+  const minDy = 34
+  for (let step = 0; step < 8; step++) {
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i]!
+        const b = items[j]!
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const absDx = Math.abs(dx)
+        const absDy = Math.abs(dy)
+        if (absDx >= minDx || absDy >= minDy) continue
+        if (absDx < 0.01 && absDy < 0.01) {
+          const pushX = minDx * 0.35
+          const pushY = minDy * 0.35
+          a.x -= pushX * 0.5
+          b.x += pushX * 0.5
+          a.y -= pushY * 0.5
+          b.y += pushY * 0.5
+          continue
+        }
+        const ovX = minDx - absDx
+        const ovY = minDy - absDy
+        if (ovX < ovY) {
+          const sign = dx >= 0 ? 1 : -1
+          a.x -= sign * ovX * 0.5
+          b.x += sign * ovX * 0.5
+        } else {
+          const sign = dy >= 0 ? 1 : -1
+          a.y -= sign * ovY * 0.5
+          b.y += sign * ovY * 0.5
+        }
+      }
+    }
+    for (const item of items) {
+      item.x += (item.anchorX - item.x) * 0.12
+      item.y += (item.anchorY - item.y) * 0.12
+      item.x = item.anchorX + clamp(item.x - item.anchorX, -46, 46)
+      item.y = item.anchorY + clamp(item.y - item.anchorY, -36, 36)
+      item.x = clamp(item.x, 42, 758)
+      item.y = clamp(item.y, 28, 314)
+    }
+  }
+
+  return items.map((item) => ({
+    ...item,
+    leftPct: (item.x / MAP_VIEWBOX.width) * 100,
+    topPct: ((item.y - MAP_VIEWBOX.yMin) / MAP_VIEWBOX.height) * 100,
+  }))
+}
+
 export function clustersOf(nodes: MonitorNode[]): RegionCluster[] {
   const clusters = new Map<string, RegionCluster>()
   for (const node of nodes) {

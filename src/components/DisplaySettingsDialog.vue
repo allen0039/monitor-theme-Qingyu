@@ -34,9 +34,7 @@ function disabledReason(key: DisplaySettingKey): string {
   if (['show_price', 'finance_currency', 'show_personal_finance'].includes(key) && !props.priceAllowed) return '费用由站点控制，当前不可显示'
   if (['finance_currency', 'show_personal_finance'].includes(key) && !props.config.show_price) return '开启费用后可设置'
   if (['ping_mode', 'ping_tasks', 'ping_max_lines', 'ping_refresh_interval'].includes(key) && !props.config.show_ping) return '开启网络延迟后可设置'
-  if (key === 'earth_rotation_speed' && props.config.earth_mode !== 'earth') return '选择自转地球后可设置'
-  if (key === 'earth_show_labels' && !['earth', 'earth-stop', 'map'].includes(props.config.earth_mode)) return '选择地球或地图后可设置'
-  if (key === 'earth_show_rates' && !['earth', 'earth-stop'].includes(props.config.earth_mode)) return '选择地球后可设置'
+  if (key === 'earth_show_labels' && props.config.earth_mode !== 'map') return '选择地图后可设置'
   if (key === 'summary_cards' && props.config.summary_preset !== 'custom') return '选择自定义总览方案后可设置'
   if (['summary_preset', 'summary_scope', 'summary_cards'].includes(key) && !props.config.show_summary) return '开启总览卡片后可设置'
   if (['background_light', 'background_dark', 'background_blur', 'background_opacity'].includes(key) && !props.config.background_enabled) return '开启自定义背景后可设置'
@@ -47,7 +45,7 @@ function update(field: DisplayField, event: Event) {
   const input = event.target as HTMLInputElement
   const value = field.type === 'boolean' ? input.checked : field.type === 'number' ? input.value === '' ? null : Number(input.value) : input.value
   if (!validDisplaySetting(field.key, value)) {
-    errors.value[field.key] = field.type === 'number' ? `请输入 ${field.min}–${field.max} 范围内的${field.key === 'earth_rotation_speed' ? '数值' : '整数'}` : '请选择有效的设置'
+    errors.value[field.key] = field.type === 'number' ? `请输入 ${field.min}–${field.max} 范围内的整数` : '请选择有效的设置'
     return
   }
   delete errors.value[field.key]
@@ -100,7 +98,7 @@ onBeforeUnmount(() => {
                 <ol v-if="selectedSummaryCards.length" class="display-summary-order"><li v-for="(key, index) in selectedSummaryCards" :key="key"><span>{{ summaryLabel(key) }}</span><button type="button" :disabled="index === 0" :aria-label="`上移${summaryLabel(key)}`" @click="moveSummaryCard(index, -1)"><ArrowUp /></button><button type="button" :disabled="index === selectedSummaryCards.length - 1" :aria-label="`下移${summaryLabel(key)}`" @click="moveSummaryCard(index, 1)"><ArrowDown /></button></li></ol>
                 <p v-else class="display-settings-field-help">未选择卡片，首页总览将隐藏。</p>
               </fieldset>
-              <input v-else :type="field.type === 'number' ? 'number' : 'text'" :value="config[field.key]" :min="field.min" :max="field.max" :step="field.key === 'earth_rotation_speed' ? 0.1 : 1" :aria-label="field.label" :aria-invalid="!!errors[field.key]" :disabled="!!disabledReason(field.key)" @change="update(field, $event)" />
+              <input v-else :type="field.type === 'number' ? 'number' : 'text'" :value="config[field.key]" :min="field.min" :max="field.max" step="1" :aria-label="field.label" :aria-invalid="!!errors[field.key]" :disabled="!!disabledReason(field.key)" @change="update(field, $event)" />
               <span v-if="errors[field.key]" class="display-settings-field-error" role="alert">{{ errors[field.key] }}</span>
               <span v-else class="display-settings-field-help">{{ disabledReason(field.key) || field.help }}</span>
             </component>

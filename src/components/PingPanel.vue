@@ -2,14 +2,13 @@
 import { computed, ref } from 'vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { selectPingNetworks, useNodePing } from '../lib/ping'
-import { historyBuckets, latencyLabel, lossLabel, networkLatency, pingTone, windowSummary } from '../lib/ping-display'
+import { historyBuckets, latencyLabel, lossLabel, networkLatency, pingTone } from '../lib/ping-display'
 import PingHistoryBars from './PingHistoryBars.vue'
 const props = defineProps<{ node: MonitorNode; details: boolean; config: ThemeConfig }>()
 const element = ref<HTMLElement | null>(null)
 const canRead = computed(() => props.node.online && props.node.metrics !== null)
 const snapshot = useNodePing(element, () => props.node.id, () => canRead.value, () => props.config.ping_refresh_interval)
 const networks = computed(() => canRead.value ? selectPingNetworks(snapshot.value?.networks ?? [], props.config.ping_tasks, props.config.ping_max_lines) : [])
-const summary = computed(() => windowSummary(networks.value))
 const buckets = computed(() => historyBuckets(networks.value.flatMap(network => network.rows)))
 const detailBuckets = computed(() => new Map(networks.value.map(network => [network.id, historyBuckets(network.rows)])))
 const hasRows = computed(() => networks.value.some(network => network.rows.length))
@@ -18,9 +17,13 @@ const emptyTitle = computed(() => !props.node.online ? '节点离线' : !props.n
   : !snapshot.value || snapshot.value.state === 'loading' ? '正在采集网络监控'
   : snapshot.value.state === 'error' ? '延迟数据暂时不可用' : !networks.value.length ? '未配置网络探针' : !hasRows.value ? '暂无网络采样' : '暂无记录')
 const placeholderNetworkCount = computed(() => Math.max(1, Math.min(3, Math.floor(props.config.ping_max_lines || 3))))
-const placeholderLatency = computed(() => Array.from({ length: placeholderNetworkCount.value }, () => '—').join(' · '))
-const placeholderLoss = computed(() => Array.from({ length: placeholderNetworkCount.value }, () => '—%').join(' · '))
-const networkLabel = computed(() => (networks.value.length || placeholderNetworkCount.value) === 3 ? '三网' : '线路')
+const placeholderValues = computed(() => Array.from({ length: placeholderNetworkCount.value }, () => '—').join(' · '))
+function latencyNumber(value: number | null, hasSamples: boolean): string {
+  return value === null ? (hasSamples ? '超时' : '—') : String(Math.round(value))
+}
+function lossNumber(value: number | null): string {
+  return value === null ? '—' : value.toFixed(value > 0 && value < 1 ? 2 : 1)
+}
 function latencyClass(value: number | null, hasSamples: boolean): string {
   return `ping-text-${value === null && hasSamples ? 'bad' : pingTone(value, 'latency')}`
 }
@@ -28,31 +31,29 @@ function latencyClass(value: number | null, hasSamples: boolean): string {
 <template>
   <div ref="element" class="ping-panel">
     <template v-if="!details">
-      <div class="fact-row ping-summary">
-        <span :title="emptyTitle">{{ networkLabel }}</span><i />
-        <div class="ping-summary-values">
-          <template v-if="networks.length">
-            <span v-for="(network, index) in networks" :key="network.id" :class="latencyClass(networkLatency(network), !!network.rows.length)" :title="`${network.name} · 近 1 小时平均延迟 ${latencyLabel(networkLatency(network), !!network.rows.length)} · 丢包 ${lossLabel(network.loss)}`">{{ latencyLabel(networkLatency(network), !!network.rows.length, true) }}<b v-if="index < networks.length - 1">·</b></span>
-          </template>
-          <span v-else class="ping-text-unknown ping-placeholder" :title="emptyTitle">{{ placeholderLatency }}</span>
-        </div>
-      </div>
-      <div class="fact-row ping-summary">
-        <span :title="emptyTitle">丢包</span><i />
-        <div class="ping-summary-values">
-          <template v-if="networks.length">
-            <span v-for="(network, index) in networks" :key="network.id" :class="`ping-text-${pingTone(network.loss, 'loss')}`" :title="`${network.name} · 近 1 小时整段窗口丢包率`">{{ lossLabel(network.loss) }}<b v-if="index < networks.length - 1">·</b></span>
-          </template>
-          <span v-else class="ping-text-unknown ping-placeholder" :title="emptyTitle">{{ placeholderLoss }}</span>
-        </div>
-      </div>
       <div class="ping-panels">
-        <div title="近 1 小时各有效线路的采样平均延迟，再取线路平均">
-          <div class="fact-row"><span>延迟</span><i /><strong :class="[!hasRows ? 'ping-placeholder' : latencyClass(summary.latency, hasRows)]">{{ latencyLabel(summary.latency, hasRows) }}</strong></div>
+        <div class="ping-panel-col" :title="networks.length ? '近 1 小时各线路平均延迟' : emptyTitle">
+          <div class="ping-panel-row">
+            <span class="ping-panel-label" :title="emptyTitle">延迟<small>ms</small></span>
+            <div class="ping-summary-values">
+              <template v-if="networks.length">
+                <span v-for="(network, index) in networks" :key="network.id" :class="latencyClass(networkLatency(network), !!network.rows.length)" :title="`${network.name} · 近 1 小时平均延迟 ${latencyLabel(networkLatency(network), !!network.rows.length)} · 丢包 ${lossLabel(network.loss)}`">{{ latencyNumber(networkLatency(network), !!network.rows.length) }}<b v-if="index < networks.length - 1">·</b></span>
+              </template>
+              <span v-else class="ping-text-unknown ping-placeholder" :title="emptyTitle">{{ placeholderValues }}</span>
+            </div>
+          </div>
           <PingHistoryBars :buckets="buckets" metric="latency" label="近期延迟分段" :empty-title="emptyTitle" />
         </div>
-        <div title="所选线路整段窗口丢包率的平均值；包含未知线路时显示 —">
-          <div class="fact-row"><span>丢包</span><i /><strong :class="[summary.loss === null ? 'ping-placeholder' : `ping-text-${pingTone(summary.loss, 'loss')}`]">{{ lossLabel(summary.loss) }}</strong></div>
+        <div class="ping-panel-col" :title="networks.length ? '近 1 小时各线路整段窗口丢包率' : emptyTitle">
+          <div class="ping-panel-row">
+            <span class="ping-panel-label" :title="emptyTitle">丢包<small>%</small></span>
+            <div class="ping-summary-values">
+              <template v-if="networks.length">
+                <span v-for="(network, index) in networks" :key="network.id" :class="`ping-text-${pingTone(network.loss, 'loss')}`" :title="`${network.name} · 近 1 小时整段窗口丢包率 ${lossLabel(network.loss)}`">{{ lossNumber(network.loss) }}<b v-if="index < networks.length - 1">·</b></span>
+              </template>
+              <span v-else class="ping-text-unknown ping-placeholder" :title="emptyTitle">{{ placeholderValues }}</span>
+            </div>
+          </div>
           <PingHistoryBars :buckets="buckets" metric="loss" label="近期丢包分段" :empty-title="emptyTitle" />
         </div>
       </div>

@@ -122,16 +122,16 @@ describe('原版式网络摘要', () => {
     expect(buckets[0]).toMatchObject({ anyLoss: true, maxLoss: 100, peak: 43 })
     expect(pingHealth([])).toEqual({ level: 'unknown', label: '等待采样' })
   })
-  it('摘要模式渲染线路延迟与丢包两行汇总，无采样时展示对应占位符', async () => {
+  it('摘要模式在延迟与丢包分段条上方直接展示各线路数值，无采样时展示占位符', async () => {
     vi.stubGlobal('document', { hidden: false })
     try {
       const node = normalizeNodes([{ id: 1, name: '东京', online: true }])[0]!
       const html = await renderToString(createSSRApp(PingPanel, { node, details: false, config: defaultConfig() }))
-      expect(html.match(/fact-row ping-summary/g)).toHaveLength(2)
-      expect(html).toContain('>三网</span>')
-      expect(html).toContain('— · — · —')
-      expect(html).toContain('>丢包</span>')
-      expect(html).toContain('—% · —% · —%')
+      expect(html.match(/ping-panel-row/g)).toHaveLength(2)
+      expect(html).not.toContain('ping-summary"')
+      expect(html).toContain('延迟<small>ms</small>')
+      expect(html).toContain('丢包<small>%</small>')
+      expect(html.match(/— · — · —/g)).toHaveLength(2)
     } finally {
       vi.unstubAllGlobals()
     }

@@ -1,6 +1,6 @@
 {
   "name": "monitor-theme-qingyu",
-  "version": "0.2.36",
+  "version": "0.2.37",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -18,16 +18,13 @@
     "verify:package": "python3 scripts/verify-package.py"
   },
   "dependencies": {
+    "@lucide/vue": "^1.55.0",
     "country-flag-icons": "^1.6.20",
-    "globe.gl": "^2.46.1",
     "simple-icons": "^16.32.0",
-    "three": "^0.184.0",
-    "vue": "^3.5.28",
-    "@lucide/vue": "^1.55.0"
+    "vue": "^3.5.28"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "@types/three": "^0.184.0",
     "@vitejs/plugin-vue": "^6.0.4",
     "typescript": "~5.9.3",
     "vite": "^8.3.4",
