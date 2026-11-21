@@ -84,3 +84,15 @@ describe('延迟图平滑模式', () => {
     expect(controls.flatMap(a => [Number(a[2]), Number(a[4]), Number(a[6])]).every(v => v >= 10 && v <= 100)).toBe(true)
   })
 })
+
+describe('趋势图面积填充', () => {
+  it.each([false, true])('平滑模式 %s：断档两侧分别填充，孤立采样不填充', smooth => {
+    const samples = [{ ts: 0, ping: 10 }, { ts: 60, ping: 20 }, { ts: 360, ping: 50 }, { ts: 420, ping: 40 }, { ts: 720, ping: 30 }]
+    const { solid, area } = chartLineGeometry(samples, 'ping', 60, x, y, smooth, 100)
+    expect(solid.match(/M/g)).toHaveLength(3)
+    expect(area.match(/M/g)).toHaveLength(2)
+    expect(area).toContain('L60 100 L0 100 Z M360')
+    expect(area).toMatch(/L420 100 L360 100 Z$/)
+    expect(area).not.toContain('M720')
+  })
+})

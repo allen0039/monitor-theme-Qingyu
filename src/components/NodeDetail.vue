@@ -20,6 +20,10 @@ const disk = computed(() => percentage(m.value?.disk_used, props.node.disk_total
 const p = (value: number | null) => value === null ? '—' : value.toFixed(1) + '%'
 const number = (value?: number | null) => value === null || value === undefined ? '—' : value.toLocaleString('zh-CN')
 const known = (value?: string | null) => value || '—'
+const meterTone = (value: number | null | undefined) => value !== null && value !== undefined && Number.isFinite(value)
+  ? (value >= 85 ? 'is-danger' : value >= 65 ? 'is-warning' : '')
+  : ''
+const trafficPercent = computed(() => percentage(props.node.month_used, props.node.traffic_limit))
 const finance = computed(() => calculateNodeFinance(props.node, props.node.currency, {}))
 const cost = computed(() => priceLabel(props.node.price, props.node.currency, props.node.billing_cycle))
 const showNet = computed(() => props.config.show_speed)
@@ -43,10 +47,25 @@ const mode = computed(() => trafficModeLabel(props.node.traffic_mode))
       <div><div class="detail-title-line"><h1>{{ node.name }}</h1><span class="detail-state" :class="{ offline: !node.online, waiting: node.online && !m }"><i class="status-dot" :class="{ offline: !node.online, waiting: node.online && !m }" />{{ nodeState(node) }}</span></div><p>{{ node.group || '未分组' }} · {{ regionName(node.country) }} <span v-if="node.last_seen_ago !== null"> · 最近上报 {{ duration(node.last_seen_ago) }} 前</span></p></div>
     </div>
     <div class="detail-kpis">
-      <div v-if="config.show_cpu" class="detail-kpi"><div class="detail-kpi-label"><Cpu />CPU</div><strong>{{ cpu }}</strong><div class="detail-kpi-progress"><span :style="{ width: m ? Math.min(100, m.cpu) + '%' : '0%' }" /></div></div>
-      <div v-if="config.show_memory" class="detail-kpi"><div class="detail-kpi-label"><MemoryStick />内存</div><strong>{{ p(mem) }}</strong><small>{{ formatBytes(m?.mem_used) }} / {{ formatBytes(node.mem_total) }}</small><div class="detail-kpi-progress"><span :style="{ width: mem === null ? '0%' : Math.min(100, mem) + '%' }" /></div></div>
-      <div v-if="config.show_disk" class="detail-kpi"><div class="detail-kpi-label"><HardDrive />磁盘</div><strong>{{ p(disk) }}</strong><small>{{ formatBytes(m?.disk_used) }} / {{ formatBytes(node.disk_total) }}</small><div class="detail-kpi-progress"><span :style="{ width: disk === null ? '0%' : Math.min(100, disk) + '%' }" /></div></div>
-      <div v-if="showNet" class="detail-kpi detail-speed-kpi"><div class="detail-kpi-label"><ArrowDownToLine />网络速率</div><strong><ArrowDownToLine />{{ formatBytes(m?.net_rx, true) }}</strong><strong class="detail-speed-up"><ArrowUpFromLine />{{ formatBytes(m?.net_tx, true) }}</strong></div>
+      <div v-if="config.show_cpu" class="detail-kpi">
+        <div class="detail-kpi-head"><div class="detail-kpi-label"><span class="detail-kpi-icon detail-kpi-icon-cpu"><Cpu /></span>CPU</div><span class="detail-kpi-badge">{{ config.show_node_metadata && node.cpu_cores > 0 ? number(node.cpu_cores) + ' 核' : '实时' }}</span></div>
+        <div class="detail-kpi-main"><strong>{{ cpu }}</strong><small>负载 {{ m && typeof m.load[0] === 'number' ? m.load[0].toFixed(2) : '—' }}</small></div>
+        <div class="detail-kpi-progress"><span :class="meterTone(m?.cpu)" :style="{ width: m ? Math.min(100, m.cpu) + '%' : '0%' }" /></div>
+      </div>
+      <div v-if="config.show_memory" class="detail-kpi">
+        <div class="detail-kpi-head"><div class="detail-kpi-label"><span class="detail-kpi-icon detail-kpi-icon-mem"><MemoryStick /></span>内存</div><span class="detail-kpi-badge">{{ formatBytes(node.mem_total) }}</span></div>
+        <div class="detail-kpi-main"><strong>{{ p(mem) }}</strong><small>{{ formatBytes(m?.mem_used) }} / {{ formatBytes(node.mem_total) }}</small></div>
+        <div class="detail-kpi-progress"><span :class="meterTone(mem)" :style="{ width: mem === null ? '0%' : Math.min(100, mem) + '%' }" /></div>
+      </div>
+      <div v-if="config.show_disk" class="detail-kpi">
+        <div class="detail-kpi-head"><div class="detail-kpi-label"><span class="detail-kpi-icon detail-kpi-icon-disk"><HardDrive /></span>磁盘</div><span class="detail-kpi-badge">{{ formatBytes(node.disk_total) }}</span></div>
+        <div class="detail-kpi-main"><strong>{{ p(disk) }}</strong><small>{{ formatBytes(m?.disk_used) }} / {{ formatBytes(node.disk_total) }}</small></div>
+        <div class="detail-kpi-progress"><span :class="meterTone(disk)" :style="{ width: disk === null ? '0%' : Math.min(100, disk) + '%' }" /></div>
+      </div>
+      <div v-if="showNet" class="detail-kpi detail-speed-kpi">
+        <div class="detail-kpi-head"><div class="detail-kpi-label"><span class="detail-kpi-icon detail-kpi-icon-net"><ArrowDownToLine /></span>网络速率</div><span class="detail-kpi-badge">实时吞吐</span></div>
+        <div class="detail-speed-rows"><strong><ArrowDownToLine />{{ formatBytes(m?.net_rx, true) }}</strong><strong class="detail-speed-up"><ArrowUpFromLine />{{ formatBytes(m?.net_tx, true) }}</strong></div>
+      </div>
     </div>
     <div v-if="config.show_cpu || config.show_memory || config.show_uptime" class="detail-info-strip">
       <span v-if="config.show_cpu"><b>负载 1 / 5 / 15m</b>{{ m ? m.load.map(v => v.toFixed(2)).join(' / ') : '—' }}</span>
@@ -62,26 +81,33 @@ const mode = computed(() => trafficModeLabel(props.node.traffic_mode))
         <div class="detail-section-head"><div><h2><Server />硬件与系统</h2><p>主控提供的节点资料</p></div></div>
         <dl class="detail-definition">
           <template v-if="config.show_node_metadata">
-            <div><dt>CPU 型号</dt><dd>{{ known(node.cpu_name) }}</dd></div>
+            <div class="def-wide"><dt>CPU 型号</dt><dd>{{ known(node.cpu_name) }}</dd></div>
             <div><dt>CPU 核心</dt><dd>{{ node.cpu_cores > 0 ? number(node.cpu_cores) + ' 核' : '—' }}</dd></div>
-            <div><dt>系统</dt><dd>{{ known(node.os) }}</dd></div>
-            <div><dt>内核</dt><dd>{{ known(node.kernel) }}</dd></div>
             <div><dt>架构 / 虚拟化</dt><dd>{{ known(node.arch) }} / {{ known(node.virt) }}</dd></div>
-            <div><dt>Agent 版本</dt><dd>{{ known(node.agent_version) }}</dd></div>
+            <div class="def-wide"><dt>系统</dt><dd>{{ known(node.os) }}</dd></div>
+            <div class="def-wide"><dt>内核</dt><dd>{{ known(node.kernel) }}</dd></div>
             <div><dt>物理内存 / Swap</dt><dd>{{ formatBytes(node.mem_total) }} / {{ formatBytes(node.swap_total ?? m?.swap_total) }}</dd></div>
             <div><dt>磁盘总容量</dt><dd>{{ formatBytes(node.disk_total) }}</dd></div>
+            <div class="def-wide"><dt>Agent 版本</dt><dd>{{ known(node.agent_version) }}</dd></div>
           </template>
           <div v-if="authed && node.ipv4"><dt>IPv4</dt><dd>{{ node.ipv4 }}</dd></div>
           <div v-if="authed && node.ipv6"><dt>IPv6</dt><dd>{{ node.ipv6 }}</dd></div>
-          <div v-if="config.show_remark && node.public_remark"><dt>备注</dt><dd class="detail-remark">{{ node.public_remark }}</dd></div>
+          <div v-if="config.show_remark && node.public_remark" class="def-wide"><dt>备注</dt><dd class="detail-remark">{{ node.public_remark }}</dd></div>
         </dl>
       </section>
       <section v-if="hasTraffic" class="detail-section detail-info-card">
         <div class="detail-section-head"><div><h2><Clock3 />流量与费用</h2><p>按主控计费规则与当前节点配置展示</p></div></div>
+        <div v-if="config.show_traffic" class="detail-traffic-quota">
+          <div class="detail-traffic-quota-head">
+            <span>{{ monthLabel }}计费流量</span>
+            <strong>{{ formatBytes(node.month_used) }} / {{ node.traffic_limit ? formatBytes(node.traffic_limit) : '无限制' }}</strong>
+            <span v-if="trafficPercent !== null" class="detail-quota-pct" :class="meterTone(trafficPercent)">{{ trafficPercent.toFixed(1) }}%</span>
+          </div>
+          <div v-if="trafficPercent !== null" class="detail-kpi-progress"><span :class="meterTone(trafficPercent)" :style="{ width: Math.min(100, trafficPercent) + '%' }" /></div>
+        </div>
         <dl class="detail-definition">
           <template v-if="config.show_traffic || config.show_total_traffic">
             <div v-if="config.show_traffic"><dt>{{ monthLabel }}上传 / 下载</dt><dd>{{ formatBytes(node.month_tx) }} / {{ formatBytes(node.month_rx) }}</dd></div>
-            <div v-if="config.show_traffic"><dt>{{ monthLabel }}计费流量</dt><dd>{{ formatBytes(node.month_used) }} / {{ node.traffic_limit ? formatBytes(node.traffic_limit) : '无限制' }}</dd></div>
             <div v-if="config.show_traffic"><dt>计费方向 / 重置日</dt><dd>{{ mode }} · {{ node.traffic_reset_day ? '每月 ' + node.traffic_reset_day + ' 日' : '—' }}</dd></div>
             <div v-if="config.show_total_traffic"><dt>累计上传 / 下载</dt><dd>{{ formatBytes(node.total_tx) }} / {{ formatBytes(node.total_rx) }}</dd></div>
           </template>

@@ -83,29 +83,31 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
     <div v-if="busy && !data.length" class="chart-empty">正在加载线路延迟…</div>
     <template v-else>
       <div v-if="data.length" class="detail-ping-networks">
-        <label v-for="(network, index) in data" :key="network.id" class="ping-network-option">
+        <label v-for="(network, index) in data" :key="network.id" class="ping-network-option" :class="{ checked: selected.includes(network.id) }">
           <input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" />
           <i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span>
           <strong>{{ latencyLabel(network.latest?.latency ?? null, !!network.latest) }}</strong>
           <small>丢包 {{ lossLabel(network.loss) }}</small>
         </label>
       </div>
-      <MetricChart v-if="active.length" title="多线路延迟历史" :points="rows" :lines="lines" :step="step" unit="ms" :scale="adaptive ? 'adaptive' : 'full'" :smooth="smooth" :cursor="cursor" @cursor="cursor = $event" />
-      <div v-else class="chart-empty">{{ data.length ? '勾选线路以查看延迟趋势' : '当前节点没有配置的线路或历史记录' }}</div>
-      <div v-if="data.length" class="ping-quality-table" role="table" aria-label="线路质量统计">
-        <div class="ping-quality-head" role="row">
-          <span>目标</span><span>质量 / 丢包</span><div class="ping-quality-metrics-head"><span>平均</span><span>抖动</span><span>丢包</span><span>最新</span></div>
-        </div>
-        <div v-for="(network, index) in data" :key="network.id" class="ping-quality-row" :class="{ inactive: !selected.includes(network.id) }" role="row">
-          <label class="ping-quality-target"><input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" /><i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span></label>
-          <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量与丢包事件'">
-            <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · 平均 ${latencyLabel(bucket.latency, !bucket.timeout)} · 峰值 ${latencyLabel(bucket.peak, bucket.peak !== null)} · 丢包 ${lossLabel(bucket.loss)}`"><b :class="`quality-tone-${bucket.timeout ? 'red' : qualityTone(bucket.peak)}`" /><i v-if="bucket.timeout || (bucket.loss !== null && bucket.loss > 0)" class="ping-loss-marker" aria-label="丢包或超时" /></span>
+      <div class="detail-ping-grid" :class="{ 'detail-ping-grid-single': !data.length }">
+        <MetricChart v-if="active.length" title="多线路延迟历史" :points="rows" :lines="lines" :step="step" unit="ms" :scale="adaptive ? 'adaptive' : 'full'" :smooth="smooth" :cursor="cursor" @cursor="cursor = $event" />
+        <div v-else class="chart-empty">{{ data.length ? '勾选线路以查看延迟趋势' : '当前节点没有配置的线路或历史记录' }}</div>
+        <div v-if="data.length" class="ping-quality-table" role="table" aria-label="线路质量统计">
+          <div class="ping-quality-head" role="row">
+            <span>线路质量与丢包统计</span><div class="ping-quality-metrics-head"><span>平均</span><span>抖动</span><span>丢包</span><span>最新</span></div>
           </div>
-          <div class="ping-quality-metrics">
-            <span><small>平均</small><strong>{{ latencyLabel(stats(network).avg, stats(network).avg !== null) }}</strong></span>
-            <span><small>抖动</small><strong :title="stats(network).jitter !== null ? '按相邻有效采样的延迟差估算' : ''">{{ jitterLabel(network) }}</strong></span>
-            <span><small>丢包</small><strong>{{ lossLabel(network.loss) }}</strong></span>
-            <span><small>最新</small><strong>{{ latencyLabel(stats(network).last, !!network.latest) }}</strong></span>
+          <div v-for="(network, index) in data" :key="network.id" class="ping-quality-row" :class="{ inactive: !selected.includes(network.id) }" role="row">
+            <label class="ping-quality-target"><input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" /><i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span></label>
+            <div class="ping-quality-metrics">
+              <span><small>平均</small><strong>{{ latencyLabel(stats(network).avg, stats(network).avg !== null) }}</strong></span>
+              <span><small>抖动</small><strong :title="stats(network).jitter !== null ? '按相邻有效采样的延迟差估算' : ''">{{ jitterLabel(network) }}</strong></span>
+              <span><small>丢包</small><strong :class="{ 'is-loss': network.loss !== null && network.loss > 0 }">{{ lossLabel(network.loss) }}</strong></span>
+              <span><small>最新</small><strong>{{ latencyLabel(stats(network).last, !!network.latest) }}</strong></span>
+            </div>
+            <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量与丢包事件'">
+              <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · 平均 ${latencyLabel(bucket.latency, !bucket.timeout)} · 峰值 ${latencyLabel(bucket.peak, bucket.peak !== null)} · 丢包 ${lossLabel(bucket.loss)}`"><b :class="`quality-tone-${bucket.timeout ? 'red' : qualityTone(bucket.peak)}`" /><i v-if="bucket.timeout || (bucket.loss !== null && bucket.loss > 0)" class="ping-loss-marker" aria-label="丢包或超时" /></span>
+            </div>
           </div>
         </div>
       </div>

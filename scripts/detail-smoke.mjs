@@ -40,6 +40,7 @@ try{
   const smoothSelector = 'input[aria-label="平滑显示延迟曲线"]'
   const readPingGeometry = "() => document.querySelector('#ping-history-title')?.closest('.detail-history')?.querySelector('.detail-chart svg path[stroke]')?.getAttribute('d')"
   const readResourceGeometry = "() => [...document.querySelectorAll('.detail-history:not(.detail-ping-history) svg path[stroke]')].map(path => path.getAttribute('d'))"
+  await untilJS("document.querySelectorAll('.detail-chart-grid .chart-svg').length === 4")
   const resourceBefore = await evalJS(`(${readResourceGeometry})()`)
   const networkValuesBefore = await evalJS("document.querySelector('.detail-ping-networks').innerText")
   const switchBefore = await evalJS(`({checked:document.querySelector('${smoothSelector}')?.checked,d:(${readPingGeometry})()})`)
@@ -95,6 +96,43 @@ try{
   await wait(180)
   const networkShot = await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
   writeFileSync('/tmp/qingyu-chart-axes-desktop.png',Buffer.from(networkShot.data,'base64'))
+  const quota = await evalJS(`(() => {
+    const box = document.querySelector('.detail-traffic-quota')
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    const toBytes = text => { const [value, unit] = text.split(' '); return Number(value) * 1024 ** units.indexOf(unit) }
+    const [used, limit] = box.querySelector('strong').textContent.split(' / ').map(toBytes)
+    return { ratio: used / limit * 100,
+      label: parseFloat(box.querySelector('.detail-quota-pct').textContent),
+      width: parseFloat(box.querySelector('.detail-kpi-progress > span').style.width) }
+  })()`)
+  if (!Number.isFinite(quota.ratio) || Math.abs(quota.ratio - quota.label) > .1 || Math.abs(Math.min(100, quota.ratio) - quota.width) > .1) {
+    throw Error('Quota display and progress disagree: ' + JSON.stringify(quota))
+  }
+  const fillCounts = await evalJS("[...document.querySelectorAll('.detail-chart svg')].map(svg => [svg.querySelectorAll('.chart-area').length, svg.querySelectorAll('path[stroke]:not([stroke-dasharray])').length, [...svg.querySelectorAll('.chart-area')].every(el => !!document.getElementById(el.getAttribute('fill').slice(5, -1)))])")
+  if (fillCounts.length !== 5 || fillCounts.some(([area, line, gradients]) => area !== line || !gradients)) {
+    throw Error('Area fill missing or applied to a dashed series: ' + JSON.stringify(fillCounts))
+  }
+  // Ensure axis labels remain legible at the new four-column breakpoint and on narrow phones.
+  await evalJS("document.querySelector('[aria-label=\"资源趋势时间范围\"]').value = '168'; document.querySelector('[aria-label=\"资源趋势时间范围\"]').dispatchEvent(new Event('change', {bubbles:true}))")
+  await untilJS("document.querySelector('.detail-chart-grid .chart-axis-x')?.textContent.includes('/')")
+  for (const width of [320, 390, 480, 481, 640, 641, 900, 901, 1024, 1025, 1080, 1081, 1380, 1880]) {
+    await command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false })
+    await untilJS("[...document.querySelectorAll('.detail-chart svg')].every(el => Math.abs(el.viewBox.baseVal.width - el.getBoundingClientRect().width) < 1)")
+    const layout = await evalJS(`(() => {
+      const charts = [...document.querySelectorAll('.detail-chart svg')]
+      const labelsOverlap = charts.some(chart => {
+        const labels = [...chart.querySelectorAll('.chart-axis-x')].map(node => node.getBoundingClientRect())
+        return labels.some((rect, index) => index && labels[index - 1].right > rect.left + 1)
+      })
+      const quality = document.querySelector('.ping-quality-table')
+      const hasQuota = !!document.querySelector('.detail-quota-pct')
+      return { labelsOverlap, overflow: document.documentElement.scrollWidth > innerWidth, qualityOverflow: quality.scrollWidth > quality.clientWidth + 1, hasQuota }
+    })()`)
+    if (layout.labelsOverlap || layout.overflow || layout.qualityOverflow || !layout.hasQuota) {
+      throw Error('Detail layout invalid at ' + width + 'px: ' + JSON.stringify(layout))
+    }
+  }
+  await command('Emulation.clearDeviceMetricsOverride')
   const initial=await evalJS("({title:document.querySelector('.detail-identity h1')?.innerText,charts:document.querySelectorAll('.detail-chart').length,resourceLines:document.querySelectorAll('.detail-chart svg path[stroke]').length,body:document.querySelector('.node-detail-page')?.innerText.slice(0,600),overflow:document.documentElement.scrollWidth>innerWidth})")
   if(!initial.title || initial.charts!==5 || initial.overflow)throw Error('Desktop invalid '+JSON.stringify(initial))
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
@@ -176,6 +214,12 @@ try{
   await evalJS("document.querySelector('.node-card').scrollIntoView({block:'start'})")
   const shot3=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})
   writeFileSync('/tmp/qingyu-card-mobile-after.png',Buffer.from(shot3.data,'base64'))
+  await evalJS("localStorage.setItem('qingyu.preferences', JSON.stringify({theme:'dark', display:{show_node_metadata:false, show_traffic:false}}))")
+  await command('Page.navigate',{url:'http://127.0.0.1:4179/?metadata-hidden=1#/node/1'})
+  await untilJS("document.querySelector('.detail-kpi-badge')?.textContent === '实时' && document.documentElement.classList.contains('dark')")
+  if (await evalJS("!!document.querySelector('.detail-traffic-quota') || document.querySelector('.detail-bottom-grid').innerText.includes('CPU 核心')")) {
+    throw Error('Detail still shows hidden node metadata or traffic quota')
+  }
   console.log(JSON.stringify({passed:true,initial,desktopAxes,wideAxes,mobileAxes,navigated,mobile,mobileCards,cardsBefore},null,2))
   ws.close()
 } catch(error){console.error(error);process.exitCode=1}

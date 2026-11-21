@@ -1,7 +1,7 @@
 /** A presentation-only path generator. No missing or timed-out sample becomes a measurement. */
 export interface PlotSample { ts: number; [key: string]: number | null | undefined }
 export interface PlotXY { x: number; y: number }
-export interface LineGeometry { solid: string }
+export interface LineGeometry { solid: string; area: string }
 
 const r = (n: number) => Number(n.toFixed(2))
 const xy = (p: PlotXY) => `${r(p.x)} ${r(p.y)}`
@@ -57,14 +57,15 @@ function smoothSamples(samples: LineSample[], step: number): LineSample[] {
 }
 
 /**
+ * Collects contiguous line segments in plotted coordinates.
  * Smooth mode joins up to two missing/timeout cycles with the same continuous curve.
  * Long outages and invalid values still split paths. Source samples remain untouched.
  */
-export function chartLineGeometry(
+function collectSegments(
   points: PlotSample[], key: string, step: number,
   x: (ts: number) => number, y: (v: number) => number,
   smooth = false,
-): LineGeometry {
+): PlotXY[][] {
   const cadence = Math.max(1, step)
   const maxGap = cadence * (smooth ? 3.25 : 1.6)
   const segments: LineSample[][] = []
@@ -93,9 +94,29 @@ export function chartLineGeometry(
     previous = sample
   }
   finish()
-  return { solid: segments.map(segment => {
-    const samples = smooth ? smoothSamples(segment, cadence) : segment
-    const plotted = samples.map(sample => ({ x: x(sample.ts), y: y(sample.value) }))
-    return smooth ? monotonePath(plotted) : `M${xy(plotted[0]!)} ${plotted.slice(1).map(lineTo).join(' ')}`
-  }).join(' ') }
+  return segments.map(seg => {
+    const samples = smooth ? smoothSamples(seg, cadence) : seg
+    return samples.map(sample => ({ x: x(sample.ts), y: y(sample.value) }))
+  })
+}
+
+function segmentLinePath(plotted: PlotXY[], smooth: boolean): string {
+  return smooth ? monotonePath(plotted) : `M${xy(plotted[0]!)} ${plotted.slice(1).map(lineTo).join(' ')}`
+}
+
+/** Draws each continuous segment, optionally filling down to the baseline. */
+export function chartLineGeometry(
+  points: PlotSample[], key: string, step: number,
+  x: (ts: number) => number, y: (v: number) => number,
+  smooth = false, baselineY?: number,
+): LineGeometry {
+  const solid: string[] = [], area: string[] = []
+  for (const plotted of collectSegments(points, key, step, x, y, smooth)) {
+    const path = segmentLinePath(plotted, smooth)
+    solid.push(path)
+    if (baselineY !== undefined && plotted.length >= 2) {
+      area.push(`${path} L${xy({ x: plotted.at(-1)!.x, y: baselineY })} L${xy({ x: plotted[0]!.x, y: baselineY })} Z`)
+    }
+  }
+  return { solid: solid.join(' '), area: area.join(' ') }
 }

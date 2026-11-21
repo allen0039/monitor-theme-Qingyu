@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { formatBytes } from '../lib/format'
 import { chartLineGeometry } from '../lib/chart-lines'
 export interface ChartPoint { ts: number; [key: string]: number | null }
@@ -8,10 +8,11 @@ const props = defineProps<{ title: string; points: ChartPoint[]; lines: ChartLin
 const emit = defineEmits<{ cursor: [number | null] }>()
 // Keep SVG drawing units in physical CSS pixels. A fixed 620-wide viewBox scaled
 // text along with the lines on desktop, producing oversized axis labels.
+const uid = useId()
 const svgElement = ref<SVGSVGElement | null>(null)
 const width = ref(620), height = ref(245)
-const left = computed(() => props.unit === 'bytes' || props.unit === 'rate' ? 66 : 52)
-const right = 14, top = 18, bottom = 34
+const left = computed(() => props.unit === 'bytes' || props.unit === 'rate' ? (width.value < 360 ? 62 : 66) : 52)
+const right = 14, top = 14, bottom = 30
 const plotW = computed(() => Math.max(1, width.value - left.value - right))
 const plotH = computed(() => Math.max(1, height.value - top - bottom))
 let sizeObserver: ResizeObserver | undefined
@@ -68,15 +69,18 @@ const y = (value: number) => {
   const fraction = Math.max(0, Math.min(1, (value - domain.value.min) / (domain.value.max - domain.value.min)))
   return top + plotH.value - fraction * plotH.value
 }
-const geometry = computed(() => Object.fromEntries(
-  props.lines.map(line => [line.key, chartLineGeometry(props.points, line.key, props.step, x, y, props.smooth === true)])
-) as Record<string, ReturnType<typeof chartLineGeometry>>)
-const ticks = computed(() => [0, .25, .5, .75, 1].map(f => {
-  const value = domain.value.min + f * (domain.value.max - domain.value.min)
-  return { y: y(value), label: display(value, true) }
-}))
+const geometry = computed(() => Object.fromEntries(props.lines.map(line => [line.key,
+  chartLineGeometry(props.points, line.key, props.step, x, y, props.smooth === true, line.dashed ? undefined : top + plotH.value),
+])))
+const ticks = computed(() => {
+  const fractions = height.value < 185 ? [0, 0.5, 1] : [0, .25, .5, .75, 1]
+  return fractions.map(f => {
+    const value = domain.value.min + f * (domain.value.max - domain.value.min)
+    return { y: y(value), label: display(value, true) }
+  })
+})
 const timeTicks = computed(() => {
-  const count = width.value < 600 ? 3 : width.value < 980 ? 4 : 5
+  const count = plotW.value < 165 ? 2 : width.value < 600 ? 3 : width.value < 980 ? 4 : 5
   const sameDay = new Date(bounds.value.start * 1000).toDateString() === new Date(bounds.value.end * 1000).toDateString()
   return Array.from({ length: count }, (_, i) => {
     const fraction = i / (count - 1)
@@ -106,14 +110,27 @@ function move(event: MouseEvent | PointerEvent) {
 </script>
 <template>
   <section class="detail-chart">
-    <div class="detail-chart-top"><div class="detail-chart-title"><h3>{{ title }}</h3><span v-if="props.scale === 'adaptive' && domain.clipped" class="chart-scale-note">{{ domain.clipped }} 个尖峰超出当前范围</span></div><div class="detail-legend"><span v-for="line in lines" :key="line.key"><i :style="{ background: line.color }" />{{ line.label }}</span></div></div>
+    <div class="detail-chart-top"><div class="detail-chart-title"><h3>{{ title }}</h3><span v-if="props.scale === 'adaptive' && domain.clipped" class="chart-scale-note">{{ domain.clipped }} 个尖峰超出当前范围</span></div><div class="detail-legend"><span v-for="line in lines" :key="line.key"><i :class="{ dashed: line.dashed }" :style="line.dashed ? { borderColor: line.color } : { background: line.color }" />{{ line.label }}</span></div></div>
     <div v-if="points.length" class="detail-plot">
       <svg ref="svgElement" class="chart-svg" :viewBox="'0 0 ' + width + ' ' + height" role="img" :aria-label="title + '历史趋势'" preserveAspectRatio="none" @pointermove="move" @pointerleave="leave" @click="move">
+        <defs>
+          <linearGradient v-for="line in lines" :id="'grad-' + uid + '-' + line.key" :key="'grad-' + line.key" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" :stop-color="line.color" :stop-opacity="unit === 'ms' ? 0.06 : 0.16" />
+            <stop offset="100%" :stop-color="line.color" stop-opacity="0" />
+          </linearGradient>
+        </defs>
         <g v-for="tick in ticks" :key="tick.y"><path :d="'M' + left + ' ' + tick.y + ' H' + (width - right)" class="chart-gridline" /><text :x="left - 7" :y="tick.y + 4" text-anchor="end" class="chart-axis chart-axis-y">{{ tick.label }}</text></g>
-        <text v-for="tick in timeTicks" :key="tick.x" :x="tick.x" :y="height - 12" :text-anchor="tick.x === left ? 'start' : tick.x >= width - right - 1 ? 'end' : 'middle'" class="chart-axis chart-axis-x">{{ tick.label }}</text>
+        <text v-for="tick in timeTicks" :key="tick.x" :x="tick.x" :y="height - 10" :text-anchor="tick.x === left ? 'start' : tick.x >= width - right - 1 ? 'end' : 'middle'" class="chart-axis chart-axis-x">{{ tick.label }}</text>
+        <template v-for="line in lines" :key="'area-' + line.key">
+          <path v-if="geometry[line.key]?.area" :d="geometry[line.key]?.area" :fill="'url(#grad-' + uid + '-' + line.key + ')'" class="chart-area" />
+        </template>
         <path v-for="line in lines" :key="line.key" :d="geometry[line.key]?.solid ?? ''" fill="none" :stroke="line.color" :stroke-dasharray="line.dashed ? '5 5' : undefined" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
         <path v-if="focused" :d="'M' + x(focused.ts) + ' ' + top + ' V' + (height - bottom)" class="chart-cursor" />
-        <circle v-for="line in lines" v-if="focused" :key="line.key" :cx="x(focused.ts)" :cy="focused[line.key] === null ? -100 : y(focused[line.key]!)" r="3.6" :fill="line.color" stroke="var(--surface-solid)" stroke-width="2" vector-effect="non-scaling-stroke" />
+        <template v-if="focused">
+          <template v-for="line in lines" :key="'point-' + line.key">
+            <circle v-if="Number.isFinite(focused[line.key])" :cx="x(focused.ts)" :cy="y(focused[line.key]!)" r="3.6" :fill="line.color" stroke="var(--surface-solid)" stroke-width="2" vector-effect="non-scaling-stroke" />
+          </template>
+        </template>
       </svg>
       <div v-if="focused" class="chart-values" aria-live="off"><time>{{ new Date(focused.ts * 1000).toLocaleString('zh-CN') }}</time><span v-for="line in lines" :key="line.key" :style="{ color: line.color }">{{ line.label }} {{ display(focused[line.key]) }}</span></div>
     </div>
