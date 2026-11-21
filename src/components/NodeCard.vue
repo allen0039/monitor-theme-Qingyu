@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CalendarDays, ChevronDown, ChevronUp, Coins, Download, Upload } from '@lucide/vue'
 import type { MonitorNode, ThemeConfig } from '../types'
 import { flagUrl } from '../lib/assets'
 import { nodeState, regionName, trafficModeLabel } from '../lib/data'
@@ -74,18 +73,18 @@ const expiryClass = computed(() => ({ expiring: props.node.expires_in !== null &
       <div v-if="highlightCount" class="node-highlights" :class="{ 'node-highlights-three': highlightCount === 3 }" :style="{ '--highlight-count': highlightCount }">
         <div v-if="config.show_speed" class="highlight-tile highlight-speed" role="group" aria-label="实时速率">
           <span class="highlight-label">实时速率</span>
-          <span class="highlight-value up" :class="{ 'highlight-empty': !node.metrics }" :title="`实时上传 ${formatBytes(node.metrics?.net_tx, true)}`"><ChevronUp />{{ tileRate(node.metrics?.net_tx) }}</span>
-          <span class="highlight-value down" :class="{ 'highlight-empty': !node.metrics }" :title="`实时下载 ${formatBytes(node.metrics?.net_rx, true)}`"><ChevronDown />{{ tileRate(node.metrics?.net_rx) }}</span>
+          <span class="highlight-value up" :class="{ 'highlight-empty': !node.metrics }" :title="`实时上传 ${formatBytes(node.metrics?.net_tx, true)}`"><span class="tile-arrow" aria-hidden="true">↑</span><span class="tile-direction">上传 </span>{{ tileRate(node.metrics?.net_tx) }}</span>
+          <span class="highlight-value down" :class="{ 'highlight-empty': !node.metrics }" :title="`实时下载 ${formatBytes(node.metrics?.net_rx, true)}`"><span class="tile-arrow" aria-hidden="true">↓</span><span class="tile-direction">下载 </span>{{ tileRate(node.metrics?.net_rx) }}</span>
         </div>
         <div v-if="config.show_total_traffic" class="highlight-tile highlight-month" role="group" :aria-label="monthTrafficTitle">
           <span class="highlight-label" :title="monthTrafficTitle">{{ monthLabel }}</span>
-          <span class="highlight-value" :title="`${monthLabel} · 上传 ${formatBytes(node.month_tx)}；${trafficAccountingNote}`"><Upload />{{ cardBytes(node.month_tx) }}</span>
-          <span class="highlight-value" :title="`${monthLabel} · 下载 ${formatBytes(node.month_rx)}；${trafficAccountingNote}`"><Download />{{ cardBytes(node.month_rx) }}</span>
+          <span class="highlight-value" :title="`${monthLabel} · 上传 ${formatBytes(node.month_tx)}；${trafficAccountingNote}`"><span class="tile-arrow" aria-hidden="true">↑</span><span class="tile-direction">上传 </span>{{ cardBytes(node.month_tx) }}</span>
+          <span class="highlight-value" :title="`${monthLabel} · 下载 ${formatBytes(node.month_rx)}；${trafficAccountingNote}`"><span class="tile-arrow" aria-hidden="true">↓</span><span class="tile-direction">下载 </span>{{ cardBytes(node.month_rx) }}</span>
         </div>
         <div v-if="hasBilling" class="highlight-tile highlight-billing" role="group" :aria-label="showPrice && hasExpiry ? '到期与剩余价值' : showPrice ? '剩余价值' : '到期'">
           <span class="highlight-label">{{ showPrice && hasExpiry ? '到期与价值' : showPrice ? '剩余价值' : '到期' }}</span>
-          <span v-if="hasExpiry" class="highlight-value highlight-expiry" :class="expiryClass" :title="`${node.expires_at || ''} ${expiryLabel(node.expires_in)}`"><CalendarDays />{{ expiryTileText }}</span>
-          <span v-if="showPrice" class="highlight-value highlight-cost" :title="remainingTitle"><Coins /><span class="highlight-cost-text">{{ remaining }}</span></span>
+          <span v-if="hasExpiry" class="highlight-value highlight-expiry" :class="expiryClass" :title="`${node.expires_at || ''} ${expiryLabel(node.expires_in)}`">{{ expiryTileText }}</span>
+          <span v-if="showPrice" class="highlight-value highlight-cost" :title="remainingTitle"><span class="highlight-cost-text">{{ remaining }}</span></span>
         </div>
       </div>
       <div v-if="showPing" class="node-detail-section">

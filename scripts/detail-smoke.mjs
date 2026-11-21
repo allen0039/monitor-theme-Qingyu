@@ -145,12 +145,14 @@ try{
   await untilJS("document.querySelectorAll('.node-card').length > 3")
   const cardsBefore = await evalJS(`(() => {
     const cards = [...document.querySelectorAll('.nodes-grid .node-card')]
-    const row = cards.slice(0, 3)
+    const row = cards.slice(0, 5)
+    const firstTop = cards[0]?.getBoundingClientRect().top ?? 0
     const pingRows = row.flatMap(card => [...card.querySelectorAll('.ping-panels .ping-panel-row')])
     const geoMap = document.querySelector('.geo-map')
     const regionRows = [...document.querySelectorAll('.geo-region-row')]
     return { count: cards.length, links: document.querySelectorAll('.node-open-link').length,
       visibleText: cards[0]?.innerText.includes('查看详情'),
+      cardsPerRow: cards.filter(card => Math.abs(card.getBoundingClientRect().top - firstTop) <= 2).length,
       extraCount: document.querySelectorAll('.node-card .node-extra').length,
       chipsCount: row.filter(card => card.querySelectorAll('.node-card-chips > span').length >= 1).length,
       pingCols: row.map(card => card.querySelectorAll('.ping-panels .ping-panel-row').length),
@@ -160,8 +162,8 @@ try{
       geoOverflow: !!geoMap && (geoMap.scrollWidth > geoMap.clientWidth + 1 || regionRows.some(el => el.scrollWidth > el.clientWidth + 1)),
       footers: row.map(card => ({ y: Math.round(card.querySelector('.node-card-footer')?.getBoundingClientRect().bottom ?? -1) })) }
   })()`)
-  if(cardsBefore.links || cardsBefore.visibleText || cardsBefore.count < 3) throw Error('Card detail CTA still shown: ' + JSON.stringify(cardsBefore))
-  if(cardsBefore.extraCount || cardsBefore.chipsCount !== 3 || !cardsBefore.pingCols.every(count => count === 2) || cardsBefore.pingOverflow) throw Error('Card chips/ping cols invalid: ' + JSON.stringify(cardsBefore))
+  if(cardsBefore.links || cardsBefore.visibleText || cardsBefore.count < 5) throw Error('Card detail CTA still shown: ' + JSON.stringify(cardsBefore))
+  if(cardsBefore.cardsPerRow !== 5 || cardsBefore.extraCount || cardsBefore.chipsCount !== 5 || !cardsBefore.pingCols.every(count => count === 2) || cardsBefore.pingOverflow) throw Error('Card chips/ping cols invalid: ' + JSON.stringify(cardsBefore))
   if(cardsBefore.geoPills < 1 || cardsBefore.geoRows < 1 || cardsBefore.geoOverflow) throw Error('GeoMap layout invalid: ' + JSON.stringify(cardsBefore))
   const footerBottom = cardsBefore.footers.map(item => item.y).filter(y => y > 0)
   if(footerBottom.length >= 2 && Math.max(...footerBottom)-Math.min(...footerBottom) > 3) throw Error('Card footer rows not level: ' + JSON.stringify(cardsBefore))
