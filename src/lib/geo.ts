@@ -286,7 +286,7 @@ export function arcsToCountry(clusters: RegionCluster[], country: string): Globe
   }))
 }
 
-export const MAP_VIEWBOX = { width: 800, yMin: 10, height: 322, antarcticaIndex: 159 } as const
+export const MAP_VIEWBOX = { width: 800, yMin: 14, height: 310, antarcticaIndex: 159 } as const
 
 export interface MapMarkerLayout {
   cluster: RegionCluster

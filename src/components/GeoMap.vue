@@ -72,10 +72,10 @@ function onListWheel(event: WheelEvent) {
         <div class="geo-map-canvas">
           <svg :viewBox="`0 ${MAP_VIEWBOX.yMin} ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`" role="img" aria-label="世界节点分布">
             <defs>
-              <pattern :id="`dots-base-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.2" class="map-dot-base" /></pattern>
-              <pattern :id="`dots-online-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.2" class="map-dot-online" /></pattern>
-              <pattern :id="`dots-offline-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.2" class="map-dot-offline" /></pattern>
-              <pattern :id="`dots-hover-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.2" class="map-dot-hover" /></pattern>
+              <pattern :id="`dots-base-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.6" class="map-dot-base" /></pattern>
+              <pattern :id="`dots-online-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.6" class="map-dot-online" /></pattern>
+              <pattern :id="`dots-offline-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.6" class="map-dot-offline" /></pattern>
+              <pattern :id="`dots-hover-${uid}`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.6" class="map-dot-hover" /></pattern>
               <clipPath :id="`land-${uid}`"><path v-for="(path, i) in basePaths" :key="i" :d="path" /></clipPath>
               <clipPath v-if="onlinePaths.length" :id="`land-online-${uid}`"><path v-for="(path, i) in onlinePaths" :key="i" :d="path" /></clipPath>
               <clipPath v-if="offlinePaths.length" :id="`land-offline-${uid}`"><path v-for="(path, i) in offlinePaths" :key="i" :d="path" /></clipPath>
