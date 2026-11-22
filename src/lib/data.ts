@@ -48,6 +48,7 @@ export function normalizeNodes(value: unknown): MonitorNode[] {
       kernel: text(n.kernel), agent_version: text(n.agent_version), ipv4: text(n.ipv4), ipv6: text(n.ipv6), swap_total: finite(n.swap_total) ? n.swap_total : null,
       mem_total: m?.mem_total ?? number(n.mem_total), disk_total: m?.disk_total ?? number(n.disk_total),
       total_rx: number(n.total_rx), total_tx: number(n.total_tx), month_rx: number(n.month_rx), month_tx: number(n.month_tx),
+      day_rx: finite(n.day_rx) ? n.day_rx : null, day_tx: finite(n.day_tx) ? n.day_tx : null,
       month_used: monthlyUsed(n), traffic_limit: number(n.traffic_limit), traffic_mode: text(n.traffic_mode),
       traffic_reset_day: Number.isInteger(n.traffic_reset_day) && finite(n.traffic_reset_day) && n.traffic_reset_day >= 1 && n.traffic_reset_day <= 31 ? n.traffic_reset_day : null,
       price: finite(n.price) ? n.price : null, currency: text(n.currency) || 'CNY', billing_cycle: text(n.billing_cycle),
@@ -167,11 +168,22 @@ export function filterNodes(nodes: MonitorNode[], search: string, sort: SortKey,
 
 export function summarize(nodes: MonitorNode[]) {
   const sum = (fn: (node: MonitorNode) => number) => nodes.reduce((total, node) => total + fn(node), 0)
+  const daily = (key: 'day_rx' | 'day_tx') => {
+    let total = 0
+    for (const node of nodes) {
+      const value = node[key]
+      if (value === null) return null
+      total += value
+    }
+    return nodes.length ? total : null
+  }
   return {
     total: nodes.length, online: nodes.filter((n) => n.online).length,
     memUsed: sum((n) => n.metrics?.mem_used ?? 0), memTotal: sum((n) => n.mem_total),
     diskUsed: sum((n) => n.metrics?.disk_used ?? 0), diskTotal: sum((n) => n.disk_total),
     totalRx: sum((n) => n.total_rx), totalTx: sum((n) => n.total_tx),
+    monthRx: sum((n) => n.month_rx), monthTx: sum((n) => n.month_tx),
+    dayRx: daily('day_rx'), dayTx: daily('day_tx'),
     rx: sum((n) => n.metrics?.net_rx ?? 0), tx: sum((n) => n.metrics?.net_tx ?? 0),
     reporting: nodes.filter((n) => n.metrics !== null).length,
   }

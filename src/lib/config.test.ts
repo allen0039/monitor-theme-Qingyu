@@ -7,7 +7,7 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('详细主题设置', () => {
   it('默认显示剩余价值，兼容自定义在线卡片，新增费用设置可独立关闭', () => {
-    expect(summaryKeys(defaultConfig())).toEqual(['memory', 'remaining_value', 'upload', 'disk', 'traffic', 'download'])
+    expect(summaryKeys(defaultConfig())).toEqual(['remaining_value', 'upload', 'download', 'traffic', 'total_upload', 'total_download'])
     expect(summaryKeys(parseConfig({ summary_preset: 'custom', summary_cards: 'online remaining_value offline' }))).toEqual(['online', 'remaining_value', 'offline'])
     expect(parseConfig({ show_node_status: false, show_personal_finance: false, finance_currency: 'USD' })).toMatchObject({ show_node_status: false, show_personal_finance: false, finance_currency: 'USD' })
   })

@@ -18,11 +18,11 @@ export function parseConfig(value: unknown): ThemeConfig {
 export const defaultConfig = () => parseConfig({})
 
 const SUMMARY_PRESETS: Record<Exclude<ThemeConfig['summary_preset'], 'custom'>, SummaryKey[]> = {
-  default: ['memory', 'remaining_value', 'upload', 'disk', 'traffic', 'download'],
+  default: ['remaining_value', 'upload', 'download', 'traffic', 'total_upload', 'total_download'],
   resources: ['cpu', 'memory', 'disk'],
   network: ['traffic', 'upload', 'download'],
   status: ['online', 'offline', 'regions'],
-  all: ['memory', 'remaining_value', 'upload', 'disk', 'traffic', 'download', 'cpu', 'online', 'offline', 'regions'],
+  all: ['remaining_value', 'upload', 'download', 'traffic', 'total_upload', 'total_download', 'memory', 'disk', 'cpu', 'online', 'offline', 'regions'],
 }
 export function summaryKeys(config: ThemeConfig): SummaryKey[] {
   if (config.summary_preset !== 'custom') return SUMMARY_PRESETS[config.summary_preset]

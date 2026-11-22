@@ -82,4 +82,43 @@ describe('费用和在线状态展示', () => {
     expect(html).toContain('购入总价按录入标价，续费按付款周期折算为月均价格。')
     expect(html).not.toContain('class="finance-row-issue"')
   })
+  it('默认总览六张卡片按剩余价值与流量明细展示，缺省日流量时回退当月', async () => {
+    const GiB = 1024 ** 3
+    const withDaily = normalizeNodes([{
+      id: 1, online: true, price: 1200, currency: 'CNY', billing_cycle: 'yearly', expires_in: 100,
+      metrics: { cpu: 1, load: [0, 0, 0], mem_total: GiB, mem_used: 0, disk_total: GiB, disk_used: 0, net_tx: 626 * 1024, net_rx: 760 * 1024, uptime: 10 },
+      month_tx: 107 * GiB, month_rx: 121 * GiB, day_tx: 85.3 * GiB, day_rx: 97.7 * GiB, total_tx: 107 * GiB, total_rx: 121 * GiB,
+    }])
+    const cards = ['remaining_value', 'upload', 'download', 'traffic', 'total_upload', 'total_download'] as const
+    const html = await renderToString(createSSRApp(SummaryCards, { nodes: withDaily, cards: [...cards], scope: 'all', showPrice: true, currency: 'CNY', rates: {}, rateLabel: '', ratesLoading: false }))
+    expect(html).toContain('剩余价值')
+    expect(html).toContain('实时上行')
+    expect(html).toContain('本月上行 107.0 GB')
+    expect(html).toContain('实时下行')
+    expect(html).toContain('本月下行 121.0 GB')
+    expect(html).toContain('累计流量')
+    expect(html).toContain('本月总计 228.0 GB')
+    expect(html).toContain('累计上行')
+    expect(html).toContain('今日上行 85.3 GB')
+    expect(html).toContain('累计下行')
+    expect(html).toContain('今日下行 97.7 GB')
+
+    const withoutDaily = normalizeNodes([{
+      id: 2, online: true, month_tx: 40 * GiB, month_rx: 60 * GiB, total_tx: 100 * GiB, total_rx: 200 * GiB,
+    }])
+    const fallbackHtml = await renderToString(createSSRApp(SummaryCards, { nodes: withoutDaily, cards: ['total_upload', 'total_download'], scope: 'all', showPrice: false, currency: 'CNY', rates: {}, rateLabel: '', ratesLoading: false }))
+    expect(fallbackHtml).toContain('本月上行 40.0 GB')
+    expect(fallbackHtml).toContain('本月下行 60.0 GB')
+  })
+
+  it('按方向检查日流量覆盖率，不把缺失数据当作零', async () => {
+    const nodes = normalizeNodes([
+      { id: 1, day_tx: 0, day_rx: 1024, month_tx: 4096, month_rx: 8192 },
+      { id: 2, day_tx: 0, month_tx: 1024, month_rx: 1024 },
+    ])
+    const html = await renderToString(createSSRApp(SummaryCards, { nodes, cards: ['total_upload', 'total_download'], scope: 'all', showPrice: false, currency: 'CNY', rates: {}, rateLabel: '', ratesLoading: false }))
+    expect(html).toContain('今日上行 0 B')
+    expect(html).toContain('本月下行 9 KB')
+    expect(html).not.toContain('今日下行')
+  })
 })

@@ -39,6 +39,8 @@ export interface MonitorNode {
   total_tx: number
   month_rx: number
   month_tx: number
+  day_rx: number | null
+  day_tx: number | null
   month_used: number
   traffic_limit: number
   traffic_mode: string
@@ -62,7 +64,7 @@ export interface SiteInfo {
 export type EarthMode = 'map' | 'summary' | 'hide'
 export type Layout = 'card' | 'list'
 export type ThemeMode = 'auto' | 'beijing' | 'light' | 'dark'
-export type SummaryKey = 'memory' | 'disk' | 'online' | 'offline' | 'traffic' | 'upload' | 'download' | 'cpu' | 'regions' | 'remaining_value'
+export type SummaryKey = 'memory' | 'disk' | 'online' | 'offline' | 'traffic' | 'upload' | 'download' | 'total_upload' | 'total_download' | 'cpu' | 'regions' | 'remaining_value'
 export type SortKey = 'default' | 'name' | 'cpu' | 'memory' | 'disk' | 'traffic' | 'upload' | 'download'
 export type ConnectionState = 'connecting' | 'live' | 'polling' | 'reconnecting' | 'paused' | 'closed'
 
