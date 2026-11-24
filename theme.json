@@ -2,7 +2,7 @@
   "name": "青屿 · Qingyu",
   "short": "qingyu",
   "description": "青屿 Qingyu：简约的翡翠绿 Monitor 主题，提供点状地图、节点卡片和列表。",
-  "version": "0.2.45",
+  "version": "0.2.46",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-Qingyu",
   "config": [
@@ -223,14 +223,14 @@
           "label": "自定义 · 按下方顺序"
         }
       ],
-      "help": "默认四张：服务器状态、实时吞吐、剩余价值、累计流量；选择自定义后读取下方的卡片名称与显示顺序。"
+      "help": "默认四张：服务器状态、实时吞吐、剩余价值、本月流量；选择自定义后读取下方的卡片名称与显示顺序。"
     },
     {
       "key": "summary_cards",
       "type": "text",
       "label": "自定义总览卡片与顺序",
       "default": "online\nrealtime\nremaining_value\ntraffic",
-      "help": "仅自定义方案生效，用逗号、空格或换行分隔：online=服务器状态；realtime=实时吞吐；remaining_value=剩余价值；traffic=累计流量；upload=实时上行；download=实时下行；total_upload=累计上行；total_download=累计下行；memory=内存；disk=硬盘；cpu=平均 CPU；offline=离线节点；regions=国家和地区。重复和不支持的名称会忽略，留空不显示总览。"
+      "help": "仅自定义方案生效，用逗号、空格或换行分隔：online=服务器状态；realtime=实时吞吐；remaining_value=剩余价值；traffic=本月流量；upload=实时上行；download=实时下行；total_upload=累计上行；total_download=累计下行；memory=内存；disk=硬盘；cpu=平均 CPU；offline=离线节点；regions=国家和地区。重复和不支持的名称会忽略，留空不显示总览。"
     },
     {
       "key": "summary_scope",
