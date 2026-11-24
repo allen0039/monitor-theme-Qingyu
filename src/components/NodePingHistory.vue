@@ -5,7 +5,21 @@ import { ApiError } from '../lib/api'
 import { fetchHistory, historyRanges } from '../lib/history'
 import { readQingyuStorage } from '../lib/storage'
 import { selectPingNetworks } from '../lib/ping'
-import { latencyLabel, lossLabel, networkStats, qualityBuckets, qualityTone } from '../lib/ping-display'
+import {
+  LATENCY_LEGEND_TEXT,
+  LATENCY_TIERS,
+  bucketLatencyState,
+  bucketLatencyTone,
+  bucketPeakElevated,
+  formatQualityBucketTooltip,
+  latencyLabel,
+  latencyTier,
+  latencyTone,
+  lossDetailLabel,
+  lossLabel,
+  networkStats,
+  qualityBuckets,
+} from '../lib/ping-display'
 import MetricChart, { type ChartPoint, type ChartLine } from './MetricChart.vue'
 const props = defineProps<{ node: MonitorNode; config: ThemeConfig; historyDays?: number }>()
 const options = computed(() => historyRanges(props.historyDays))
@@ -50,11 +64,27 @@ function rangeLabel(hours: number, fallback: string): string {
   return ({ 1: '实时', 6: '6h', 24: '24h', 168: '7d', 720: '30d' } as Record<number, string>)[hours] ?? fallback
 }
 const active = computed(() => data.value.filter(n => selected.value.includes(n.id)))
-const stats = (network: PingNetwork) => networkStats(network)
-const quality = (network: PingNetwork) => qualityBuckets(network.rows)
+const statsMap = computed(() => new Map(data.value.map(network => [network.id, networkStats(network)])))
+const qualityMap = computed(() => new Map(data.value.map(network => [network.id, qualityBuckets(network.rows)])))
+const stats = (network: PingNetwork) => statsMap.value.get(network.id) ?? networkStats(network)
+const quality = (network: PingNetwork) => qualityMap.value.get(network.id) ?? []
 const jitterLabel = (network: PingNetwork) => {
   const value = stats(network).jitter
   return value === null ? '—' : Math.round(value) + ' ms'
+}
+function avgTitle(network: PingNetwork): string {
+  const s = stats(network)
+  const tier = latencyTier(s.avg, s.allTimeout)
+  return `当前时间范围平均延迟：${latencyLabel(s.avg, s.allTimeout)}（${tier.label}）\n${LATENCY_LEGEND_TEXT}`
+}
+function lastTitle(network: PingNetwork): string {
+  const s = stats(network)
+  const tier = latencyTier(s.last, s.lastTimeout)
+  return `当前时间范围最后一条实际采样：${latencyLabel(s.last, s.lastTimeout)}（${tier.label}）\n${LATENCY_LEGEND_TEXT}`
+}
+function lossTitle(network: PingNetwork): string {
+  const s = stats(network)
+  return `当前时间范围丢包率：${lossDetailLabel(network.loss, s.hasSamples)}`
 }
 const lines = computed<ChartLine[]>(() => active.value.map(n => ({ key: 'ping_' + n.id, label: n.name, color: colors[data.value.findIndex(p => p.id === n.id) % colors.length]! })))
 const rows = computed<ChartPoint[]>(() => {
@@ -86,8 +116,8 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
         <label v-for="(network, index) in data" :key="network.id" class="ping-network-option" :class="{ checked: selected.includes(network.id) }">
           <input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" />
           <i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span>
-          <strong>{{ latencyLabel(network.latest?.latency ?? null, !!network.latest) }}</strong>
-          <small>丢包 {{ lossLabel(network.loss) }}</small>
+          <strong :class="`latency-text-${latencyTone(stats(network).last, stats(network).lastTimeout)}`" :title="lastTitle(network)">{{ latencyLabel(stats(network).last, stats(network).lastTimeout) }}</strong>
+          <small :title="lossTitle(network)">丢包 {{ lossLabel(network.loss) }}</small>
         </label>
       </div>
       <div class="detail-ping-grid" :class="{ 'detail-ping-grid-single': !data.length }">
@@ -100,14 +130,30 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
           <div v-for="(network, index) in data" :key="network.id" class="ping-quality-row" :class="{ inactive: !selected.includes(network.id) }" role="row">
             <label class="ping-quality-target"><input type="checkbox" :checked="selected.includes(network.id)" @change="toggle(network.id)" /><i :style="{ background: colors[index % colors.length] }" /><span>{{ network.name }}</span></label>
             <div class="ping-quality-metrics">
-              <span><small>平均</small><strong>{{ latencyLabel(stats(network).avg, stats(network).avg !== null) }}</strong></span>
+              <span><small>平均</small><strong :class="`latency-text-${latencyTone(stats(network).avg, stats(network).allTimeout)}`" :title="avgTitle(network)">{{ latencyLabel(stats(network).avg, stats(network).allTimeout) }}</strong></span>
               <span><small>抖动</small><strong :title="stats(network).jitter !== null ? '按相邻有效采样的延迟差估算' : ''">{{ jitterLabel(network) }}</strong></span>
-              <span><small>丢包</small><strong :class="{ 'is-loss': network.loss !== null && network.loss > 0 }">{{ lossLabel(network.loss) }}</strong></span>
-              <span><small>最新</small><strong>{{ latencyLabel(stats(network).last, !!network.latest) }}</strong></span>
+              <span><small>丢包</small><strong :class="{ 'is-loss': network.loss !== null && network.loss > 0 }" :title="lossTitle(network)">{{ lossLabel(network.loss) }}</strong></span>
+              <span><small>最新</small><strong :class="`latency-text-${latencyTone(stats(network).last, stats(network).lastTimeout)}`" :title="lastTitle(network)">{{ latencyLabel(stats(network).last, stats(network).lastTimeout) }}</strong></span>
             </div>
             <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量与丢包事件'">
-              <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="`${new Date(bucket.start * 1000).toLocaleTimeString('zh-CN')} · 平均 ${latencyLabel(bucket.latency, !bucket.timeout)} · 峰值 ${latencyLabel(bucket.peak, bucket.peak !== null)} · 丢包 ${lossLabel(bucket.loss)}`"><b :class="`quality-tone-${bucket.timeout ? 'red' : qualityTone(bucket.peak)}`" /><i v-if="bucket.timeout || (bucket.loss !== null && bucket.loss > 0)" class="ping-loss-marker" aria-label="丢包或超时" /></span>
+              <template v-if="quality(network).length">
+                <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="formatQualityBucketTooltip(bucket, network.name)">
+                  <b :class="`latency-bar-${bucketLatencyTone(bucket)}`" />
+                  <i v-if="bucketPeakElevated(bucket)" class="ping-peak-marker" :class="`latency-marker-${latencyTone(bucket.peak)}`" aria-label="峰值高于均值档" />
+                  <i v-if="bucketLatencyState(bucket) === 'partial-timeout'" class="ping-timeout-marker" aria-label="含超时采样" />
+                  <i v-else-if="bucketLatencyState(bucket) !== 'timeout' && bucket.loss !== null && bucket.loss > 0" class="ping-loss-marker" aria-label="有丢包" />
+                </span>
+              </template>
+              <span v-else class="ping-quality-segment" :title="`${network.name} · 无采样（缺测）\n平均：— · 峰值：—\n丢包：未知（缺测） · 超时：无采样（缺测）`"><b class="latency-bar-unknown" /></span>
             </div>
+          </div>
+          <div class="ping-quality-legend" aria-label="延迟颜色与状态图例">
+            <span v-for="tier in LATENCY_TIERS" :key="tier.tone" class="ping-quality-legend-item">
+              <i class="ping-quality-legend-swatch" :class="`latency-bar-${tier.tone}`" aria-hidden="true" />
+              <span>{{ tier.range }} {{ tier.label }}</span>
+            </span>
+            <span class="ping-quality-legend-item"><i class="ping-quality-legend-peak" aria-hidden="true" /><span>峰值高于均值档</span></span>
+            <span class="ping-quality-legend-item"><i class="ping-quality-legend-timeout" aria-hidden="true" /><span>含超时</span></span>
           </div>
         </div>
       </div>

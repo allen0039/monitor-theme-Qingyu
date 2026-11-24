@@ -131,7 +131,7 @@ describe('地球访客连线', () => {
 
     const coldHtml = await renderToString(createSSRApp(GeoMap, { nodes, showLabels: true, pingEnabled: true }))
     expect(coldHtml).toContain('平均延迟')
-    expect(coldHtml).toContain('is-unknown geo-region-latency')
+    expect(coldHtml).toContain('latency-badge-unknown geo-region-latency')
     expect(coldHtml).not.toMatch(/\d+ms/)
 
     seedPingCacheForTest(101, parsePing({ probes: { 1: '电信' }, ping: [{ task_id: 1, ts: 60, latency: 60 }], loss: { 1: 0 } }))
@@ -142,8 +142,8 @@ describe('地球访客连线', () => {
     const warmHtml = await renderToString(createSSRApp(GeoMap, { nodes, showLabels: true, pingEnabled: true }))
     expect(warmHtml).toContain('70 ms')
     expect(warmHtml).toContain('70ms')
-    expect(warmHtml).toContain('is-good geo-region-latency')
-    expect(warmHtml).toContain('is-unknown geo-region-latency')
+    expect(warmHtml).toContain('latency-badge-green geo-region-latency')
+    expect(warmHtml).toContain('latency-badge-unknown geo-region-latency')
     expect(warmHtml).not.toContain('500ms')
 
     seedPingCacheForTest(103, parsePing({ ping: [{ task_id: 1, ts: 60, latency: 200 }] }))
@@ -151,6 +151,66 @@ describe('地球访客连线', () => {
     expect(fullHtml).toContain('113 ms')
     expect(fullHtml).toContain('70ms')
     expect(fullHtml).toContain('200ms')
-    expect(fullHtml).not.toContain('is-unknown geo-region-latency')
+    expect(fullHtml).toContain('latency-badge-orange')
+    expect(fullHtml).toContain('latency-pill-yellow')
+    expect(fullHtml).toContain('latency-text-yellow')
+    expect(fullHtml).not.toContain('latency-badge-unknown geo-region-latency')
+  })
+
+  it('地区 5 台在线仅 3 台有延迟读数时按 3 台求均值并显示 3/5 覆盖，无读数地区显示灰色占位，156 ms 与首页详情同为黄色', async () => {
+    const metrics = { cpu: 1, load: [0, 0, 0], mem_total: 1, mem_used: 0, disk_total: 1, disk_used: 0, net_tx: 1024, net_rx: 2048, uptime: 10 }
+    const nodes = normalizeNodes([
+      { id: 201, name: '日本 1', country: 'JP', group: '亚太', online: true, metrics },
+      { id: 202, name: '日本 2', country: 'JP', group: '亚太', online: true, metrics },
+      { id: 203, name: '日本 3', country: 'JP', group: '亚太', online: true, metrics },
+      { id: 204, name: '日本 4', country: 'JP', group: '亚太', online: true, metrics }, // 全超时，无可用读数
+      { id: 205, name: '日本 5', country: 'JP', group: '亚太', online: true }, // 等待指标上报
+      { id: 206, name: '日本 6', country: 'JP', group: '亚太', online: false }, // 离线
+      { id: 207, name: '新加坡 1', country: 'SG', group: '亚太', online: true, metrics },
+      { id: 208, name: '美国 1', country: 'US', group: '美洲', online: true, metrics },
+    ])
+    seedPingCacheForTest(201, parsePing({ ping: [{ task_id: 1, ts: 60, latency: 100 }] }))
+    seedPingCacheForTest(202, parsePing({ ping: [{ task_id: 1, ts: 60, latency: 140 }] }))
+    seedPingCacheForTest(203, parsePing({ ping: [{ task_id: 1, ts: 60, latency: 228 }] }))
+    seedPingCacheForTest(204, parsePing({ ping: [{ task_id: 1, ts: 60, latency: null, loss: 100 }], loss: { 1: 100 } }))
+    seedPingCacheForTest(208, parsePing({ ping: [{ task_id: 1, ts: 60, latency: 300 }] }))
+
+    const asiaNodes = nodes.filter(n => n.group === '亚太')
+    const html = await renderToString(createSSRApp(GeoMap, { nodes: asiaNodes, showLabels: true, pingEnabled: true }))
+    // 顶部统计当前分组（亚太）：6 台在线，3 台有读数，均值 (100+140+228)/3 = 156 ms（黄色）
+    expect(html).toContain('latency-pill-yellow')
+    expect(html).toContain('latency-text-yellow')
+    expect(html).toContain('156 ms')
+    expect(html).toContain('6 台在线，3 台有延迟读数（3/6）')
+    // 日本地区：5 台在线，3 台有延迟读数，均值 156ms（黄色）
+    expect(html).toContain('latency-badge-yellow')
+    expect(html).toContain('156ms')
+    expect(html).toContain('5 台在线，3 台有延迟读数（3/5）')
+    // 新加坡地区：1 台在线，0 台有延迟读数，显示灰色 —
+    expect(html).toContain('latency-badge-unknown')
+    expect(html).toContain('1 台在线，0 台有延迟读数（0/1）')
+    // 地图标记仍保留在线/部分在线状态
+    expect(html).toContain('is-tier2 is-partial geo-marker-pill')
+    // 当前分组不含美洲 300 ms 节点
+    expect(html).not.toContain('300ms')
+  })
+
+  it.each([
+    [90.49, '90', 'green'],
+    [90.5, '91', 'yellow'],
+    [180.49, '180', 'yellow'],
+    [180.5, '181', 'orange'],
+    [260.49, '260', 'orange'],
+    [260.5, '261', 'red'],
+  ])('地图顶部与地区行对边界值 %s ms 取整为 %s ms 并着色为 %s', async (raw, rounded, tone) => {
+    const metrics = { cpu: 1, load: [0, 0, 0], mem_total: 1, mem_used: 0, disk_total: 1, disk_used: 0, net_tx: 1024, net_rx: 2048, uptime: 10 }
+    const nodes = normalizeNodes([{ id: 301, name: '德国', country: 'DE', online: true, metrics }])
+    seedPingCacheForTest(301, parsePing({ ping: [{ task_id: 1, ts: 60, latency: raw }] }))
+    const html = await renderToString(createSSRApp(GeoMap, { nodes, showLabels: true, pingEnabled: true }))
+    expect(html).toContain(`latency-pill-${tone}`)
+    expect(html).toContain(`latency-text-${tone}`)
+    expect(html).toContain(`latency-badge-${tone}`)
+    expect(html).toContain(`${rounded} ms`)
+    expect(html).toContain(`${rounded}ms`)
   })
 })

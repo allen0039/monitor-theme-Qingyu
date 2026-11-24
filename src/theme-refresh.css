@@ -279,6 +279,22 @@ body { min-width: 0; }
 .dark .ping-panel .ping-text-moderate { color: #eab308; }
 .dark .ping-panel .ping-text-slow { color: #fb923c; }
 .dark .ping-panel .ping-text-bad { color: #f87171; }
+.ping-panel .latency-text-green,
+.ping-panel .latency-text-yellow,
+.ping-panel .latency-text-orange,
+.ping-panel .latency-text-red { font-weight: 650; }
+.ping-history-timeout-marker {
+  position: absolute;
+  bottom: -2.5px;
+  left: 50%;
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: var(--latency-red);
+  box-shadow: 0 0 0 1px var(--surface-solid);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
 .node-card .ping-panels { gap: 10px; container-type: inline-size; }
 .card-size-compact .node-card .ping-panels, .card-size-mini .node-card .ping-panels { gap: 8px; }
 .ping-panel-col { min-width: 0; }
@@ -376,8 +392,7 @@ body { min-width: 0; }
   height: 20px;
   padding: 0 7px;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--muted) 7%, transparent);
-  border: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
+  border: 1px solid transparent;
   color: var(--muted);
   font-size: 10px;
   font-weight: 500;
@@ -385,7 +400,12 @@ body { min-width: 0; }
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.geo-stat-pill strong { color: var(--foreground); font-weight: 650; }
+.geo-stat-pill:not(.geo-stat-latency) {
+  background: color-mix(in srgb, var(--muted) 7%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+.geo-stat-pill strong { font-weight: 650; }
+.geo-stat-pill:not(.geo-stat-latency) strong { color: var(--foreground); }
 .node-status-badges { position: relative; display: inline-flex; }
 .node-status-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 20px; padding: 2px 8px; border-radius: 4px; background: var(--surface); backdrop-filter: blur(8px); }
 .node-status-badge { gap: 4px; padding: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 10px; line-height: 1.4; }
@@ -576,13 +596,7 @@ body { min-width: 0; }
   flex: none;
   font-variant-numeric: tabular-nums;
 }
-.geo-region-latency.is-good { background: color-mix(in srgb, var(--emerald) 12%, transparent); color: #047857; }
-.dark .geo-region-latency.is-good { background: color-mix(in srgb, var(--emerald) 18%, transparent); color: #6ee7b7; }
-.geo-region-latency.is-warn { background: color-mix(in srgb, #f59e0b 14%, transparent); color: #b45309; }
-.dark .geo-region-latency.is-warn { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #fbbf24; }
-.geo-region-latency.is-bad { background: color-mix(in srgb, #ef4444 13%, transparent); color: #dc2626; }
-.dark .geo-region-latency.is-bad { background: color-mix(in srgb, #ef4444 18%, transparent); color: #f87171; }
-.geo-region-latency.is-unknown { background: transparent; color: var(--muted); opacity: .65; }
+.geo-region-latency.latency-badge-unknown { opacity: .72; }
 .geo-more-btn {
   flex: none;
   height: 23px;

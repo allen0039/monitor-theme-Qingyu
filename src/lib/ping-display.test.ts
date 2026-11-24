@@ -4,8 +4,30 @@ import { renderToString } from '@vue/server-renderer'
 import { clearPingCacheForTest, parsePing, seedPingCacheForTest } from './ping'
 import { defaultConfig } from './config'
 import { normalizeNodes } from './data'
-import { historyBuckets, latencyLabel, networkLatency, networkStats, networkTone, pingHealth, pingTone, qualityBuckets, shortProbeName, windowSummary } from './ping-display'
+import {
+  bucketLatencyState,
+  bucketLatencyTone,
+  bucketPeakElevated,
+  formatHistoryBucketTooltip,
+  formatQualityBucketTooltip,
+  historyBuckets,
+  latencyLabel,
+  latencyTier,
+  latencyTone,
+  lossDetailLabel,
+  networkLatency,
+  networkStats,
+  networkTone,
+  pingHealth,
+  pingTone,
+  qualityBuckets,
+  qualityTone,
+  roundLatency,
+  shortProbeName,
+  windowSummary,
+} from './ping-display'
 import { cardBytes, cardExpiry, cardPrice, remarkParts } from './format'
+import MetricChart from '../components/MetricChart.vue'
 import PingHistoryBars from '../components/PingHistoryBars.vue'
 import PingPanel from '../components/PingPanel.vue'
 
@@ -47,7 +69,7 @@ describe('原版式网络摘要', () => {
     const buckets = [{ start: 60, end: 120, latency: 80, peak: 320, loss: 1, maxLoss: 5, timeout: false }]
     const latency = await renderToString(createSSRApp(PingHistoryBars, { buckets, metric: 'latency', label: '延迟分段' }))
     const loss = await renderToString(createSSRApp(PingHistoryBars, { buckets, metric: 'loss', label: '丢包分段' }))
-    expect(latency).toContain('ping-tone-good')
+    expect(latency).toContain('latency-bar-green')
     expect(latency).toContain('峰值 320 ms')
     expect(loss).toContain('ping-tone-bad')
     expect(loss).toContain('最高丢包 5.0%')
@@ -85,10 +107,10 @@ describe('原版式网络摘要', () => {
     expect(pingTone(0.56, 'loss')).toBe('moderate')
     expect(pingTone(1.5, 'loss')).toBe('slow')
     expect(pingTone(2, 'loss')).toBe('bad')
-    expect(pingTone(75, 'latency')).toBe('good')
-    expect(pingTone(135, 'latency')).toBe('fair')
-    expect(pingTone(200, 'latency')).toBe('moderate')
-    expect(pingTone(250, 'latency')).toBe('slow')
+    expect(pingTone(75, 'latency')).toBe('green')
+    expect(pingTone(135, 'latency')).toBe('yellow')
+    expect(pingTone(200, 'latency')).toBe('orange')
+    expect(pingTone(270, 'latency')).toBe('red')
 
     expect(shortProbeName('浙江电信')).toBe('电信')
     expect(shortProbeName('浙江联通')).toBe('联通')
@@ -160,6 +182,285 @@ describe('原版式网络摘要', () => {
       clearPingCacheForTest()
       vi.unstubAllGlobals()
     }
+  })
+})
+
+describe('统一延迟分档与状态展示', () => {
+  it.each([
+    [0, 0, 'green', '低延迟'],
+    [90, 90, 'green', '低延迟'],
+    [90.49, 90, 'green', '低延迟'],
+    [90.5, 91, 'yellow', '延迟偏高'],
+    [91, 91, 'yellow', '延迟偏高'],
+    [156, 156, 'yellow', '延迟偏高'],
+    [180, 180, 'yellow', '延迟偏高'],
+    [180.49, 180, 'yellow', '延迟偏高'],
+    [180.5, 181, 'orange', '高延迟'],
+    [181, 181, 'orange', '高延迟'],
+    [260, 260, 'orange', '高延迟'],
+    [260.49, 260, 'orange', '高延迟'],
+    [260.5, 261, 'red', '很高延迟'],
+    [261, 261, 'red', '很高延迟'],
+  ])('延迟 %s ms 先取整为 %d ms 再按统一规则分档为 %s（%s）', (raw, rounded, tone, label) => {
+    expect(roundLatency(raw)).toBe(rounded)
+    expect(latencyLabel(raw)).toBe(`${rounded} ms`)
+    expect(latencyTone(raw)).toBe(tone)
+    expect(qualityTone(raw)).toBe(tone)
+    expect(pingTone(raw, 'latency')).toBe(tone)
+    expect(latencyTier(raw)).toMatchObject({ tone, label })
+  })
+
+  it('明确超时与暂无有效采样严格区分，统计聚合使用原始精度后再取整', () => {
+    expect(latencyTone(null, true)).toBe('red')
+    expect(latencyLabel(null, true)).toBe('超时')
+    expect(latencyTier(null, true)).toMatchObject({ tone: 'red', label: '超时' })
+
+    expect(latencyTone(null, false)).toBe('unknown')
+    expect(latencyLabel(null, false)).toBe('—')
+    expect(latencyTier(null, false)).toMatchObject({ tone: 'unknown', label: '暂无采样' })
+
+    // 原始均值 90.533... -> 取整后为 91 ms（黄色），不能按样本预先取整
+    const [network] = parsePing({
+      probes: { 1: '电信' },
+      ping: [
+        { task_id: 1, ts: 60, latency: 90.4 },
+        { task_id: 1, ts: 120, latency: 90.4 },
+        { task_id: 1, ts: 180, latency: 90.8 },
+      ],
+      loss: { 1: 0 },
+    })
+    const avg = networkLatency(network!)
+    expect(avg).toBeCloseTo(90.5333, 3)
+    expect(latencyLabel(avg)).toBe('91 ms')
+    expect(latencyTone(avg)).toBe('yellow')
+
+    const [warnNet] = parsePing({ ping: [{ task_id: 1, ts: 60, latency: 260.49 }], loss: { 1: 0 } })
+    const [alertNet] = parsePing({ ping: [{ task_id: 1, ts: 60, latency: 260.5 }], loss: { 1: 0 } })
+    expect(networkTone(warnNet!)).toBe('warn')
+    expect(networkTone(alertNet!)).toBe('alert')
+  })
+
+  it('同一个 156 ms 在首页摘要、首页明细、分段条和趋势图悬停均显示黄色档，平滑不改悬停原始读数', async () => {
+    vi.stubGlobal('document', { hidden: false })
+    try {
+      const node = normalizeNodes([{
+        id: 88,
+        name: '东京节点',
+        online: true,
+        metrics: { cpu: 1, load: [0, 0, 0], mem_total: 1, mem_used: 0, disk_total: 1, disk_used: 0, net_tx: 0, net_rx: 0, uptime: 10 },
+      }])[0]!
+      seedPingCacheForTest(88, parsePing({
+        probes: { 1: '电信' },
+        ping: [
+          { task_id: 1, ts: 60, latency: 156, loss: 0 },
+          { task_id: 1, ts: 120, latency: 156, loss: 0 },
+        ],
+        loss: { 1: 0 },
+      }))
+
+      const summaryHtml = await renderToString(createSSRApp(PingPanel, { node, details: false, config: defaultConfig() }))
+      expect(summaryHtml).toContain('latency-text-yellow')
+      expect(summaryHtml).toContain('latency-bar-yellow')
+      expect(summaryHtml).toContain('>156<!---->')
+      expect(summaryHtml).toContain('延迟偏高')
+
+      const detailHtml = await renderToString(createSSRApp(PingPanel, { node, details: true, config: defaultConfig() }))
+      expect(detailHtml).toContain('latency-text-yellow')
+      expect(detailHtml).toContain('latency-bar-yellow')
+      expect(detailHtml).toContain('156 ms')
+
+      const points = [
+        { ts: 0, ping_1: 10 },
+        { ts: 60, ping_1: 156 },
+        { ts: 120, ping_1: 12 },
+      ]
+      const lines = [{ key: 'ping_1', label: '电信', color: '#14aa86' }]
+      const rawChart = await renderToString(createSSRApp(MetricChart, {
+        title: '多线路延迟历史',
+        points,
+        lines,
+        step: 60,
+        unit: 'ms',
+        smooth: false,
+        cursor: 60,
+      }))
+      const smoothChart = await renderToString(createSSRApp(MetricChart, {
+        title: '多线路延迟历史',
+        points,
+        lines,
+        step: 60,
+        unit: 'ms',
+        smooth: true,
+        cursor: 60,
+      }))
+      for (const chartHtml of [rawChart, smoothChart]) {
+        expect(chartHtml).toContain('color:#14aa86')
+        expect(chartHtml).toContain('latency-text-yellow')
+        expect(chartHtml).toContain('latency-badge-yellow')
+        expect(chartHtml).toContain('156 ms')
+        expect(chartHtml).toContain('延迟偏高')
+      }
+
+      const boundaryChart = await renderToString(createSSRApp(MetricChart, {
+        title: '边界悬停',
+        points: [
+          { ts: 0, a: 90.49, b: 90.5, c: null },
+        ],
+        lines: [
+          { key: 'a', label: 'A线', color: '#14aa86' },
+          { key: 'b', label: 'B线', color: '#3f96d7' },
+          { key: 'c', label: 'C线', color: '#d68c44' },
+          { key: 'd', label: 'D线', color: '#9d80d7' },
+        ],
+        step: 60,
+        unit: 'ms',
+        cursor: 0,
+      }))
+      expect(boundaryChart).toContain('latency-text-green')
+      expect(boundaryChart).toContain('90 ms')
+      expect(boundaryChart).toContain('latency-text-yellow')
+      expect(boundaryChart).toContain('91 ms')
+      expect(boundaryChart).toContain('latency-badge-red')
+      expect(boundaryChart).toContain('超时')
+      expect(boundaryChart).toContain('latency-text-unknown')
+    } finally {
+      clearPingCacheForTest()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('分段状态区分混合超时、全超时、缺测、峰值跨档及旧协议未知丢包', async () => {
+    const elevated = qualityBuckets([
+      { ts: 60, task_id: 1, latency: 22, loss: 0 },
+      { ts: 61, task_id: 1, latency: 290, loss: 0 },
+    ], 1)[0]!
+    expect(elevated.latency).toBe(156)
+    expect(elevated.peak).toBe(290)
+    expect(bucketLatencyTone(elevated)).toBe('yellow')
+    expect(bucketPeakElevated(elevated)).toBe(true)
+    expect(latencyTone(elevated.peak)).toBe('red')
+    const elevatedTip = formatQualityBucketTooltip(elevated, '电信')
+    expect(elevatedTip).toContain('156 ms')
+    expect(elevatedTip).toContain('290 ms')
+    expect(elevatedTip).toContain('高于均值档')
+    expect(elevatedTip).toContain('丢包：0.0%')
+    expect(elevatedTip).toContain('超时：无')
+
+    const sameTierPeak = qualityBuckets([
+      { ts: 60, task_id: 1, latency: 137, loss: 0 },
+      { ts: 61, task_id: 1, latency: 175, loss: 0 },
+    ], 1)[0]!
+    expect(bucketLatencyTone(sameTierPeak)).toBe('yellow')
+    expect(bucketPeakElevated(sameTierPeak)).toBe(false)
+
+    const partial = qualityBuckets([
+      { ts: 60, task_id: 1, latency: 80, loss: 0 },
+      { ts: 61, task_id: 1, latency: null, loss: 100 },
+    ], 1)[0]!
+    expect(partial.timeout).toBe(false)
+    expect(partial.hasTimeout).toBe(true)
+    expect(bucketLatencyState(partial)).toBe('partial-timeout')
+    expect(bucketLatencyTone(partial)).toBe('green')
+    expect(formatQualityBucketTooltip(partial, '电信')).toContain('有超时（1/2）')
+    const partialBarHtml = await renderToString(createSSRApp(PingHistoryBars, {
+      buckets: [partial],
+      metric: 'latency',
+      label: '延迟分段',
+      scope: '电信 近 1 小时单线',
+    }))
+    expect(partialBarHtml).toContain('latency-bar-green')
+    expect(partialBarHtml).toContain('ping-history-timeout-marker')
+    expect(partialBarHtml).toContain('80 ms')
+    expect(partialBarHtml).toContain('含超时')
+
+    const allTimeout = qualityBuckets([
+      { ts: 60, task_id: 1, latency: null, loss: 100 },
+    ], 1)[0]!
+    expect(allTimeout.timeout).toBe(true)
+    expect(bucketLatencyState(allTimeout)).toBe('timeout')
+    expect(bucketLatencyTone(allTimeout)).toBe('red')
+    expect(formatQualityBucketTooltip(allTimeout, '电信')).toContain('平均：超时')
+    expect(formatHistoryBucketTooltip(allTimeout, 'latency')).toContain('超时')
+
+    const gapped = qualityBuckets([
+      { ts: 0, task_id: 1, latency: 50, loss: 0 },
+      { ts: 60, task_id: 1, latency: 60, loss: 0 },
+      { ts: 240, task_id: 1, latency: 70, loss: 0 },
+    ], 3)
+    const emptyBucket = gapped[1]!
+    expect(emptyBucket.sampleCount).toBe(0)
+    expect(bucketLatencyState(emptyBucket)).toBe('empty')
+    expect(bucketLatencyTone(emptyBucket)).toBe('unknown')
+    const emptyTip = formatQualityBucketTooltip(emptyBucket, '电信')
+    expect(emptyTip).toContain('无采样/缺测')
+    expect(emptyTip).toContain('丢包：未知（缺测）')
+    expect(formatHistoryBucketTooltip(emptyBucket, 'latency')).toContain('无采样（缺测）')
+    expect(formatHistoryBucketTooltip(emptyBucket, 'loss')).toContain('未知（缺测）')
+
+    // 旧协议未提供丢包字段 vs 缺测
+    const [legacyNet] = parsePing({ ping: [{ task_id: 1, ts: 60, latency: 85 }] })
+    const legacyBucket = qualityBuckets(legacyNet!.rows, 1)[0]!
+    expect(legacyBucket.loss).toBeNull()
+    expect(lossDetailLabel(legacyNet!.loss, legacyNet!.rows.length > 0)).toBe('未知（未提供）')
+    expect(lossDetailLabel(null, false)).toBe('未知（缺测）')
+    expect(formatQualityBucketTooltip(legacyBucket, '电信')).toContain('丢包：未知（未提供）')
+    expect(formatHistoryBucketTooltip(legacyBucket, 'loss')).toContain('未知（未提供）')
+  })
+
+  it('使用成功采样的主控区间上界作为分段峰值，均值仍按延迟读数计算', () => {
+    const [network] = parsePing({ ping: [
+      { ts: 60, task_id: 1, latency: 156, band: [22, 290] },
+      { ts: 120, task_id: 1, latency: 156 },
+      { ts: 180, task_id: 1, latency: null, band: [0, 999] },
+    ] })
+    const [bucket] = qualityBuckets(network!.rows, 1)
+
+    expect(bucket).toMatchObject({ latency: 156, peak: 290, successCount: 2, timeoutCount: 1 })
+    expect(bucketLatencyTone(bucket!)).toBe('yellow')
+    expect(bucketPeakElevated(bucket!)).toBe(true)
+    expect(formatQualityBucketTooltip(bucket!)).toContain('峰值：290 ms')
+    expect(historyBuckets(network!.rows).map(segment => segment.peak)).toEqual([290, 156, null])
+  })
+
+  it('延迟缺测时仍显示主控提供的窗口丢包率', () => {
+    const [network] = parsePing({ probes: { 1: '电信' }, ping: [], loss: { 1: 12.5 } })
+    expect(lossDetailLabel(network!.loss, network!.rows.length > 0)).toBe('12.5%')
+    expect(lossDetailLabel(0, false)).toBe('0.0%')
+  })
+
+  it('线路统计区分选定范围平均值与最后一条实际采样超时', () => {
+    const [trailingTimeout] = parsePing({
+      probes: { 1: '电信' },
+      ping: [
+        { task_id: 1, ts: 60, latency: 80, loss: 0 },
+        { task_id: 1, ts: 120, latency: null, loss: 100 },
+      ],
+      loss: { 1: 50 },
+    })
+    const trailingStats = networkStats(trailingTimeout!)
+    expect(trailingStats).toMatchObject({ avg: 80, last: null, hasSamples: true, allTimeout: false, lastTimeout: true })
+    expect(latencyLabel(trailingStats.avg, trailingStats.allTimeout)).toBe('80 ms')
+    expect(latencyTone(trailingStats.avg, trailingStats.allTimeout)).toBe('green')
+    expect(latencyLabel(trailingStats.last, trailingStats.lastTimeout)).toBe('超时')
+    expect(latencyTone(trailingStats.last, trailingStats.lastTimeout)).toBe('red')
+
+    const [allTimedOut] = parsePing({
+      probes: { 1: '电信' },
+      ping: [{ task_id: 1, ts: 60, latency: null, loss: 100 }],
+      loss: { 1: 100 },
+    })
+    const allTimeoutStats = networkStats(allTimedOut!)
+    expect(allTimeoutStats).toMatchObject({ avg: null, last: null, hasSamples: true, allTimeout: true, lastTimeout: true })
+    expect(latencyLabel(allTimeoutStats.avg, allTimeoutStats.allTimeout)).toBe('超时')
+    expect(latencyTone(allTimeoutStats.avg, allTimeoutStats.allTimeout)).toBe('red')
+
+    const [noSamples] = parsePing({ probes: { 1: '电信' }, ping: [], loss: {} })
+    const emptyStats = networkStats(noSamples!)
+    expect(emptyStats).toMatchObject({ avg: null, last: null, hasSamples: false, allTimeout: false, lastTimeout: false })
+    expect(latencyLabel(emptyStats.avg, emptyStats.allTimeout)).toBe('—')
+    expect(latencyTone(emptyStats.avg, emptyStats.allTimeout)).toBe('unknown')
+    expect(latencyLabel(emptyStats.last, emptyStats.lastTimeout)).toBe('—')
+    expect(latencyTone(emptyStats.last, emptyStats.lastTimeout)).toBe('unknown')
   })
 })
 

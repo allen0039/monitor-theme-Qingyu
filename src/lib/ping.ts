@@ -119,8 +119,25 @@ export function nodePingLatency(id: number, tasks = '', maxLines = 3): number | 
   return mean(selected.map(networkLatency))
 }
 
+export interface NodesLatencySummary {
+  avg: number | null
+  sampled: number
+}
+
+export function summarizeNodesLatency(nodeIds: number[], tasks = '', maxLines = 3): NodesLatencySummary {
+  const valid: number[] = []
+  for (const id of nodeIds) {
+    const value = nodePingLatency(id, tasks, maxLines)
+    if (value !== null && Number.isFinite(value)) valid.push(value)
+  }
+  return {
+    avg: valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : null,
+    sampled: valid.length,
+  }
+}
+
 export function averageNodesLatency(nodeIds: number[], tasks = '', maxLines = 3): number | null {
-  return mean(nodeIds.map((id) => nodePingLatency(id, tasks, maxLines)))
+  return summarizeNodesLatency(nodeIds, tasks, maxLines).avg
 }
 
 export function seedPingCacheForTest(id: number, networks: PingNetwork[]) {

@@ -6,7 +6,7 @@ Qingyu 是 [Monitor](https://github.com/monitor-probe/monitor) 的翡翠绿主�
 
 ![Qingyu 首页：点状地图、流量总览和节点卡片](preview.webp)
 
-预览图使用 Monitor 官方示例数据，访客地区为模拟结果。当前最新版本为 **v0.2.42**。
+预览图使用 Monitor 官方示例数据，访客地区为模拟结果。当前最新版本为 **v0.2.43**。
 
 ## 安装
 
@@ -148,7 +148,7 @@ npm run verify:package
 
 ### 发布
 
-发布前同步更新 `package.json`、`package-lock.json` 根包版本和 `theme.json` 版本，并在 `.github/release-notes/` 添加对应标签的说明。例如版本 `0.2.42` 使用 `v0.2.42.md`。
+发布前同步更新 `package.json`、`package-lock.json` 根包版本和 `theme.json` 版本，并在 `.github/release-notes/` 添加对应标签的说明。例如版本 `0.2.43` 使用 `v0.2.43.md`。
 
 推送匹配的 `v*` 标签后，[发布工作流](.github/workflows/release.yml) 会检查版本和仓库地址，运行测试，构建安装包，并创建 GitHub Release。工作流也会上传 `theme.tar.gz`、SHA256 文件和 Actions 构建产物。
 

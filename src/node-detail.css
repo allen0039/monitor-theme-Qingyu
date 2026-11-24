@@ -201,6 +201,10 @@
 .chart-values { position: absolute; right: 4px; top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 3px 9px; padding: 5px 8px; max-width: 92%; background: var(--surface-solid); border: 1px solid var(--line); box-shadow: 0 5px 18px rgb(0 0 0 / 8%); border-radius: 7px; font-size: 10px; pointer-events: none; }
 .chart-values time { color: var(--muted); width: 100%; }
 .chart-values span { font-variant-numeric: tabular-nums; font-weight: 650; }
+.chart-value-item { display: inline-flex; align-items: center; gap: 4px; }
+.chart-value-series { font-weight: 650; }
+.chart-value-reading { font-weight: 700; }
+.chart-value-tier { font-style: normal; font-size: 9px; font-weight: 600; padding: 1px 4px; border-radius: 4px; line-height: 1.25; }
 .chart-empty { border: 1px dashed var(--line); color: var(--muted); font-size: 12px; display: grid; place-items: center; padding: 36px 12px; min-height: 120px; border-radius: 11px; background: var(--detail-card-bg); }
 .chart-footnote { font-size: 10px; margin: 7px 0 0; color: var(--muted); }
 .detail-ping-networks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
@@ -278,6 +282,7 @@
   gap: 1.5px;
   min-width: 0;
   height: 11px;
+  margin: 3px 0;
   align-items: stretch;
   padding: 1px;
   border-radius: 4px;
@@ -287,12 +292,70 @@
 .ping-quality-segment > b { display: block; width: 100%; height: 100%; border-radius: 1.5px; transition: transform .15s ease; }
 .ping-quality-segment:hover { z-index: 1; }
 .ping-quality-segment:hover > b { transform: scaleY(1.65); }
-.ping-loss-marker { position: absolute; top: -3px; left: 50%; width: 3px; height: 3px; border-radius: 2px 2px 0 0; background: var(--danger); transform: translateX(-50%); }
-.quality-tone-green { background: #10b981; }
-.quality-tone-yellow { background: #eab308; }
-.quality-tone-orange { background: #f97316; }
-.quality-tone-red { background: #ef4444; }
-.quality-tone-unknown { background: color-mix(in srgb,var(--muted) 24%,transparent); }
+.ping-peak-marker {
+  position: absolute;
+  top: -4.5px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 2.5px solid transparent;
+  border-right: 2.5px solid transparent;
+  border-bottom: 4px solid currentColor;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.ping-timeout-marker {
+  position: absolute;
+  bottom: -4.5px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--latency-red);
+  box-shadow: 0 0 0 1px var(--surface-solid);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.ping-loss-marker {
+  position: absolute;
+  bottom: -4.5px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  border: 1px solid var(--latency-red);
+  background: var(--surface-solid);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.ping-quality-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 7px 13px 9px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  font-size: 9.5px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.ping-quality-legend-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ping-quality-legend-swatch { width: 7px; height: 7px; border-radius: 2px; flex: none; }
+.ping-quality-legend-peak {
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-bottom: 6px solid var(--latency-red);
+  flex: none;
+}
+.ping-quality-legend-timeout {
+  width: 5.5px;
+  height: 5.5px;
+  border-radius: 50%;
+  background: var(--latency-red);
+  flex: none;
+}
 .ping-quality-metrics > span { min-width: 0; display: flex; justify-content: flex-end; }
 .ping-quality-metrics small { display: none; }
 .ping-quality-metrics strong { text-align: right; font-weight: 650; white-space: nowrap; font-size: 11px; }
@@ -427,6 +490,7 @@
   .ping-quality-metrics > span { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; }
   .ping-quality-metrics small { display: block; color: var(--muted); font-size: 9px; line-height: 1.2; }
   .ping-quality-metrics strong { text-align: left; font-size: 10px; }
+  .ping-quality-legend { padding: 8px 11px 10px; gap: 5px 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .node-detail-page * { scroll-behavior: auto; transition-duration: .01ms !important; animation-duration: .01ms !important; }

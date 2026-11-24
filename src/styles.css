@@ -12,6 +12,21 @@
   --blue: #2563eb;
   --danger: #dc6565;
   --warning: #c99238;
+  --latency-green: #10b981;
+  --latency-green-text: #047857;
+  --latency-green-soft: rgb(16 185 129 / 12%);
+  --latency-yellow: #eab308;
+  --latency-yellow-text: #9e7200;
+  --latency-yellow-soft: rgb(234 179 8 / 18%);
+  --latency-orange: #f97316;
+  --latency-orange-text: #c94a06;
+  --latency-orange-soft: rgb(249 115 22 / 15%);
+  --latency-red: #dc2626;
+  --latency-red-text: #dc2626;
+  --latency-red-soft: rgb(220 38 38 / 13%);
+  --latency-unknown: color-mix(in srgb, var(--muted) 26%, transparent);
+  --latency-unknown-text: var(--muted);
+  --latency-unknown-soft: transparent;
   --shadow: 0 0 20px rgb(5 150 105 / 7%), 0 0 0 1px rgb(5 150 105 / 10%);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-synthesis: none;
@@ -32,6 +47,21 @@
   --blue: #84aed3;
   --danger: #eb8e8e;
   --warning: #d4ab60;
+  --latency-green: #34d399;
+  --latency-green-text: #34d399;
+  --latency-green-soft: rgb(52 211 153 / 16%);
+  --latency-yellow: #facc15;
+  --latency-yellow-text: #fde047;
+  --latency-yellow-soft: rgb(250 204 21 / 17%);
+  --latency-orange: #fb923c;
+  --latency-orange-text: #fb923c;
+  --latency-orange-soft: rgb(251 146 60 / 19%);
+  --latency-red: #ef4444;
+  --latency-red-text: #f87171;
+  --latency-red-soft: rgb(239 68 68 / 20%);
+  --latency-unknown: color-mix(in srgb, var(--muted) 28%, transparent);
+  --latency-unknown-text: var(--muted);
+  --latency-unknown-soft: transparent;
   --shadow: 0 0 20px rgb(39 174 132 / 7%), 0 0 0 1px rgb(84 188 155 / 20%);
 }
 * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
@@ -200,7 +230,32 @@ svg { flex-shrink: 0; }
 .ping-text-bad { color: var(--danger); }
 .ping-text-unknown { color: var(--muted); }
 .ping-placeholder { color: var(--muted) !important; font-weight: 500; letter-spacing: .01em; }
-.ping-history-empty > .ping-tone-unknown { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 8%, transparent); }
+.ping-history-empty > span { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 8%, transparent); }
+.latency-text-green { color: var(--latency-green-text); }
+.latency-text-yellow { color: var(--latency-yellow-text); }
+.latency-text-orange { color: var(--latency-orange-text); }
+.latency-text-red { color: var(--latency-red-text); }
+.latency-text-unknown { color: var(--latency-unknown-text); }
+.latency-bar-green { background: var(--latency-green); }
+.latency-bar-yellow { background: var(--latency-yellow); }
+.latency-bar-orange { background: var(--latency-orange); }
+.latency-bar-red { background: var(--latency-red); }
+.latency-bar-unknown { background: var(--latency-unknown); }
+.latency-badge-green { background: var(--latency-green-soft); color: var(--latency-green-text); }
+.latency-badge-yellow { background: var(--latency-yellow-soft); color: var(--latency-yellow-text); }
+.latency-badge-orange { background: var(--latency-orange-soft); color: var(--latency-orange-text); }
+.latency-badge-red { background: var(--latency-red-soft); color: var(--latency-red-text); }
+.latency-badge-unknown { background: var(--latency-unknown-soft); color: var(--latency-unknown-text); }
+.latency-pill-green { background: var(--latency-green-soft); border-color: color-mix(in srgb, var(--latency-green) 30%, transparent); }
+.latency-pill-yellow { background: var(--latency-yellow-soft); border-color: color-mix(in srgb, var(--latency-yellow) 32%, transparent); }
+.latency-pill-orange { background: var(--latency-orange-soft); border-color: color-mix(in srgb, var(--latency-orange) 32%, transparent); }
+.latency-pill-red { background: var(--latency-red-soft); border-color: color-mix(in srgb, var(--latency-red) 32%, transparent); }
+.latency-pill-unknown { background: color-mix(in srgb, var(--muted) 7%, transparent); border-color: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.latency-marker-green { color: var(--latency-green); }
+.latency-marker-yellow { color: var(--latency-yellow); }
+.latency-marker-orange { color: var(--latency-orange); }
+.latency-marker-red { color: var(--latency-red); }
+.latency-marker-unknown { color: var(--latency-unknown-text); }
 .dark .ping-text-fair { color: #4ade80; }
 .dark .ping-text-moderate { color: #a3e635; }
 .dark .ping-text-slow { color: #fbbf24; }

@@ -6,7 +6,8 @@ import worldCountryIndex from '../assets/world-map-countries.json'
 import { clustersOf, layoutMapMarkers, MAP_VIEWBOX, sortClusters, type RegionCluster } from '../lib/geo'
 import { flagUrl } from '../lib/assets'
 import { bytes, formatBytes } from '../lib/format'
-import { averageNodesLatency } from '../lib/ping'
+import { summarizeNodesLatency } from '../lib/ping'
+import { LATENCY_LEGEND_TEXT, latencyLabel, latencyTier, latencyTone } from '../lib/ping-display'
 
 const props = withDefaults(defineProps<{
   nodes: MonitorNode[]
@@ -50,35 +51,58 @@ const hoveredPath = computed(() => {
   return index !== undefined ? allPaths[index] ?? '' : ''
 })
 
+const onlineNodeCount = computed(() => props.nodes.filter(node => node.online).length)
 const eligibleNodeIds = computed(() => new Set(props.nodes.filter(node => node.online && node.metrics !== null).map(node => node.id)))
-const globalAvgLatency = computed(() => props.pingEnabled ? averageNodesLatency([...eligibleNodeIds.value], props.pingTasks, props.pingMaxLines) : null)
-const globalLatencyTitle = computed(() => globalAvgLatency.value !== null
-  ? `当前已加载监控节点的平均延迟 ${Math.round(globalAvgLatency.value)} ms`
-  : '等待卡片网络监控采样')
+const globalLatency = computed(() => props.pingEnabled
+  ? summarizeNodesLatency([...eligibleNodeIds.value], props.pingTasks, props.pingMaxLines)
+  : { avg: null, sampled: 0 })
+const globalLatencyTone = computed(() => latencyTone(globalLatency.value.avg))
+const globalLatencyTitle = computed(() => {
+  const online = onlineNodeCount.value
+  const { avg, sampled } = globalLatency.value
+  const coverage = online > 0 ? `${online} 台在线，${sampled} 台有延迟读数（${sampled}/${online}）` : '暂无在线节点'
+  if (avg === null) {
+    return `当前分组平均延迟 — · ${coverage}\n等待卡片网络监控采样；${LATENCY_LEGEND_TEXT}`
+  }
+  const tier = latencyTier(avg)
+  return `当前分组平均延迟 ${latencyLabel(avg, false)}（${tier.label}）· ${coverage}\n按节点等权聚合近 1 小时采样；${LATENCY_LEGEND_TEXT}`
+})
 
 const regionLatencies = computed(() => new Map(clusters.value.map(cluster => [
   cluster.code,
-  props.pingEnabled && cluster.online > 0 ? averageNodesLatency(cluster.nodeIds.filter(id => eligibleNodeIds.value.has(id)), props.pingTasks, props.pingMaxLines) : null,
+  props.pingEnabled && cluster.online > 0
+    ? summarizeNodesLatency(cluster.nodeIds.filter(id => eligibleNodeIds.value.has(id)), props.pingTasks, props.pingMaxLines)
+    : { avg: null, sampled: 0 },
 ])))
 
-function regionLatency(code: string): number | null {
-  return regionLatencies.value.get(code) ?? null
+function regionLatencySummary(code: string) {
+  return regionLatencies.value.get(code) ?? { avg: null, sampled: 0 }
 }
 
-function latencyTone(value: number | null): string {
-  if (value === null) return 'is-unknown'
-  if (value <= 90) return 'is-good'
-  if (value <= 220) return 'is-warn'
-  return 'is-bad'
+function regionLatencyTone(code: string) {
+  return latencyTone(regionLatencySummary(code).avg)
 }
 
-function latencyText(value: number | null): string {
-  return value === null ? '—' : `${Math.round(value)}ms`
+function regionLatencyText(code: string): string {
+  return latencyLabel(regionLatencySummary(code).avg, false, true)
+}
+
+function regionLatencyTitle(cluster: RegionCluster): string {
+  const { avg, sampled } = regionLatencySummary(cluster.code)
+  const coverage = cluster.online > 0 ? `${cluster.online} 台在线，${sampled} 台有延迟读数（${sampled}/${cluster.online}）` : '暂无在线节点'
+  if (avg === null) {
+    return `${cluster.name} · 平均延迟 — · ${coverage}\n${LATENCY_LEGEND_TEXT}`
+  }
+  const tier = latencyTier(avg)
+  return `${cluster.name} · 平均延迟 ${latencyLabel(avg, false)}（${tier.label}）· ${coverage}\n按地区节点等权聚合近 1 小时采样；${LATENCY_LEGEND_TEXT}`
 }
 
 function clusterTitle(cluster: RegionCluster): string {
-  const lat = regionLatency(cluster.code)
-  const latPart = props.pingEnabled ? ` · 平均延迟 ${lat !== null ? `${Math.round(lat)} ms` : '—'}` : ''
+  const { avg, sampled } = regionLatencySummary(cluster.code)
+  const coverage = cluster.online > 0 ? `（${cluster.online} 台在线，${sampled} 台有延迟读数，${sampled}/${cluster.online}）` : ''
+  const latPart = props.pingEnabled
+    ? ` · 平均延迟 ${latencyLabel(avg, false)}${coverage}`
+    : ''
   return `${cluster.name} · ${cluster.online}/${cluster.total} 在线${latPart} · ↑ ${formatBytes(cluster.tx, true)} ↓ ${formatBytes(cluster.rx, true)}`
 }
 
@@ -128,7 +152,7 @@ function onListWheel(event: WheelEvent) {
         <div class="geo-map-stats">
           <span class="geo-stat-pill geo-stat-regions">{{ clusters.length }} 个地区</span>
           <div class="geo-map-status"><slot name="status" /></div>
-          <span v-if="pingEnabled" class="geo-stat-pill geo-stat-latency" :title="globalLatencyTitle">平均延迟 <strong>{{ globalAvgLatency !== null ? `${Math.round(globalAvgLatency)} ms` : '—' }}</strong></span>
+          <span v-if="pingEnabled" class="geo-stat-pill geo-stat-latency" :class="`latency-pill-${globalLatencyTone}`" :title="globalLatencyTitle">平均延迟 <strong :class="`latency-text-${globalLatencyTone}`">{{ latencyLabel(globalLatency.avg, false) }}</strong></span>
         </div>
         <div class="geo-map-stage">
           <div class="geo-map-canvas">
@@ -217,7 +241,7 @@ function onListWheel(event: WheelEvent) {
               </template>
               <span v-else class="geo-region-offline-label">离线</span>
             </span>
-            <span v-if="pingEnabled" class="geo-region-latency" :class="latencyTone(regionLatency(cluster.code))">{{ latencyText(regionLatency(cluster.code)) }}</span>
+            <span v-if="pingEnabled" class="geo-region-latency" :class="`latency-badge-${regionLatencyTone(cluster.code)}`" :title="regionLatencyTitle(cluster)">{{ regionLatencyText(cluster.code) }}</span>
           </div>
         </div>
         <button

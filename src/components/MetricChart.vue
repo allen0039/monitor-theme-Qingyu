@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { formatBytes } from '../lib/format'
 import { chartLineGeometry } from '../lib/chart-lines'
+import { latencyTier } from '../lib/ping-display'
 export interface ChartPoint { ts: number; [key: string]: number | null }
 export interface ChartLine { key: string; label: string; color: string; dashed?: boolean }
 const props = defineProps<{ title: string; points: ChartPoint[]; lines: ChartLine[]; step: number; unit: 'percent' | 'bytes' | 'rate' | 'ms'; cap?: number; cursor?: number | null; smooth?: boolean; scale?: 'full' | 'adaptive' }>()
@@ -94,11 +95,19 @@ const timeTicks = computed(() => {
 const focused = computed(() => props.cursor === null || props.cursor === undefined ? null : props.points.reduce<ChartPoint | null>((best, point) =>
   !best || Math.abs(point.ts - props.cursor!) < Math.abs(best.ts - props.cursor!) ? point : best, null))
 function display(value: number | null | undefined, short = false) {
+  if (props.unit === 'ms') {
+    if (value === null) return '超时'
+    if (value === undefined || !Number.isFinite(value)) return '—'
+    return `${Math.round(value)} ms`
+  }
   if (value === null || value === undefined || !Number.isFinite(value)) return '—'
   if (props.unit === 'bytes') return formatBytes(value)
   if (props.unit === 'rate') return formatBytes(value, true)
   if (props.unit === 'percent') return value.toFixed(short ? 0 : 1) + '%'
   return value.toFixed(short ? 0 : 1) + ' ms'
+}
+function hoverTier(value: number | null | undefined) {
+  return latencyTier(value, value === null)
 }
 function leave(event: PointerEvent) { if (event.pointerType !== 'touch') emit('cursor', null) }
 function move(event: MouseEvent | PointerEvent) {
@@ -132,7 +141,27 @@ function move(event: MouseEvent | PointerEvent) {
           </template>
         </template>
       </svg>
-      <div v-if="focused" class="chart-values" aria-live="off"><time>{{ new Date(focused.ts * 1000).toLocaleString('zh-CN') }}</time><span v-for="line in lines" :key="line.key" :style="{ color: line.color }">{{ line.label }} {{ display(focused[line.key]) }}</span></div>
+      <div v-if="focused" class="chart-values" aria-live="off">
+        <time>{{ new Date(focused.ts * 1000).toLocaleString('zh-CN') }}</time>
+        <template v-if="props.unit === 'ms'">
+          <span v-for="line in lines" :key="line.key" class="chart-value-item">
+            <b class="chart-value-series" :style="{ color: line.color }">{{ line.label }}</b>
+            <template v-if="focused[line.key] === null">
+              <em class="chart-value-tier latency-badge-red">超时</em>
+            </template>
+            <template v-else-if="focused[line.key] === undefined || !Number.isFinite(focused[line.key])">
+              <strong class="chart-value-reading latency-text-unknown">—</strong>
+            </template>
+            <template v-else>
+              <strong class="chart-value-reading" :class="`latency-text-${hoverTier(focused[line.key]).tone}`">{{ display(focused[line.key]) }}</strong>
+              <em class="chart-value-tier" :class="`latency-badge-${hoverTier(focused[line.key]).tone}`">{{ hoverTier(focused[line.key]).label }}</em>
+            </template>
+          </span>
+        </template>
+        <template v-else>
+          <span v-for="line in lines" :key="line.key" :style="{ color: line.color }">{{ line.label }} {{ display(focused[line.key]) }}</span>
+        </template>
+      </div>
     </div>
     <div v-else class="chart-empty">当前时间范围暂无历史数据</div>
   </section>
