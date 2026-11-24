@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useId } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import type { MonitorNode } from '../types'
 import worldPaths from '../assets/world-map.json'
 import worldCountryIndex from '../assets/world-map-countries.json'
@@ -116,27 +116,31 @@ function compactRate(value: number): string {
   return `${Number(n.toFixed(1))}${part.unit}`
 }
 
-const page = ref(0)
-const needsPager = computed(() => clusters.value.length > 6)
-const pageSize = computed(() => (needsPager.value ? 5 : 6))
-const totalPages = computed(() => Math.max(1, Math.ceil(clusters.value.length / pageSize.value)))
-const currentPage = computed(() => Math.min(page.value, totalPages.value - 1))
-const pagedClusters = computed(() => clusters.value.slice(currentPage.value * pageSize.value, (currentPage.value + 1) * pageSize.value))
-const hiddenAfterFirst = computed(() => Math.max(0, clusters.value.length - pageSize.value))
-const moreLabel = computed(() => {
-  if (currentPage.value === 0) return `另外 ${hiddenAfterFirst.value} 个地区`
-  const remaining = clusters.value.length - (currentPage.value + 1) * pageSize.value
-  return remaining > 0 ? `下一页 · 还有 ${remaining} 个地区` : `返回前 ${pageSize.value} 个地区`
-})
+const listRef = ref<HTMLElement | null>(null)
+const scrollTopFade = ref(false)
+const scrollBottomFade = ref(false)
 
-function setPage(next: number) {
-  pointerCode.value = null
-  page.value = Math.min(totalPages.value - 1, Math.max(0, next))
+function updateScrollState() {
+  const el = listRef.value
+  if (!el) {
+    scrollTopFade.value = false
+    scrollBottomFade.value = false
+    return
+  }
+  scrollTopFade.value = el.scrollTop > 4
+  scrollBottomFade.value = el.scrollHeight - el.clientHeight - el.scrollTop > 4
 }
 
-function cyclePage() {
-  setPage((currentPage.value + 1) % totalPages.value)
-}
+watch(() => clusters.value.length, updateScrollState, { flush: 'post' })
+watch(listRef, (el, _, onCleanup) => {
+  updateScrollState()
+  if (!el || typeof ResizeObserver === 'undefined') return
+  const observer = new ResizeObserver(updateScrollState)
+  observer.observe(el)
+  onCleanup(() => observer.disconnect())
+}, { flush: 'post' })
+onMounted(() => window.addEventListener('resize', updateScrollState))
+onBeforeUnmount(() => window.removeEventListener('resize', updateScrollState))
 
 const hoveredMarker = computed(() => hoveredCode.value ? markers.value.find(m => m.cluster.code === hoveredCode.value) ?? null : null)
 const hoverCardStyle = computed(() => {
@@ -151,16 +155,6 @@ function markerFill(cluster: RegionCluster): string {
   if (!cluster.online) return '#94a3b8'
   if (cluster.online < cluster.total) return '#d97706'
   return 'var(--emerald)'
-}
-
-let lastWheelAt = 0
-function onListWheel(event: WheelEvent) {
-  if (totalPages.value <= 1 || Math.abs(event.deltaY) < 8) return
-  event.preventDefault()
-  const now = Date.now()
-  if (now - lastWheelAt < 180) return
-  lastWheelAt = now
-  setPage(currentPage.value + (event.deltaY > 0 ? 1 : -1))
 }
 </script>
 <template>
@@ -272,10 +266,10 @@ function onListWheel(event: WheelEvent) {
           </div>
         </div>
       </div>
-      <div v-if="clusters.length" class="geo-region-panel" @wheel="onListWheel">
-        <div class="geo-region-list" :class="{ 'is-paged': needsPager }" role="list" :aria-label="pingEnabled ? '各地区在线状态、实时速率与平均延迟' : '各地区在线状态与实时速率'">
+      <div v-if="clusters.length" class="geo-region-panel" :class="{ 'has-scroll-top': scrollTopFade, 'has-scroll-bottom': scrollBottomFade }">
+        <div ref="listRef" class="geo-region-list" role="list" tabindex="0" :aria-label="pingEnabled ? '各地区在线状态、实时速率与平均延迟' : '各地区在线状态与实时速率'" @scroll="updateScrollState">
           <div
-            v-for="cluster in pagedClusters"
+            v-for="cluster in clusters"
             :key="cluster.code"
             class="geo-region-row"
             :class="{ 'is-offline': !cluster.online, 'is-hovered': hoveredCode === cluster.code }"
@@ -302,16 +296,6 @@ function onListWheel(event: WheelEvent) {
             <span v-if="pingEnabled" class="geo-region-latency" :class="`latency-badge-${regionLatencyTone(cluster.code)}`" :title="regionLatencyTitle(cluster)">{{ regionLatencyText(cluster.code) }}</span>
           </div>
         </div>
-        <button
-          v-if="needsPager"
-          type="button"
-          class="geo-more-btn"
-          :aria-label="`${moreLabel}（第 ${currentPage + 1} / ${totalPages} 页）`"
-          @click="cyclePage"
-        >
-          <span>{{ moreLabel }}</span>
-          <small class="geo-more-page">{{ currentPage + 1 }}/{{ totalPages }}</small>
-        </button>
       </div>
     </div>
   </div>

@@ -765,23 +765,70 @@ body { min-width: 0; }
 .geo-legend-dot.is-online { background: #10b981; }
 .geo-legend-dot.is-partial { background: #d97706; }
 .geo-legend-dot.is-offline { background: #94a3b8; }
-.geo-region-panel { height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.geo-region-panel {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.geo-region-panel::before,
+.geo-region-panel::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 4px;
+  height: 16px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+.geo-region-panel::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--surface-solid), transparent);
+}
+.geo-region-panel::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--surface-solid), transparent);
+}
+.geo-region-panel.has-scroll-top::before { opacity: 1; }
+.geo-region-panel.has-scroll-bottom::after { opacity: 1; }
 .geo-region-list {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-  display: grid;
-  grid-template-rows: repeat(6, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 26%, transparent) transparent;
+  padding-right: 2px;
 }
-.geo-region-list.is-paged { grid-template-rows: repeat(5, minmax(0, 1fr)); }
+.geo-region-list:focus-visible {
+  outline: 2px solid var(--emerald);
+  outline-offset: 2px;
+}
+.geo-region-list::-webkit-scrollbar { width: 4px; }
+.geo-region-list::-webkit-scrollbar-track { background: transparent; }
+.geo-region-list::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
+}
+.geo-region-list::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 48%, transparent);
+}
 .geo-region-row {
+  flex: none;
+  height: 38px;
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
-  min-height: 0;
-  height: 100%;
   padding: 0 9px;
   border-radius: 8px;
   background: color-mix(in srgb, var(--muted) 4%, var(--surface-solid));
@@ -833,29 +880,6 @@ body { min-width: 0; }
   border: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
   opacity: .75;
 }
-.geo-more-btn {
-  flex: none;
-  height: 27px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
-  background: var(--surface-solid);
-  color: var(--muted);
-  font-size: 10.5px;
-  font-weight: 550;
-  line-height: 1;
-  transition: background .15s, border-color .15s, color .15s;
-}
-.geo-more-btn:hover {
-  background: color-mix(in srgb, var(--emerald) 8%, var(--surface-solid));
-  border-color: color-mix(in srgb, var(--emerald) 26%, transparent);
-  color: var(--emerald);
-}
-.geo-more-page { font-size: 9px; opacity: .75; font-variant-numeric: tabular-nums; }
 @media (min-width: 1280px) {
   .geo-map-body { grid-template-columns: minmax(0, 1.04fr) minmax(290px, 46.5%); gap: 11px; }
 }
@@ -873,6 +897,7 @@ body { min-width: 0; }
   .overview { gap: 10px; padding: 10px 0 14px; }
   .overview-visual, .overview-visual-only .overview-visual { height: auto; }
   .geo-map-body { grid-template-columns: minmax(0, 1fr) 268px; }
+  .geo-region-list { max-height: 224px; }
   .geo-region-bar { display: none; }
   .summary-card, .summary-grid-quad .summary-card { height: auto; min-height: 112px; padding: 10px 11px; gap: 5px; }
   .summary-label { font-size: 10.5px; }
@@ -900,7 +925,7 @@ body { min-width: 0; }
   .geo-map-body, .overview-visual-only .geo-map-body { grid-template-columns: 1fr; gap: 8px; }
   .geo-map-stage { min-height: 138px; }
   .geo-region-panel { height: auto; }
-  .geo-region-list, .geo-region-list.is-paged { height: auto; max-height: none; grid-template-rows: none; grid-auto-rows: 34px; gap: 5px; }
+  .geo-region-row { height: 36px; }
 }
 @media (max-width: 600px) {
   .highlight-label { font-size: 10px; }

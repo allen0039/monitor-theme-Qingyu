@@ -112,11 +112,9 @@ describe('地球访客连线', () => {
     const eightCodes = [...sixCodes, 'GB', 'AU']
     const eightNodes = normalizeNodes(eightCodes.map((country, id) => ({ id: id + 1, name: country, country, online: true, metrics })))
     const eightHtml = await renderToString(createSSRApp(GeoMap, { nodes: eightNodes, showLabels: true }))
-    expect(eightHtml.match(/geo-region-row/g)).toHaveLength(5)
+    expect(eightHtml.match(/geo-region-row/g)).toHaveLength(8)
     expect(eightHtml.match(/geo-marker-pill/g)).toHaveLength(8)
-    expect(eightHtml).toContain('geo-more-btn')
-    expect(eightHtml).toContain('另外 3 个地区')
-    expect(eightHtml).toContain('1/2')
+    expect(eightHtml).not.toContain('geo-more-btn')
   })
 
   it('开启延迟监控后直接复用卡片缓存展示全局与分地区平均延迟，未缓存地区保持占位', async () => {

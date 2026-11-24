@@ -159,27 +159,68 @@ try{
       pingOverflow: pingRows.some(el => el.scrollWidth > el.clientWidth + 1),
       geoPills: document.querySelectorAll('.geo-marker-pill').length,
       geoRows: regionRows.length,
-      geoClipped: (() => {
-        const listBox = document.querySelector('.geo-region-list')?.getBoundingClientRect()
-        return !listBox || regionRows.some(el => {
-          const r = el.getBoundingClientRect()
-          return r.height < 18 || r.top < listBox.top - 1 || r.bottom > listBox.bottom + 1
-        })
-      })(),
       geoOverflow: !!geoMap && (geoMap.scrollWidth > geoMap.clientWidth + 1 || regionRows.some(el => el.scrollWidth > el.clientWidth + 1)),
       footers: row.map(card => ({ y: Math.round(card.querySelector('.node-card-footer')?.getBoundingClientRect().bottom ?? -1) })) }
   })()`)
   if(cardsBefore.links || cardsBefore.visibleText || cardsBefore.count < 5) throw Error('Card detail CTA still shown: ' + JSON.stringify(cardsBefore))
   if(cardsBefore.cardsPerRow !== 5 || cardsBefore.extraCount || cardsBefore.chipsCount !== 5 || !cardsBefore.pingCols.every(count => count === 2) || cardsBefore.pingOverflow) throw Error('Card chips/ping cols invalid: ' + JSON.stringify(cardsBefore))
-  if(cardsBefore.geoPills < 1 || cardsBefore.geoRows !== 5 || cardsBefore.geoClipped || cardsBefore.geoOverflow) throw Error('GeoMap layout invalid: ' + JSON.stringify(cardsBefore))
-  const moreBefore = await evalJS("document.querySelector('.geo-more-btn')?.innerText")
-  if (!moreBefore || !moreBefore.includes('另外 5 个地区')) throw Error('GeoMap more button missing: ' + JSON.stringify(moreBefore))
-  await evalJS("document.querySelector('.geo-more-btn')?.click()")
-  await untilJS("document.querySelector('.geo-more-btn')?.innerText.includes('返回前 5 个地区')")
-  const page2 = await evalJS("(() => { const listBox = document.querySelector('.geo-region-list').getBoundingClientRect(); const rows = [...document.querySelectorAll('.geo-region-row')]; return { count: rows.length, clipped: rows.some(el => { const r = el.getBoundingClientRect(); return r.height < 18 || r.top < listBox.top - 1 || r.bottom > listBox.bottom + 1 }) } })()")
-  if (page2.count !== 5 || page2.clipped) throw Error('GeoMap page 2 rows invalid: ' + JSON.stringify(page2))
-  await evalJS("document.querySelector('.geo-more-btn')?.click()")
-  await untilJS("document.querySelector('.geo-more-btn')?.innerText.includes('另外 5 个地区')")
+  if(cardsBefore.geoPills < 1 || cardsBefore.geoRows !== 10 || cardsBefore.geoOverflow) throw Error('GeoMap layout invalid: ' + JSON.stringify(cardsBefore))
+  if (await evalJS("!!document.querySelector('.geo-more-btn')")) throw Error('GeoMap still renders obsolete pager button')
+  const scrollState = `(() => {
+    const list = document.querySelector('.geo-region-list')
+    const panel = document.querySelector('.geo-region-panel')
+    const rows = [...list.querySelectorAll('.geo-region-row')]
+    const box = list.getBoundingClientRect()
+    return {
+      height: list.clientHeight, max: list.scrollHeight - list.clientHeight, top: list.scrollTop,
+      rows: rows.length, tabIndex: list.tabIndex,
+      topFade: panel.classList.contains('has-scroll-top'), bottomFade: panel.classList.contains('has-scroll-bottom'),
+      lastRowVisible: rows.at(-1).getBoundingClientRect().bottom <= box.bottom + 2,
+      rowHeightsValid: rows.every(r => r.getBoundingClientRect().height >= 24),
+      horizontalOverflow: list.scrollWidth > list.clientWidth + 1 || rows.some(r => r.scrollWidth > r.clientWidth + 1),
+    }
+  })()`
+  const topState = await evalJS(scrollState)
+  if (topState.max <= 0 || !topState.bottomFade || topState.topFade || topState.tabIndex !== 0) throw Error('GeoMap initial scroll cues missing: ' + JSON.stringify(topState))
+  const wheelPoint = await evalJS(`(() => {
+    const list = document.querySelector('.geo-region-list')
+    list.scrollIntoView({block:'center'})
+    const box = list.getBoundingClientRect()
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+  })()`)
+  await command('Input.dispatchMouseEvent', { type: 'mouseWheel', ...wheelPoint, deltaX: 0, deltaY: 70 })
+  await untilJS(`(s => s.top > 4 && s.topFade && s.bottomFade)(${scrollState})`)
+  await evalJS("document.querySelector('.geo-region-list').focus()")
+  await command('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'End', code: 'End', windowsVirtualKeyCode: 35 })
+  await command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'End', code: 'End', windowsVirtualKeyCode: 35 })
+  await untilJS(`(s => s.topFade && !s.bottomFade && s.lastRowVisible)(${scrollState})`)
+  await evalJS("[...document.querySelectorAll('.group-tabs button')].find(el => el.getAttribute('aria-label')?.includes('欧洲')).click()")
+  await untilJS(`(s => s.rows < 6 && s.max === 0 && !s.topFade && !s.bottomFade)(${scrollState})`)
+  await evalJS("document.querySelector('.group-tabs button').click()")
+  await untilJS(`(s => s.rows === 10 && s.top === 0 && s.bottomFade)(${scrollState})`)
+  const mapLayouts = []
+  for (const theme of ['light', 'dark']) {
+    await evalJS(`localStorage.setItem('qingyu.preferences', JSON.stringify({theme:'${theme}'}))`)
+    await command('Page.navigate', { url: 'http://127.0.0.1:4179/?map-layout=' + theme })
+    await untilJS(`document.querySelectorAll('.geo-region-row').length === 10 && document.documentElement.classList.contains('dark') === ${theme === 'dark'}`)
+    for (const width of [320, 390, 640, 641, 767, 768, 1024, 1380, 1880]) {
+      await command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 641 })
+      await untilJS('innerWidth === ' + width)
+      await evalJS("document.querySelector('.geo-region-list').scrollTop = 0")
+      await untilJS(`(s => s.top === 0 && !s.topFade && s.bottomFade)(${scrollState})`)
+      const initialMap = await evalJS(scrollState)
+      if (initialMap.max <= 0 || initialMap.topFade || initialMap.horizontalOverflow || !initialMap.rowHeightsValid || (width <= 767 && initialMap.height > 224)) {
+        throw Error('GeoMap layout invalid for ' + theme + ' at ' + width + 'px: ' + JSON.stringify(initialMap))
+      }
+      await evalJS("document.querySelector('.geo-region-list').scrollTop = 9999")
+      await untilJS(`(s => s.topFade && !s.bottomFade && s.lastRowVisible)(${scrollState})`)
+      mapLayouts.push({ theme, width })
+    }
+  }
+  await command('Emulation.clearDeviceMetricsOverride')
+  await evalJS("localStorage.setItem('qingyu.preferences', JSON.stringify({theme:'light'}))")
+  await command('Page.navigate', { url: 'http://127.0.0.1:4179/?smoke=1' })
+  await untilJS("document.querySelectorAll('.node-card').length > 3")
   const footerBottom = cardsBefore.footers.map(item => item.y).filter(y => y > 0)
   if(footerBottom.length >= 2 && Math.max(...footerBottom)-Math.min(...footerBottom) > 3) throw Error('Card footer rows not level: ' + JSON.stringify(cardsBefore))
   await evalJS("document.querySelector('.nodes-grid .node-card').scrollIntoView({block:'start'})")
@@ -240,7 +281,7 @@ try{
   if (await evalJS("!!document.querySelector('.detail-traffic-quota') || document.querySelector('.detail-bottom-grid').innerText.includes('CPU 核心')")) {
     throw Error('Detail still shows hidden node metadata or traffic quota')
   }
-  console.log(JSON.stringify({passed:true,initial,desktopAxes,wideAxes,mobileAxes,navigated,mobile,mobileCards,cardsBefore},null,2))
+  console.log(JSON.stringify({passed:true,initial,desktopAxes,wideAxes,mobileAxes,navigated,mobile,mobileCards,cardsBefore,mapLayouts},null,2))
   ws.close()
 } catch(error){console.error(error);process.exitCode=1}
 finally {processChrome.kill('SIGKILL'); closeVite()}
