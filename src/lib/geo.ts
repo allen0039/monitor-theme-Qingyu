@@ -266,6 +266,7 @@ export interface RegionCluster {
   online: number
   tx: number
   rx: number
+  nodeIds: number[]
 }
 
 export interface GlobeArc {
@@ -320,13 +321,13 @@ export function layoutMapMarkers(clusters: RegionCluster[]): MapMarkerLayout[] {
       cluster,
       anchorX,
       anchorY,
-      x: clamp(anchorX, 42, 758),
-      y: clamp(anchorY, 28, 314),
+      x: clamp(anchorX, 24, 776),
+      y: clamp(anchorY, 24, 316),
     }
   })
 
-  const minDx = 62
-  const minDy = 34
+  const minDx = 44
+  const minDy = 30
   for (let step = 0; step < 8; step++) {
     for (let i = 0; i < items.length; i++) {
       for (let j = i + 1; j < items.length; j++) {
@@ -362,10 +363,10 @@ export function layoutMapMarkers(clusters: RegionCluster[]): MapMarkerLayout[] {
     for (const item of items) {
       item.x += (item.anchorX - item.x) * 0.12
       item.y += (item.anchorY - item.y) * 0.12
-      item.x = item.anchorX + clamp(item.x - item.anchorX, -46, 46)
-      item.y = item.anchorY + clamp(item.y - item.anchorY, -36, 36)
-      item.x = clamp(item.x, 42, 758)
-      item.y = clamp(item.y, 28, 314)
+      item.x = item.anchorX + clamp(item.x - item.anchorX, -34, 34)
+      item.y = item.anchorY + clamp(item.y - item.anchorY, -28, 28)
+      item.x = clamp(item.x, 24, 776)
+      item.y = clamp(item.y, 24, 316)
     }
   }
 
@@ -381,11 +382,12 @@ export function clustersOf(nodes: MonitorNode[]): RegionCluster[] {
   for (const node of nodes) {
     const coord = COORD_MAP[node.country]
     if (!coord) continue
-    const cluster = clusters.get(node.country) ?? { code: node.country, name: regionName(node.country), lat: coord[0], lng: coord[1], total: 0, online: 0, tx: 0, rx: 0 }
+    const cluster = clusters.get(node.country) ?? { code: node.country, name: regionName(node.country), lat: coord[0], lng: coord[1], total: 0, online: 0, tx: 0, rx: 0, nodeIds: [] }
     cluster.total++
     if (node.online) cluster.online++
     cluster.tx += node.metrics?.net_tx ?? 0
     cluster.rx += node.metrics?.net_rx ?? 0
+    cluster.nodeIds.push(node.id)
     clusters.set(node.country, cluster)
   }
   return [...clusters.values()]

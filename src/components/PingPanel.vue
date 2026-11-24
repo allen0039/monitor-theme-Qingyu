@@ -22,7 +22,10 @@ function latencyNumber(value: number | null, hasSamples: boolean): string {
   return value === null ? (hasSamples ? '超时' : '—') : String(Math.round(value))
 }
 function lossNumber(value: number | null): string {
-  return value === null ? '—' : value.toFixed(value > 0 && value < 1 ? 2 : 1)
+  if (value === null) return '—'
+  if (value <= 0) return '0'
+  if (value >= 100) return '100'
+  return String(Number(value.toFixed(value < 1 ? 2 : 1)))
 }
 function latencyClass(value: number | null, hasSamples: boolean): string {
   return `ping-text-${value === null && hasSamples ? 'bad' : pingTone(value, 'latency')}`

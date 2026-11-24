@@ -28,6 +28,8 @@ with tarfile.open(fileobj=io.BytesIO(plain), mode='r:') as bundle:
             content = bundle.extractfile(entry).read()
             assert b'/Users/' not in content and b'/home/' not in content, '包内包含本地用户路径'
             assert b'__official-preview.js' not in content and b'HISTORY_DAYS' not in content, '正式包不能包含开发预览脚本'
+    if 'preview.png' in names:
+        assert bundle.extractfile('preview.png').read(8) == b'\x89PNG\r\n\x1a\n', '后台预览必须是 PNG'
     manifest = json.load(bundle.extractfile('theme.json'))
     assert all(isinstance(manifest.get(key), str) for key in ('name', 'short', 'description', 'version', 'author', 'url')), 'manifest 必填字段错误'
     assert manifest['name'] and manifest['short'], '名称和 short 不能为空'

@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref } 
 import type { PingNetwork, PingRow } from '../types'
 import { api } from './api'
 import { finite, record } from './data'
+import { mean, networkLatency } from './ping-display'
 
 export function parsePing(value: unknown): PingNetwork[] {
   const data = record(value), probes = record(data.probes)
@@ -109,4 +110,23 @@ export function useNodePing(element: Ref<HTMLElement | null>, id: () => number, 
     document.removeEventListener('visibilitychange', onVisibility)
   })
   return snapshot
+}
+
+export function nodePingLatency(id: number, tasks = '', maxLines = 3): number | null {
+  const snapshot = cache.get(id)
+  if (!snapshot || snapshot.state === 'error') return null
+  const selected = selectPingNetworks(snapshot.networks, tasks, maxLines)
+  return mean(selected.map(networkLatency))
+}
+
+export function averageNodesLatency(nodeIds: number[], tasks = '', maxLines = 3): number | null {
+  return mean(nodeIds.map((id) => nodePingLatency(id, tasks, maxLines)))
+}
+
+export function seedPingCacheForTest(id: number, networks: PingNetwork[]) {
+  cache.set(id, { networks, at: Date.now(), state: 'ready', error: '' })
+}
+
+export function clearPingCacheForTest() {
+  cache.clear()
 }

@@ -175,9 +175,9 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
         <section v-if="showOverview" class="overview" :class="{ 'overview-compact': !hasVisual, 'overview-visual-only': !showSummary }" aria-label="节点概况">
           <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :show-price="showPrice" v-model:currency="summaryCurrency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" @public-open-change="publicFinanceOpen = $event" />
           <div v-if="hasVisual" class="overview-visual">
-            <GeoMap :nodes="grouped" :show-labels="config.earth_show_labels">
+            <GeoMap :nodes="grouped" :show-labels="config.earth_show_labels" :ping-enabled="configLoaded && config.show_ping" :ping-tasks="config.ping_tasks" :ping-max-lines="config.ping_max_lines">
               <template #status>
-                <NodeStatusBadges v-if="config.show_node_status" class="visual-node-status" :nodes="grouped" :group="effectiveGroup" />
+                <NodeStatusBadges v-if="config.show_node_status" class="visual-node-status" mode="rate" :nodes="grouped" :group="effectiveGroup" />
               </template>
             </GeoMap>
           </div>

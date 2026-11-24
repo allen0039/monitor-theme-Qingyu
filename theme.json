@@ -2,7 +2,7 @@
   "name": "青屿 · Qingyu",
   "short": "qingyu",
   "description": "青屿 Qingyu：简约的翡翠绿 Monitor 主题，提供点状地图、节点卡片和列表。",
-  "version": "0.2.41",
+  "version": "0.2.42",
   "author": "Davies_Allen",
   "url": "https://github.com/allen0039/monitor-theme-Qingyu",
   "config": [
@@ -149,16 +149,16 @@
     {
       "key": "earth_show_labels",
       "type": "boolean",
-      "label": "显示地图国旗",
+      "label": "显示地图节点数量",
       "default": true,
-      "help": "显示节点所在国家和地区的国旗；关闭后保留位置标记。位置使用国家中心点。"
+      "help": "在地图标记上显示各地区的节点数量。关闭后保留位置标记，国旗继续显示在地区列表中。"
     },
     {
       "key": "show_node_status",
       "type": "boolean",
-      "label": "显示在线状态数量",
+      "label": "显示节点在线状态",
       "default": true,
-      "help": "在地图左上角以绿色在线数与琥珀色离线数显示当前分组状态，只有离线数大于 0 时显示离线项；点击可查看说明，隐藏地图时移至节点工具栏。"
+      "help": "地图显示当前分组的在线率和离线数量，未显示地图时在节点工具栏显示在线和离线数量。点击可查看节点总数。"
     },
     {
       "key": "show_group_tabs",

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSSRApp } from 'vue'
 import { renderToString } from '@vue/server-renderer'
-import { parsePing } from './ping'
+import { clearPingCacheForTest, parsePing, seedPingCacheForTest } from './ping'
 import { defaultConfig } from './config'
 import { normalizeNodes } from './data'
 import { historyBuckets, latencyLabel, networkLatency, networkStats, networkTone, pingHealth, pingTone, qualityBuckets, shortProbeName, windowSummary } from './ping-display'
@@ -133,6 +133,31 @@ describe('原版式网络摘要', () => {
       expect(html).toContain('丢包<small>%</small>')
       expect(html.match(/— · — · —/g)).toHaveLength(2)
     } finally {
+      clearPingCacheForTest()
+      vi.unstubAllGlobals()
+    }
+  })
+  it('摘要模式精简整数丢包率为 0 或 100，非整数保留小数', async () => {
+    vi.stubGlobal('document', { hidden: false })
+    try {
+      const node = normalizeNodes([{ id: 77, name: '香港', online: true, metrics: { cpu: 1, load: [0, 0, 0], mem_total: 1, mem_used: 0, disk_total: 1, disk_used: 0, net_tx: 0, net_rx: 0, uptime: 10 } }])[0]!
+      seedPingCacheForTest(77, parsePing({
+        probes: { 1: '电信', 2: '联通', 3: '移动' },
+        ping: [
+          { task_id: 1, ts: 60, latency: 26, loss: 0 },
+          { task_id: 2, ts: 60, latency: 27, loss: 0 },
+          { task_id: 3, ts: 60, latency: 30, loss: 0 },
+        ],
+        loss: { 1: 0, 2: 0.56, 3: 100 },
+      }))
+      const html = await renderToString(createSSRApp(PingPanel, { node, details: false, config: defaultConfig() }))
+      expect(html).toContain('>0<b')
+      expect(html).toContain('>0.56<b')
+      expect(html).toContain('>100<!---->')
+      expect(html).not.toContain('>0.0<')
+      expect(html).not.toContain('>100.0<')
+    } finally {
+      clearPingCacheForTest()
       vi.unstubAllGlobals()
     }
   })
