@@ -369,7 +369,7 @@ describe('统一延迟分档与状态展示', () => {
       scope: '电信 近 1 小时单线',
     }))
     expect(partialBarHtml).toContain('latency-bar-green')
-    expect(partialBarHtml).toContain('ping-history-timeout-marker')
+    expect(partialBarHtml).not.toContain('ping-history-timeout-marker')
     expect(partialBarHtml).toContain('80 ms')
     expect(partialBarHtml).toContain('含超时')
 

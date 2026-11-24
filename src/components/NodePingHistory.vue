@@ -135,13 +135,12 @@ function toggle(id: number) { selected.value = selected.value.includes(id) ? sel
               <span><small>丢包</small><strong :class="{ 'is-loss': network.loss !== null && network.loss > 0 }" :title="lossTitle(network)">{{ lossLabel(network.loss) }}</strong></span>
               <span><small>最新</small><strong :class="`latency-text-${latencyTone(stats(network).last, stats(network).lastTimeout)}`" :title="lastTitle(network)">{{ latencyLabel(stats(network).last, stats(network).lastTimeout) }}</strong></span>
             </div>
-            <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量与丢包事件'">
+            <div class="ping-quality-strip" :aria-label="network.name + ' 延迟质量历史'">
               <template v-if="quality(network).length">
                 <span v-for="(bucket, bucketIndex) in quality(network)" :key="bucketIndex" class="ping-quality-segment" :title="formatQualityBucketTooltip(bucket, network.name)">
                   <b :class="`latency-bar-${bucketLatencyTone(bucket)}`" />
                   <i v-if="bucketPeakElevated(bucket)" class="ping-peak-marker" :class="`latency-marker-${latencyTone(bucket.peak)}`" aria-label="峰值高于均值档" />
                   <i v-if="bucketLatencyState(bucket) === 'partial-timeout'" class="ping-timeout-marker" aria-label="含超时采样" />
-                  <i v-else-if="bucketLatencyState(bucket) !== 'timeout' && bucket.loss !== null && bucket.loss > 0" class="ping-loss-marker" aria-label="有丢包" />
                 </span>
               </template>
               <span v-else class="ping-quality-segment" :title="`${network.name} · 无采样（缺测）\n平均：— · 峰值：—\n丢包：未知（缺测） · 超时：无采样（缺测）`"><b class="latency-bar-unknown" /></span>

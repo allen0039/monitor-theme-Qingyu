@@ -283,18 +283,6 @@ body { min-width: 0; }
 .ping-panel .latency-text-yellow,
 .ping-panel .latency-text-orange,
 .ping-panel .latency-text-red { font-weight: 650; }
-.ping-history-timeout-marker {
-  position: absolute;
-  bottom: -2.5px;
-  left: 50%;
-  width: 3.5px;
-  height: 3.5px;
-  border-radius: 50%;
-  background: var(--latency-red);
-  box-shadow: 0 0 0 1px var(--surface-solid);
-  transform: translateX(-50%);
-  pointer-events: none;
-}
 .node-card .ping-panels { gap: 10px; container-type: inline-size; }
 .card-size-compact .node-card .ping-panels, .card-size-mini .node-card .ping-panels { gap: 8px; }
 .ping-panel-col { min-width: 0; }

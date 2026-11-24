@@ -2,7 +2,6 @@
 import type { PingBucket } from '../lib/ping-display'
 import {
   bucketAllTimeout,
-  bucketLatencyState,
   bucketLatencyTone,
   formatHistoryBucketTooltip,
   pingTone,
@@ -22,14 +21,10 @@ function barClass(bucket: PingBucket): string {
   if (props.metric === 'latency') return `latency-bar-${bucketLatencyTone(bucket)}`
   return `ping-tone-${bucketAllTimeout(bucket) ? 'bad' : pingTone(bucket.maxLoss ?? bucket.loss, 'loss')}`
 }
-
-function showTimeoutMarker(bucket: PingBucket): boolean {
-  return props.metric === 'latency' && bucketLatencyState(bucket) === 'partial-timeout'
-}
 </script>
 <template>
   <div class="ping-history" :class="{ 'ping-history-empty': !props.buckets.length }" role="img" :aria-label="props.buckets.length ? props.label : `${props.label}：${props.emptyTitle}`">
-    <span v-for="(bucket, index) in props.buckets" :key="index" :class="barClass(bucket)" :title="formatHistoryBucketTooltip(bucket, props.metric, props.scope)"><i v-if="showTimeoutMarker(bucket)" class="ping-history-timeout-marker" aria-label="含超时采样" /></span>
+    <span v-for="(bucket, index) in props.buckets" :key="index" :class="barClass(bucket)" :title="formatHistoryBucketTooltip(bucket, props.metric, props.scope)" />
     <template v-if="!props.buckets.length"><span v-for="index in 10" :key="`empty-${index}`" :class="props.metric === 'latency' ? 'latency-bar-unknown ping-tone-unknown' : 'ping-tone-unknown'" :title="props.emptyTitle" /></template>
   </div>
 </template>
