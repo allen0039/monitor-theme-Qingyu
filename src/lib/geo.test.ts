@@ -186,6 +186,7 @@ describe('地球访客连线', () => {
     expect(html).toContain('latency-badge-yellow')
     expect(html).toContain('156ms')
     expect(html).toContain('5 台在线，3 台有延迟读数（3/5）')
+    expect(html).not.toContain('延迟分档：')
     // 新加坡地区：1 台在线，0 台有延迟读数，显示灰色 —
     expect(html).toContain('latency-badge-unknown')
     expect(html).toContain('1 台在线，0 台有延迟读数（0/1）')

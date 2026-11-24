@@ -294,25 +294,25 @@ export function formatHistoryBucketTooltip(bucket: PingBucket, metric: 'latency'
   const prefix = scope ? `${range} · ${scope}` : range
   if (metric === 'loss') {
     if (!bucketHasSamples(bucket)) {
-      return `${prefix}\n无采样（缺测） · 丢包 未知（缺测）\n整段窗口丢包率见上方数值`
+      return `${prefix}\n无采样（缺测） · 丢包 未知（缺测）`
     }
     if (bucketAllTimeout(bucket)) {
-      return `${prefix}\n最高丢包 100.0%（全部超时）\n整段窗口丢包率见上方数值`
+      return `${prefix}\n最高丢包 100.0%（全部超时）`
     }
     const lossValue = bucket.maxLoss ?? bucket.loss
     const lossText = lossValue === null
       ? '最高丢包 未知（未提供）'
       : `最高丢包 ${lossLabel(lossValue)}${bucketHasTimeout(bucket) ? '（含超时）' : ''}`
-    return `${prefix}\n${lossText}\n整段窗口丢包率见上方数值`
+    return `${prefix}\n${lossText}`
   }
 
   const state = bucketLatencyState(bucket)
   if (state === 'empty') {
-    return `${prefix}\n无采样（缺测） · 暂无有效采样\n口径：分段平均延迟；${LATENCY_LEGEND_TEXT}`
+    return `${prefix}\n无采样（缺测）`
   }
   if (state === 'timeout') {
-    const countText = typeof bucket.sampleCount === 'number' ? `（${bucket.timeoutCount ?? bucket.sampleCount}/${bucket.sampleCount} 超时）` : ''
-    return `${prefix}\n超时${countText}\n口径：分段平均延迟（全部采样超时）；${LATENCY_LEGEND_TEXT}`
+    const countText = typeof bucket.sampleCount === 'number' ? `（${bucket.timeoutCount ?? bucket.sampleCount}/${bucket.sampleCount}）` : ''
+    return `${prefix}\n超时${countText}`
   }
   const tier = latencyTier(bucket.latency)
   const peakText = bucket.peak !== null ? `峰值 ${latencyLabel(bucket.peak, false)}` : '峰值 —'
@@ -320,9 +320,9 @@ export function formatHistoryBucketTooltip(bucket: PingBucket, metric: 'latency'
     const countText = typeof bucket.timeoutCount === 'number' && typeof bucket.sampleCount === 'number'
       ? `（${bucket.timeoutCount}/${bucket.sampleCount}）`
       : ''
-    return `${prefix}\n平均 ${latencyLabel(bucket.latency, false)}（${tier.label}） · ${peakText} · 含超时${countText}\n口径：本段成功采样平均延迟；${LATENCY_LEGEND_TEXT}`
+    return `${prefix}\n平均 ${latencyLabel(bucket.latency, false)}（${tier.label}） · ${peakText} · 含超时${countText}`
   }
-  return `${prefix}\n平均 ${latencyLabel(bucket.latency, false)}（${tier.label}） · ${peakText}\n口径：本段成功采样平均延迟；${LATENCY_LEGEND_TEXT}`
+  return `${prefix}\n平均 ${latencyLabel(bucket.latency, false)}（${tier.label}） · ${peakText}`
 }
 
 export function formatQualityBucketTooltip(bucket: PingBucket, networkName?: string): string {

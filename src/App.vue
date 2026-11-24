@@ -173,7 +173,7 @@ onBeforeUnmount(() => { alive = false; stopStream(); window.removeEventListener(
       <div v-else-if="routeNode !== null && nodes !== null" class="empty-state" role="alert"><Server /><h2>节点不存在或无权查看</h2><button type="button" class="primary-button" @click="backToList">返回节点列表</button></div>
       <template v-else-if="nodes !== null">
         <section v-if="showOverview" class="overview" :class="{ 'overview-compact': !hasVisual, 'overview-visual-only': !showSummary }" aria-label="节点概况">
-          <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :show-price="showPrice" v-model:currency="summaryCurrency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" @public-open-change="publicFinanceOpen = $event" />
+          <SummaryCards v-if="showSummary" :nodes="summaryNodes" :cards="cards" :scope="config.summary_scope" :group="config.summary_scope === 'group' ? effectiveGroup : null" :show-price="showPrice" v-model:currency="summaryCurrency" :rates="exchange.rates" :rate-label="exchangeRateLabel(exchange)" :rates-loading="ratesLoading" :expiry-warning-days="config.expiry_warning_days" @public-open-change="publicFinanceOpen = $event" />
           <div v-if="hasVisual" class="overview-visual">
             <GeoMap :nodes="grouped" :show-labels="config.earth_show_labels" :ping-enabled="configLoaded && config.show_ping" :ping-tasks="config.ping_tasks" :ping-max-lines="config.ping_max_lines">
               <template #status>

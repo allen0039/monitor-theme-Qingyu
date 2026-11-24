@@ -16,10 +16,11 @@ export const DISPLAY_SECTIONS = [
 export type DisplaySettingKey = typeof DISPLAY_SECTIONS[number]['keys'][number]
 export type DisplayOverrides = Partial<Pick<ThemeConfig, DisplaySettingKey>>
 export const SUMMARY_CHOICES = [
-  { key: 'remaining_value', label: '剩余价值' }, { key: 'upload', label: '实时上行' }, { key: 'download', label: '实时下行' },
-  { key: 'traffic', label: '累计流量' }, { key: 'total_upload', label: '累计上行' }, { key: 'total_download', label: '累计下行' },
+  { key: 'online', label: '服务器状态' }, { key: 'realtime', label: '实时吞吐' }, { key: 'remaining_value', label: '剩余价值' },
+  { key: 'traffic', label: '累计流量' }, { key: 'upload', label: '实时上行' }, { key: 'download', label: '实时下行' },
+  { key: 'total_upload', label: '累计上行' }, { key: 'total_download', label: '累计下行' },
   { key: 'memory', label: '内存用量' }, { key: 'disk', label: '硬盘用量' }, { key: 'cpu', label: '平均 CPU' },
-  { key: 'online', label: '节点在线' }, { key: 'offline', label: '离线节点' }, { key: 'regions', label: '国家和地区' },
+  { key: 'offline', label: '离线节点' }, { key: 'regions', label: '国家和地区' },
 ] as const
 export interface DisplayField {
   key: DisplaySettingKey

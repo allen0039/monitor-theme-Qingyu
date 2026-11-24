@@ -262,12 +262,16 @@ describe('统一延迟分档与状态展示', () => {
       expect(summaryHtml).toContain('latency-text-yellow')
       expect(summaryHtml).toContain('latency-bar-yellow')
       expect(summaryHtml).toContain('>156<!---->')
+      expect(summaryHtml).toContain('title="电信"')
+      expect(summaryHtml).not.toContain('延迟分档：')
+      expect(summaryHtml).not.toContain('近 1 小时平均延迟')
       expect(summaryHtml).toContain('延迟偏高')
 
       const detailHtml = await renderToString(createSSRApp(PingPanel, { node, details: true, config: defaultConfig() }))
       expect(detailHtml).toContain('latency-text-yellow')
       expect(detailHtml).toContain('latency-bar-yellow')
       expect(detailHtml).toContain('156 ms')
+      expect(detailHtml).not.toContain('延迟分档：')
 
       const points = [
         { ts: 0, ping_1: 10 },

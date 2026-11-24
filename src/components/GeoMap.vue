@@ -7,7 +7,7 @@ import { clustersOf, layoutMapMarkers, MAP_VIEWBOX, sortClusters, type RegionClu
 import { flagUrl } from '../lib/assets'
 import { bytes, formatBytes } from '../lib/format'
 import { summarizeNodesLatency } from '../lib/ping'
-import { LATENCY_LEGEND_TEXT, latencyLabel, latencyTier, latencyTone } from '../lib/ping-display'
+import { latencyLabel, latencyTier, latencyTone } from '../lib/ping-display'
 
 const props = withDefaults(defineProps<{
   nodes: MonitorNode[]
@@ -24,7 +24,9 @@ const props = withDefaults(defineProps<{
 
 const clusters = computed(() => sortClusters(clustersOf(props.nodes)))
 const markers = computed(() => layoutMapMarkers(clusters.value))
-const hoveredCode = ref<string | null>(null)
+const pointerCode = ref<string | null>(null)
+const focusedCode = ref<string | null>(null)
+const hoveredCode = computed(() => pointerCode.value ?? focusedCode.value)
 const uid = useId().replaceAll(':', '')
 const allPaths = worldPaths as string[]
 const basePaths = allPaths.filter((_, index) => index !== MAP_VIEWBOX.antarcticaIndex)
@@ -62,10 +64,10 @@ const globalLatencyTitle = computed(() => {
   const { avg, sampled } = globalLatency.value
   const coverage = online > 0 ? `${online} 台在线，${sampled} 台有延迟读数（${sampled}/${online}）` : '暂无在线节点'
   if (avg === null) {
-    return `当前分组平均延迟 — · ${coverage}\n等待卡片网络监控采样；${LATENCY_LEGEND_TEXT}`
+    return `当前分组平均延迟 — · ${coverage}`
   }
   const tier = latencyTier(avg)
-  return `当前分组平均延迟 ${latencyLabel(avg, false)}（${tier.label}）· ${coverage}\n按节点等权聚合近 1 小时采样；${LATENCY_LEGEND_TEXT}`
+  return `当前分组平均延迟 ${latencyLabel(avg, false)}（${tier.label}）· ${coverage}`
 })
 
 const regionLatencies = computed(() => new Map(clusters.value.map(cluster => [
@@ -91,10 +93,10 @@ function regionLatencyTitle(cluster: RegionCluster): string {
   const { avg, sampled } = regionLatencySummary(cluster.code)
   const coverage = cluster.online > 0 ? `${cluster.online} 台在线，${sampled} 台有延迟读数（${sampled}/${cluster.online}）` : '暂无在线节点'
   if (avg === null) {
-    return `${cluster.name} · 平均延迟 — · ${coverage}\n${LATENCY_LEGEND_TEXT}`
+    return `${cluster.name} · 平均延迟 — · ${coverage}`
   }
   const tier = latencyTier(avg)
-  return `${cluster.name} · 平均延迟 ${latencyLabel(avg, false)}（${tier.label}）· ${coverage}\n按地区节点等权聚合近 1 小时采样；${LATENCY_LEGEND_TEXT}`
+  return `${cluster.name} · 平均延迟 ${latencyLabel(avg, false)}（${tier.label}）· ${coverage}`
 }
 
 function clusterTitle(cluster: RegionCluster): string {
@@ -128,11 +130,27 @@ const moreLabel = computed(() => {
 })
 
 function setPage(next: number) {
+  pointerCode.value = null
   page.value = Math.min(totalPages.value - 1, Math.max(0, next))
 }
 
 function cyclePage() {
   setPage((currentPage.value + 1) % totalPages.value)
+}
+
+const hoveredMarker = computed(() => hoveredCode.value ? markers.value.find(m => m.cluster.code === hoveredCode.value) ?? null : null)
+const hoverCardStyle = computed(() => {
+  const marker = hoveredMarker.value
+  if (!marker) return {}
+  return {
+    ...(marker.leftPct > 52 ? { left: '10px' } : { right: '10px' }),
+    ...(marker.topPct > 58 ? { bottom: '10px' } : { top: '10px' }),
+  }
+})
+function markerFill(cluster: RegionCluster): string {
+  if (!cluster.online) return '#94a3b8'
+  if (cluster.online < cluster.total) return '#d97706'
+  return 'var(--emerald)'
 }
 
 let lastWheelAt = 0
@@ -150,7 +168,7 @@ function onListWheel(event: WheelEvent) {
     <div class="geo-map-body" :class="{ 'geo-map-body-full': !clusters.length }">
       <div class="geo-map-main">
         <div class="geo-map-stats">
-          <span class="geo-stat-pill geo-stat-regions">{{ clusters.length }} 个地区</span>
+          <span class="geo-stat-pill geo-stat-regions"><strong>{{ clusters.length }}</strong> 个地区</span>
           <div class="geo-map-status"><slot name="status" /></div>
           <span v-if="pingEnabled" class="geo-stat-pill geo-stat-latency" :class="`latency-pill-${globalLatencyTone}`" :title="globalLatencyTitle">平均延迟 <strong :class="`latency-text-${globalLatencyTone}`">{{ latencyLabel(globalLatency.avg, false) }}</strong></span>
         </div>
@@ -158,11 +176,11 @@ function onListWheel(event: WheelEvent) {
           <div class="geo-map-canvas">
             <svg :viewBox="`0 ${MAP_VIEWBOX.yMin} ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`" role="img" aria-label="世界节点分布">
               <defs>
-                <pattern :id="`dots-base-${uid}`" width="4.8" height="4.8" patternUnits="userSpaceOnUse"><circle cx="2.4" cy="2.4" r="1.55" class="map-dot-base" /></pattern>
-                <pattern :id="`dots-online-1-${uid}`" width="4.8" height="4.8" patternUnits="userSpaceOnUse"><circle cx="2.4" cy="2.4" r="1.55" class="map-dot-online-1" /></pattern>
-                <pattern :id="`dots-online-2-${uid}`" width="4.8" height="4.8" patternUnits="userSpaceOnUse"><circle cx="2.4" cy="2.4" r="1.55" class="map-dot-online-2" /></pattern>
-                <pattern :id="`dots-offline-${uid}`" width="4.8" height="4.8" patternUnits="userSpaceOnUse"><circle cx="2.4" cy="2.4" r="1.55" class="map-dot-offline" /></pattern>
-                <pattern :id="`dots-hover-${uid}`" width="4.8" height="4.8" patternUnits="userSpaceOnUse"><circle cx="2.4" cy="2.4" r="1.55" class="map-dot-hover" /></pattern>
+                <pattern :id="`dots-base-${uid}`" width="4.2" height="4.2" patternUnits="userSpaceOnUse"><circle cx="2.1" cy="2.1" r="1.3" class="map-dot-base" /></pattern>
+                <pattern :id="`dots-online-1-${uid}`" width="4.2" height="4.2" patternUnits="userSpaceOnUse"><circle cx="2.1" cy="2.1" r="1.3" class="map-dot-online-1" /></pattern>
+                <pattern :id="`dots-online-2-${uid}`" width="4.2" height="4.2" patternUnits="userSpaceOnUse"><circle cx="2.1" cy="2.1" r="1.3" class="map-dot-online-2" /></pattern>
+                <pattern :id="`dots-offline-${uid}`" width="4.2" height="4.2" patternUnits="userSpaceOnUse"><circle cx="2.1" cy="2.1" r="1.3" class="map-dot-offline" /></pattern>
+                <pattern :id="`dots-hover-${uid}`" width="4.2" height="4.2" patternUnits="userSpaceOnUse"><circle cx="2.1" cy="2.1" r="1.3" class="map-dot-hover" /></pattern>
                 <clipPath :id="`land-${uid}`"><path v-for="(path, i) in basePaths" :key="i" :d="path" /></clipPath>
                 <clipPath v-if="onlineTier1Paths.length" :id="`land-online-1-${uid}`"><path v-for="(path, i) in onlineTier1Paths" :key="i" :d="path" /></clipPath>
                 <clipPath v-if="onlineTier2Paths.length" :id="`land-online-2-${uid}`"><path v-for="(path, i) in onlineTier2Paths" :key="i" :d="path" /></clipPath>
@@ -174,10 +192,23 @@ function onListWheel(event: WheelEvent) {
               <rect v-if="onlineTier2Paths.length" x="0" :y="MAP_VIEWBOX.yMin" :width="MAP_VIEWBOX.width" :height="MAP_VIEWBOX.height" :fill="`url(#dots-online-2-${uid})`" :clip-path="`url(#land-online-2-${uid})`" />
               <rect v-if="offlinePaths.length" x="0" :y="MAP_VIEWBOX.yMin" :width="MAP_VIEWBOX.width" :height="MAP_VIEWBOX.height" :fill="`url(#dots-offline-${uid})`" :clip-path="`url(#land-offline-${uid})`" />
               <rect v-if="hoveredPath" x="0" :y="MAP_VIEWBOX.yMin" :width="MAP_VIEWBOX.width" :height="MAP_VIEWBOX.height" :fill="`url(#dots-hover-${uid})`" :clip-path="`url(#land-hover-${uid})`" />
-              <g v-for="marker in markers" :key="marker.cluster.code" :transform="`translate(${marker.anchorX},${marker.anchorY})`" class="map-marker" @mouseenter="hoveredCode = marker.cluster.code" @mouseleave="hoveredCode = null">
+              <g v-if="showLabels" class="map-marker-links" aria-hidden="true">
+                <line
+                  v-for="marker in markers"
+                  v-show="Math.hypot(marker.x - marker.anchorX, marker.y - marker.anchorY) > 6"
+                  :key="`link-${marker.cluster.code}`"
+                  :x1="marker.anchorX"
+                  :y1="marker.anchorY"
+                  :x2="marker.x"
+                  :y2="marker.y"
+                  class="map-marker-link"
+                  :class="{ 'is-hovered': hoveredCode === marker.cluster.code }"
+                />
+              </g>
+              <g v-for="marker in markers" :key="marker.cluster.code" :transform="`translate(${marker.anchorX},${marker.anchorY})`" class="map-marker" @mouseenter="pointerCode = marker.cluster.code" @mouseleave="pointerCode = null">
                 <title>{{ clusterTitle(marker.cluster) }}</title>
-                <circle v-if="!showLabels" r="8" :fill="!marker.cluster.online ? '#94a3b8' : marker.cluster.online < marker.cluster.total ? '#d97706' : 'var(--emerald)'" opacity=".2" />
-                <circle :r="showLabels ? 2 : 3.2" :fill="!marker.cluster.online ? '#94a3b8' : marker.cluster.online < marker.cluster.total ? '#d97706' : 'var(--emerald)'" />
+                <circle :r="hoveredCode === marker.cluster.code ? 8.5 : showLabels ? 5.5 : 8" :fill="markerFill(marker.cluster)" :opacity="hoveredCode === marker.cluster.code ? 0.28 : showLabels ? 0.14 : 0.2" />
+                <circle :r="showLabels ? 2.6 : 3.4" :fill="markerFill(marker.cluster)" stroke="var(--surface-solid)" stroke-width="1.2" />
               </g>
             </svg>
             <div v-if="showLabels && markers.length" class="geo-map-markers">
@@ -193,11 +224,38 @@ function onListWheel(event: WheelEvent) {
                 }"
                 :style="{ left: `${marker.leftPct}%`, top: `${marker.topPct}%` }"
                 :title="clusterTitle(marker.cluster)"
-                @mouseenter="hoveredCode = marker.cluster.code"
-                @mouseleave="hoveredCode = null"
+                :aria-label="clusterTitle(marker.cluster)"
+                tabindex="0"
+                @focus="focusedCode = marker.cluster.code"
+                @blur="focusedCode = null"
+                @keydown.esc="focusedCode = pointerCode = null"
+                @mouseenter="pointerCode = marker.cluster.code"
+                @mouseleave="pointerCode = null"
               >
+                <i class="geo-marker-dot" aria-hidden="true" />
                 <span class="geo-marker-count">{{ marker.cluster.total }}</span>
               </span>
+            </div>
+          </div>
+          <div v-if="hoveredMarker" class="geo-hover-card" :style="hoverCardStyle" role="status" aria-live="polite">
+            <div class="geo-hover-head">
+              <span class="geo-hover-title">
+                <img v-if="flagUrl(hoveredMarker.cluster.code)" :src="flagUrl(hoveredMarker.cluster.code)" :alt="hoveredMarker.cluster.name" class="geo-region-flag" />
+                <strong>{{ hoveredMarker.cluster.name }}</strong>
+              </span>
+              <span class="geo-hover-count" :class="{ 'is-partial': hoveredMarker.cluster.online > 0 && hoveredMarker.cluster.online < hoveredMarker.cluster.total, 'is-offline': !hoveredMarker.cluster.online }">{{ hoveredMarker.cluster.online }}/{{ hoveredMarker.cluster.total }}</span>
+            </div>
+            <div class="geo-hover-rows">
+              <div><span>实时上行</span><strong class="geo-region-up">↑ {{ formatBytes(hoveredMarker.cluster.tx, true) }}</strong></div>
+              <div><span>实时下行</span><strong class="geo-region-down">↓ {{ formatBytes(hoveredMarker.cluster.rx, true) }}</strong></div>
+              <div v-if="pingEnabled">
+                <span>平均延迟</span>
+                <strong :class="`latency-text-${regionLatencyTone(hoveredMarker.cluster.code)}`">{{ latencyLabel(regionLatencySummary(hoveredMarker.cluster.code).avg, false) }}</strong>
+              </div>
+              <div v-if="pingEnabled && hoveredMarker.cluster.online > 0" class="geo-hover-cov">
+                <span>采样覆盖</span>
+                <span>{{ regionLatencySummary(hoveredMarker.cluster.code).sampled }}/{{ hoveredMarker.cluster.online }} 台</span>
+              </div>
             </div>
           </div>
         </div>
@@ -223,8 +281,8 @@ function onListWheel(event: WheelEvent) {
             :class="{ 'is-offline': !cluster.online, 'is-hovered': hoveredCode === cluster.code }"
             role="listitem"
             :title="clusterTitle(cluster)"
-            @mouseenter="hoveredCode = cluster.code"
-            @mouseleave="hoveredCode = null"
+            @mouseenter="pointerCode = cluster.code"
+            @mouseleave="pointerCode = null"
           >
             <span class="geo-region-name">
               <img v-if="flagUrl(cluster.code)" :src="flagUrl(cluster.code)" :alt="cluster.name" class="geo-region-flag" />

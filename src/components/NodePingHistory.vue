@@ -6,7 +6,6 @@ import { fetchHistory, historyRanges } from '../lib/history'
 import { readQingyuStorage } from '../lib/storage'
 import { selectPingNetworks } from '../lib/ping'
 import {
-  LATENCY_LEGEND_TEXT,
   LATENCY_TIERS,
   bucketLatencyState,
   bucketLatencyTone,
@@ -75,12 +74,12 @@ const jitterLabel = (network: PingNetwork) => {
 function avgTitle(network: PingNetwork): string {
   const s = stats(network)
   const tier = latencyTier(s.avg, s.allTimeout)
-  return `当前时间范围平均延迟：${latencyLabel(s.avg, s.allTimeout)}（${tier.label}）\n${LATENCY_LEGEND_TEXT}`
+  return `当前时间范围平均延迟：${latencyLabel(s.avg, s.allTimeout)}（${tier.label}）`
 }
 function lastTitle(network: PingNetwork): string {
   const s = stats(network)
   const tier = latencyTier(s.last, s.lastTimeout)
-  return `当前时间范围最后一条实际采样：${latencyLabel(s.last, s.lastTimeout)}（${tier.label}）\n${LATENCY_LEGEND_TEXT}`
+  return `当前时间范围最后一条实际采样：${latencyLabel(s.last, s.lastTimeout)}（${tier.label}）`
 }
 function lossTitle(network: PingNetwork): string {
   const s = stats(network)

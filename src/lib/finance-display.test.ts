@@ -82,30 +82,36 @@ describe('费用和在线状态展示', () => {
     expect(html).toContain('购入总价按录入标价，续费按付款周期折算为月均价格。')
     expect(html).not.toContain('class="finance-row-issue"')
   })
-  it('默认总览六张卡片按剩余价值与流量明细展示，缺省日流量时回退当月', async () => {
+  it('默认总览四张卡片依次展示服务器状态、实时吞吐、剩余价值与累计流量，缺省日流量时回退当月', async () => {
     const GiB = 1024 ** 3
     const withDaily = normalizeNodes([{
-      id: 1, online: true, price: 1200, currency: 'CNY', billing_cycle: 'yearly', expires_in: 100,
+      id: 1, online: true, country: 'JP', price: 1200, currency: 'CNY', billing_cycle: 'yearly', expires_in: 100,
       metrics: { cpu: 1, load: [0, 0, 0], mem_total: GiB, mem_used: 0, disk_total: GiB, disk_used: 0, net_tx: 626 * 1024, net_rx: 760 * 1024, uptime: 10 },
       month_tx: 107 * GiB, month_rx: 121 * GiB, day_tx: 85.3 * GiB, day_rx: 97.7 * GiB, total_tx: 107 * GiB, total_rx: 121 * GiB,
     }])
-    const cards = ['remaining_value', 'upload', 'download', 'traffic', 'total_upload', 'total_download'] as const
+    const cards = ['online', 'realtime', 'remaining_value', 'traffic'] as const
     const html = await renderToString(createSSRApp(SummaryCards, { nodes: withDaily, cards: [...cards], scope: 'all', showPrice: true, currency: 'CNY', rates: {}, rateLabel: '', ratesLoading: false }))
-    expect(html).toContain('剩余价值')
-    expect(html).toContain('实时上行')
-    expect(html).toContain('本月上行 107.0 GB')
-    expect(html).toContain('实时下行')
-    expect(html).toContain('本月下行 121.0 GB')
-    expect(html).toContain('累计流量')
-    expect(html).toContain('本月总计 228.0 GB')
-    expect(html).toContain('累计上行')
-    expect(html).toContain('今日上行 85.3 GB')
-    expect(html).toContain('累计下行')
-    expect(html).toContain('今日下行 97.7 GB')
+    expect(html.indexOf('服务器状态')).toBeLessThan(html.indexOf('实时吞吐'))
+    expect(html.indexOf('实时吞吐')).toBeLessThan(html.indexOf('剩余价值'))
+    expect(html.indexOf('剩余价值')).toBeLessThan(html.indexOf('累计流量'))
+    expect(html).toContain('summary-grid-quad')
+    expect(html).toContain('100.0%')
+    expect(html).toContain('1 地区')
+    expect(html).toContain('summary-sparkline')
+    expect(html).toContain('↑ 626 KB/s')
+    expect(html).toContain('↓ 760 KB/s')
+    expect(html).toContain('>1.4<')
+    expect(html).toContain('MB/s')
+    expect(html).toContain('↑ 107.0 GB')
+    expect(html).toContain('↓ 121.0 GB')
+    expect(html).toContain('今日 183.0 GB')
 
     const withoutDaily = normalizeNodes([{
       id: 2, online: true, month_tx: 40 * GiB, month_rx: 60 * GiB, total_tx: 100 * GiB, total_rx: 200 * GiB,
     }])
+    const fallbackTraffic = await renderToString(createSSRApp(SummaryCards, { nodes: withoutDaily, cards: ['traffic'], scope: 'all', showPrice: false, currency: 'CNY', rates: {}, rateLabel: '', ratesLoading: false }))
+    expect(fallbackTraffic).toContain('本月 100.0 GB')
+
     const fallbackHtml = await renderToString(createSSRApp(SummaryCards, { nodes: withoutDaily, cards: ['total_upload', 'total_download'], scope: 'all', showPrice: false, currency: 'CNY', rates: {}, rateLabel: '', ratesLoading: false }))
     expect(fallbackHtml).toContain('本月上行 40.0 GB')
     expect(fallbackHtml).toContain('本月下行 60.0 GB')
